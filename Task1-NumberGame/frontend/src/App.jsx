@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "./assets/number_game_logo.png";
 
-
 // --- EPIC ANIMATION VARIANTS ---
 
 const containerReveal = {
@@ -130,7 +129,7 @@ function App() {
   const [gameFinished, setGameFinished] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
 
-  // ADDED: Force a clean backend session when you first load the page
+  // Force a clean backend session when you first load the page
   useEffect(() => {
     fetch("http://localhost:8080/game/restart", { credentials: "include" })
       .catch((e) => console.log("Initial reset failed:", e));
@@ -138,7 +137,6 @@ function App() {
 
   const restartGame = async () => {
     try {
-      // ADDED: credentials: "include"
       await fetch("http://localhost:8080/game/restart", { credentials: "include" });
     } catch (e) {
       console.log("Backend failed to restart, resetting frontend anyway.");
@@ -157,7 +155,6 @@ function App() {
     setAttemptsLeft(currentAttempts);
 
     try {
-      // ADDED: credentials: "include"
       const response = await fetch(`http://localhost:8080/game/guess?guess=${guess}`, {
         credentials: "include"
       });
@@ -210,57 +207,44 @@ function App() {
           padding: "24px 48px", borderBottom: "1px solid #1C1C1C", zIndex: 100
         }}
       >
-<div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "14px"
-  }}
->
-
-  <motion.img
-    src={logo}
-
-    alt="Logo"
-
-    animate={{
-      rotate: [0, 5, -5, 0],
-      scale: [1, 1.05, 1]
-    }}
-
-    transition={{
-      duration: 4,
-      repeat: Infinity
-    }}
-
-    style={{
-      width: "52px",
-      height: "52px",
-
-      borderRadius: "50%",
-
-      objectFit: "cover",
-
-      border:
-        "2px solid #FF3D00",
-
-      boxShadow:
-        "0px 0px 20px rgba(255,61,0,0.6)"
-    }}
-  />
-
-  <span
-    style={{
-      fontSize: "14px",
-      letterSpacing: "0.3em",
-      color: "#FFF",
-      fontWeight: "bold"
-    }}
-  >
-    NUMGAME
-  </span>
-
-</div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "14px"
+          }}
+        >
+          <motion.img
+            src={logo}
+            alt="Logo"
+            animate={{
+              rotate: [0, 5, -5, 0],
+              scale: [1, 1.05, 1]
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity
+            }}
+            style={{
+              width: "52px",
+              height: "52px",
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "2px solid #FF3D00",
+              boxShadow: "0px 0px 20px rgba(255,61,0,0.6)"
+            }}
+          />
+          <span
+            style={{
+              fontSize: "14px",
+              letterSpacing: "0.3em",
+              color: "#FFF",
+              fontWeight: "bold"
+            }}
+          >
+            NUMGAME
+          </span>
+        </div>
         <nav style={{ display: "flex", gap: "32px" }}>
           {["rules", "scoring"].map((item) => (
             <motion.button
@@ -291,18 +275,71 @@ function App() {
             SYSTEM ONLINE // 5 ATTEMPTS
           </motion.p>
 
-          <h1 style={{ fontSize: "clamp(70px, 12vw, 130px)", fontWeight: "900", lineHeight: "0.85", margin: "0 0 40px", display: "flex", flexDirection: "column", gap: "10px" }}>
-            <motion.div style={{ display: "flex", overflow: "hidden" }} variants={containerReveal}>
+          <motion.h1
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 200 }}
+            style={{
+              fontSize: "clamp(70px, 12vw, 130px)",
+              fontWeight: "900",
+              lineHeight: "0.85",
+              margin: "0 0 40px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              cursor: "default"
+            }}
+          >
+            {/* NUMBER */}
+            <motion.div
+              style={{ display: "flex", overflow: "hidden" }}
+              variants={containerReveal}
+              whileHover={{ x: 12 }}
+            >
               {titleLine1.map((char, i) => (
-                <motion.span key={i} variants={titleLetterReveal} style={{ display: "inline-block" }}>{char}</motion.span>
+                <motion.span
+                  key={i}
+                  variants={titleLetterReveal}
+                  whileHover={{
+                    y: -10,
+                    scale: 1.08,
+                    textShadow: "0px 0px 20px rgba(255,255,255,0.5)"
+                  }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  style={{ display: "inline-block" }}
+                >
+                  {char}
+                </motion.span>
               ))}
             </motion.div>
-            <motion.div style={{ display: "flex", color: "#FF3D00", overflow: "hidden" }} variants={containerReveal}>
+
+            {/* GAME */}
+            <motion.div
+              style={{
+                display: "flex",
+                color: "#FF3D00",
+                overflow: "hidden",
+                textShadow: "0px 0px 20px rgba(255,61,0,0.5)"
+              }}
+              variants={containerReveal}
+              whileHover={{ x: 18 }}
+            >
               {titleLine2.map((char, i) => (
-                <motion.span key={i} variants={titleLetterReveal} style={{ display: "inline-block" }}>{char}</motion.span>
+                <motion.span
+                  key={i}
+                  variants={titleLetterReveal}
+                  whileHover={{
+                    y: -12,
+                    scale: 1.1,
+                    textShadow: "0px 0px 30px rgba(255,61,0,0.9)"
+                  }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  style={{ display: "inline-block" }}
+                >
+                  {char}
+                </motion.span>
               ))}
             </motion.div>
-          </h1>
+          </motion.h1>
         </motion.div>
       </section>
 
