@@ -1,8 +1,6 @@
 services:
   - type: web
     name: number-game-backend
-    env: java
-    plan: free
+    env: docker
     rootDir: Task1-NumberGame/backend
-    buildCommand: ./mvnw clean install
-    startCommand: java -jar target/*.jar
+    dockerfilePath: ./Dockerfile
