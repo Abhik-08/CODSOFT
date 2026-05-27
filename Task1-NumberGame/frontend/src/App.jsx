@@ -131,13 +131,13 @@ function App() {
 
   // Force a clean backend session when you first load the page
   useEffect(() => {
-    fetch("http://localhost:8080/game/restart", { credentials: "include" })
+    fetch("https://codsoft-s5i9.onrender.com/game/restart", { credentials: "include" })
       .catch((e) => console.log("Initial reset failed:", e));
   }, []);
 
   const restartGame = async () => {
     try {
-      await fetch("http://localhost:8080/game/restart", { credentials: "include" });
+      await fetch("https://codsoft-s5i9.onrender.com/game/restart", { credentials: "include" });
     } catch (e) {
       console.log("Backend failed to restart, resetting frontend anyway.");
     }
@@ -155,7 +155,7 @@ function App() {
     setAttemptsLeft(currentAttempts);
 
     try {
-      const response = await fetch(`http://localhost:8080/game/guess?guess=${guess}`, {
+      const response = await fetch(`https://codsoft-s5i9.onrender.com/game/guess?guess=${guess}`, {
         credentials: "include"
       });
       const data = await response.json();
