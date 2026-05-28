@@ -108,7 +108,6 @@ function Panel({ id, onClose }) {
           flexDirection: "column",
         }}
       >
-        {/* Panel header */}
         <div style={{
           padding: "20px 28px",
           borderBottom: `4px solid ${T.black}`,
@@ -139,7 +138,6 @@ function Panel({ id, onClose }) {
           </motion.button>
         </div>
 
-        {/* Panel items */}
         <div style={{ padding: "32px 28px", display: "flex", flexDirection: "column", gap: "28px" }}>
           {data.items.map((item, i) => (
             <motion.div
@@ -221,66 +219,66 @@ function StatCard({ label, value, accent, rotate = 0 }) {
 
 // ─── MAIN APP ───────────────────────────────────────────────────
 export default function App() {
-  // ── All original state ──
   const [guess, setGuess] = useState("");
   const [message, setMessage] = useState("Awaiting your command...");
   const [attemptsLeft, setAttemptsLeft] = useState(5);
   const [score, setScore] = useState(0);
   const [correctNumber, setCorrectNumber] = useState(null);
   const [gameFinished, setGameFinished] = useState(false);
-  const [won, setWon] = useState(null); // true = win, false = loss, null = in-progress
+  const [won, setWon] = useState(null);
   const [activePanel, setActivePanel] = useState(null);
 
-  // ── All original logic ──
-  useEffect(() => {
-    fetch("https://codsoft-s5i9.onrender.com/game/restart", { credentials: "include" })
-      .catch((e) => console.log("Initial reset failed:", e));
-  }, []);
-
-  const restartGame = async () => {
-    try {
-      await fetch("https://codsoft-s5i9.onrender.com/game/restart", { credentials: "include" });
-    } catch (e) {
-      console.log("Backend failed to restart, resetting frontend anyway.");
-    }
+  // ── Local Logic Implementation ──
+  const startNewGame = () => {
+    // Generate a new random number between 1 and 100 locally
+    const newSecret = Math.floor(Math.random() * 100) + 1;
+    setCorrectNumber(newSecret);
     setAttemptsLeft(5);
     setMessage("System Initialized. Make your move.");
-    setCorrectNumber(null);
     setGameFinished(false);
     setWon(null);
     setGuess("");
   };
 
-  const checkGuess = async () => {
+  // Initialize the game when the component mounts
+  useEffect(() => {
+    startNewGame();
+  }, []);
+
+  const checkGuess = () => {
     if (!guess || gameFinished) return;
+
+    const numGuess = parseInt(guess, 10);
+
+    // Basic validation
+    if (isNaN(numGuess) || numGuess < 1 || numGuess > 100) {
+      setMessage("Error: Enter a valid number between 1 and 100.");
+      return;
+    }
+
     const currentAttempts = attemptsLeft - 1;
     setAttemptsLeft(currentAttempts);
-    try {
-      const response = await fetch(
-        `https://codsoft-s5i9.onrender.com/game/guess?guess=${guess}`,
-        { credentials: "include" }
-      );
-      const data = await response.json();
-      setMessage(data.message || "No signal from base.");
-      if (data.score !== undefined) setScore(data.score);
-      const hasWon = data.won === true;
-      if (hasWon || currentAttempts <= 0) {
-        setGameFinished(true);
-        setWon(hasWon);
-        if (data.correctNumber !== undefined) setCorrectNumber(data.correctNumber);
-        // If backend didn't return correctNumber on loss, flag it as unknown
-        else if (!hasWon) setCorrectNumber("?");
-      }
-      setGuess("");
-    } catch (error) {
-      console.log(error);
-      setMessage("Backend Connection Interrupted.");
-      if (currentAttempts <= 0) {
-        setGameFinished(true);
-        setWon(false);
-        setCorrectNumber("?");
-      }
+
+    if (numGuess === correctNumber) {
+      // Win Condition
+      setMessage("Target acquired! You win.");
+      setScore(prevScore => prevScore + (currentAttempts * 20));
+      setGameFinished(true);
+      setWon(true);
+    } else if (currentAttempts <= 0) {
+      // Loss Condition
+      setMessage("Mission failed. Out of attempts.");
+      setGameFinished(true);
+      setWon(false);
+    } else if (numGuess < correctNumber) {
+      // Higher Hint
+      setMessage("Too low! Aim higher.");
+    } else {
+      // Lower Hint
+      setMessage("Too high! Aim lower.");
     }
+
+    setGuess("");
   };
 
   // ── Attempt bar ──
@@ -288,7 +286,6 @@ export default function App() {
 
   return (
     <>
-      {/* Google Font */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;900&display=swap');
 
@@ -309,11 +306,6 @@ export default function App() {
           to   { transform: translateX(-50%); }
         }
 
-        @keyframes spinSlow {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition: none !important; }
         }
@@ -327,12 +319,10 @@ export default function App() {
         overflowX: "hidden",
         position: "relative",
       }}>
-        {/* ── Side panels ── */}
         <AnimatePresence>
           {activePanel && <Panel id={activePanel} onClose={() => setActivePanel(null)} />}
         </AnimatePresence>
 
-        {/* ══════════════ MARQUEE TICKER ══════════════ */}
         <div style={{
           backgroundColor: T.black, borderBottom: `4px solid ${T.black}`,
           overflow: "hidden", padding: "10px 0",
@@ -353,7 +343,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* ══════════════ HEADER ══════════════ */}
         <motion.header
           initial={{ y: -80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -366,7 +355,6 @@ export default function App() {
             position: "sticky", top: 0, zIndex: 100,
           }}
         >
-          {/* Logo block */}
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <div style={{
               border: `4px solid ${T.black}`,
@@ -394,7 +382,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Nav buttons */}
           <nav style={{ display: "flex", gap: "12px" }}>
             {["rules", "scoring"].map((item) => (
               <motion.button
@@ -425,14 +412,12 @@ export default function App() {
           </nav>
         </motion.header>
 
-        {/* ══════════════ HERO ══════════════ */}
         <section style={{
           padding: "60px 48px 0",
           position: "relative",
           overflow: "hidden",
           ...gridPattern,
         }}>
-          {/* Giant watermark ? */}
           <div style={{
             position: "absolute", top: "-40px", right: "-20px",
             fontSize: "clamp(280px, 35vw, 480px)",
@@ -445,7 +430,6 @@ export default function App() {
           </div>
 
           <motion.div variants={stagger} initial="hidden" animate="show">
-            {/* Label pill */}
             <motion.div variants={popUp} style={{ marginBottom: "24px" }}>
               <span style={{
                 display: "inline-block",
@@ -463,7 +447,6 @@ export default function App() {
               </span>
             </motion.div>
 
-            {/* Title */}
             <motion.h1
               variants={popUp}
               style={{
@@ -494,7 +477,6 @@ export default function App() {
               GAME
             </motion.h1>
 
-            {/* Attempt pips */}
             <motion.div
               variants={popUp}
               style={{
@@ -526,10 +508,8 @@ export default function App() {
           </motion.div>
         </section>
 
-        {/* ══════════════ GAME SECTION ══════════════ */}
         <main style={{ flex: 1, padding: "0 48px 80px", position: "relative", zIndex: 1 }}>
 
-          {/* ── Input + Buttons row ── */}
           <motion.div
             variants={stagger}
             initial="hidden"
@@ -542,7 +522,6 @@ export default function App() {
               marginBottom: "56px",
             }}
           >
-            {/* Number input */}
             <motion.div variants={slideIn} style={{ flex: "1 1 260px" }}>
               <p style={{
                 margin: "0 0 6px",
@@ -586,7 +565,6 @@ export default function App() {
               />
             </motion.div>
 
-            {/* Execute button */}
             <motion.div variants={slideIn} style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
               <p style={{
                 margin: "0 0 6px",
@@ -627,7 +605,6 @@ export default function App() {
               </motion.button>
             </motion.div>
 
-            {/* Reboot button */}
             <AnimatePresence>
               {gameFinished && (
                 <motion.div
@@ -651,7 +628,7 @@ export default function App() {
                       boxShadow: shadow(10),
                     }}
                     whileTap={{ x: 4, y: 4, boxShadow: "0px 0px 0px 0px #000" }}
-                    onClick={restartGame}
+                    onClick={startNewGame}
                     style={{
                       height: "72px",
                       padding: "0 36px",
@@ -675,7 +652,6 @@ export default function App() {
             </AnimatePresence>
           </motion.div>
 
-          {/* ── Win / Loss reveal ── */}
           <AnimatePresence>
             {correctNumber && won === true && (
               <motion.div
@@ -752,7 +728,6 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          {/* ── Stats dashboard ── */}
           <div style={{
             borderTop: `4px solid ${T.black}`,
             paddingTop: "48px",
@@ -780,7 +755,6 @@ export default function App() {
             />
           </div>
 
-          {/* ── Decorative halftone strip ── */}
           <div style={{
             marginTop: "60px",
             height: "48px",
@@ -790,7 +764,6 @@ export default function App() {
           }} />
         </main>
 
-        {/* ══════════════ FOOTER ══════════════ */}
         <footer style={{
           backgroundColor: T.black,
           borderTop: `4px solid ${T.black}`,
