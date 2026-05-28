@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Random;
 
 // 1. Added allowCredentials = "true" so the browser can send and store the Session Cookie
-@CrossOrigin(origins = "https://codsoft-eosin-nu.vercel.app", allowCredentials = "true")
+@CrossOrigin(origins = {"https://codsoft-eosin-nu.vercel.app", "http://localhost:5173"}, allowCredentials = "true")
 @RestController
 @RequestMapping("/game")
 // 2. Added SessionScope so every browser tab/user gets their own variables
