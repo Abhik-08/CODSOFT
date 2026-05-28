@@ -228,6 +228,7 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [correctNumber, setCorrectNumber] = useState(null);
   const [gameFinished, setGameFinished] = useState(false);
+  const [won, setWon] = useState(null); // true = win, false = loss, null = in-progress
   const [activePanel, setActivePanel] = useState(null);
 
   // ── All original logic ──
@@ -246,6 +247,7 @@ export default function App() {
     setMessage("System Initialized. Make your move.");
     setCorrectNumber(null);
     setGameFinished(false);
+    setWon(null);
     setGuess("");
   };
 
@@ -264,13 +266,20 @@ export default function App() {
       const hasWon = data.won === true;
       if (hasWon || currentAttempts <= 0) {
         setGameFinished(true);
+        setWon(hasWon);
         if (data.correctNumber !== undefined) setCorrectNumber(data.correctNumber);
+        // If backend didn't return correctNumber on loss, flag it as unknown
+        else if (!hasWon) setCorrectNumber("?");
       }
       setGuess("");
     } catch (error) {
       console.log(error);
       setMessage("Backend Connection Interrupted.");
-      if (currentAttempts <= 0) setGameFinished(true);
+      if (currentAttempts <= 0) {
+        setGameFinished(true);
+        setWon(false);
+        setCorrectNumber("?");
+      }
     }
   };
 
@@ -666,10 +675,11 @@ export default function App() {
             </AnimatePresence>
           </motion.div>
 
-          {/* ── Correct number reveal ── */}
+          {/* ── Win / Loss reveal ── */}
           <AnimatePresence>
-            {correctNumber && (
+            {correctNumber && won === true && (
               <motion.div
+                key="win-reveal"
                 initial={{ opacity: 0, scale: 0.6, rotate: -4 }}
                 animate={{ opacity: 1, scale: 1, rotate: -1.5 }}
                 exit={{ opacity: 0, scale: 0.6 }}
@@ -677,28 +687,67 @@ export default function App() {
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "16px",
+                  gap: "20px",
                   marginBottom: "48px",
-                  backgroundColor: T.violet,
+                  backgroundColor: T.yellow,
                   border: `4px solid ${T.black}`,
                   boxShadow: shadow(10),
-                  padding: "16px 28px",
+                  padding: "18px 32px",
                 }}
               >
-                <span style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: "12px", fontWeight: 900,
-                  letterSpacing: "0.25em", color: T.black,
-                }}>
-                  TARGET WAS
-                </span>
-                <span style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: "48px", fontWeight: 900,
-                  color: T.black, lineHeight: 1,
-                }}>
-                  {correctNumber}
-                </span>
+                <span style={{ fontSize: "32px", lineHeight: 1 }}>★</span>
+                <div>
+                  <p style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "11px", fontWeight: 900,
+                    letterSpacing: "0.3em", color: T.black, margin: "0 0 4px",
+                  }}>YOU NAILED IT!</p>
+                  <p style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "42px", fontWeight: 900,
+                    color: T.black, margin: 0, lineHeight: 1,
+                  }}>
+                    {correctNumber} ✓
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {won === false && gameFinished && (
+              <motion.div
+                key="loss-reveal"
+                initial={{ opacity: 0, y: 40, rotate: 3 }}
+                animate={{ opacity: 1, y: 0, rotate: 1 }}
+                exit={{ opacity: 0, scale: 0.6 }}
+                transition={{ type: "spring", bounce: 0.55 }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "20px",
+                  marginBottom: "48px",
+                  backgroundColor: T.red,
+                  border: `4px solid ${T.black}`,
+                  boxShadow: shadow(10),
+                  padding: "18px 32px",
+                }}
+              >
+                <span style={{ fontSize: "32px", lineHeight: 1 }}>✗</span>
+                <div>
+                  <p style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "11px", fontWeight: 900,
+                    letterSpacing: "0.3em", color: T.black, margin: "0 0 4px",
+                  }}>GAME OVER — THE NUMBER WAS</p>
+                  <p style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "62px", fontWeight: 900,
+                    color: T.black, margin: 0, lineHeight: 1,
+                    textDecoration: "underline",
+                    textDecorationThickness: "4px",
+                  }}>
+                    {correctNumber}
+                  </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
