@@ -16,6 +16,8 @@ This repository contains all tasks completed during the CodSoft Java Programming
 ## 🎯 Task 1 — Number Game
 
 A modern full-stack Number Guessing Game built using React and Spring Boot.
+<img width="926" height="910" alt="Screenshot 2026-05-31 005005" src="https://github.com/user-attachments/assets/108ca626-ccc2-4529-9b6b-ecd3644773f5" />
+
 
 ### ✨ Features
 
