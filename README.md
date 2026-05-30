@@ -44,6 +44,12 @@ A modern full-stack Number Guessing Game built using React and Spring Boot.
 
 A modern full-stack Student Grade Calculator built using React and Spring Boot.
 
+<img width="1848" height="893" alt="Screenshot 2026-05-31 005436" src="https://github.com/user-attachments/assets/5604fd7f-989d-424c-90fb-ca8b9ab0d9f5" />
+
+<img width="1852" height="893" alt="Screenshot 2026-05-31 005458" src="https://github.com/user-attachments/assets/6536440c-cfb7-442b-8d51-b05902811db8" />
+
+
+
 ### ✨ Features
 
 * Dynamic subject input system
