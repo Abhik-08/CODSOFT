@@ -4,84 +4,135 @@ This repository contains all tasks completed during the CodSoft Java Programming
 
 ---
 
-## 👨‍💻 Intern Details
+# 👨‍💻 Intern Details
 
-- Name: Abhik Mukherjee
-- Role: Java Programming Intern
+* **Name:** Abhik Mukherjee
+* **Role:** Java Programming Intern
 
 ---
 
-## 📂 Tasks
+# 📂 Tasks
 
-### 🎯 Task 1 — Number Game
+## 🎯 Task 1 — Number Game
 
 A modern full-stack Number Guessing Game built using React and Spring Boot.
 
-#### ✨ Features
+### ✨ Features
 
-- Random number generation
-- High / Low feedback
-- Attempts system
-- Score tracking
-- Multiple rounds
-- Responsive modern UI
-- Frontend ↔ Backend integration
+* Random number generation
+* High / Low feedback
+* Attempts system
+* Score tracking
+* Multiple rounds
+* Responsive modern UI
+* Frontend ↔ Backend integration
 
-#### 🛠 Tech Stack
+### 🛠 Tech Stack
 
-- React
-- Vite
-- Java
-- Spring Boot
-- REST API
-
----
-
-### 📊 Task 2 — Student Grade Calculator
-
-A Java application to calculate grades, percentages, and performance statistics for students.
+* React
+* Vite
+* Java
+* Spring Boot
+* REST API
 
 ---
 
-### 🏧 Task 3 — ATM Interface
+## 📊 Task 2 — Student Grade Calculator
 
-A Java-based ATM simulation system with balance checking, deposits, withdrawals, and transaction handling.
+A modern full-stack Student Grade Calculator built using React and Spring Boot.
 
----
+### ✨ Features
 
-### ❓ Task 4 — Quiz Application
+* Dynamic subject input system
+* Total marks calculation
+* Percentage calculation
+* Grade generation
+* Performance analytics
+* Responsive dashboard UI
+* Frontend ↔ Backend integration
+* Modern animations and visualizations
 
-An interactive quiz system with multiple-choice questions, score tracking, and result evaluation.
+### 🛠 Tech Stack
 
----
-
-### 🧑‍🎓 Task 5 — Student Management System
-
-A Java application for managing student records including add, update, delete, and search operations.
-
----
-
-## 🛠 Skills Learned
-
-- Java Programming
-- Spring Boot
-- REST APIs
-- React.js
-- Full-Stack Development
-- Git & GitHub
-- Responsive UI Design
+* React
+* Vite
+* Java
+* Spring Boot
+* REST API
 
 ---
 
-## 📌 Repository Structure
+## 🏧 Task 3 — ATM Interface
+
+🚧 Under Development
+
+---
+
+## 💱 Task 4 — Currency Converter
+
+🚧 Under Development
+
+---
+
+## 🧑‍🎓 Task 5 — Student Management System
+
+🚧 Under Development
+
+---
+
+# 🛠 Skills Learned
+
+* Java Programming
+* Object-Oriented Programming (OOP)
+* Spring Boot
+* REST APIs
+* React.js
+* Full-Stack Development
+* Responsive UI Design
+* Git & GitHub
+* API Integration
+* Problem Solving
+
+---
+
+# 📌 Repository Structure
 
 ```bash
 CODSOFT/
 │
 ├── Task1-NumberGame/
+│
 ├── Task2-StudentGradeCalculator/
+│
 ├── Task3-ATMInterface/
-├── Task4-QuizApplication/
+│
+├── Task4-CurrencyConverter/
+│
 ├── Task5-StudentManagementSystem/
 │
 └── README.md
+```
+
+---
+
+# 🌟 Highlights
+
+* Full-Stack Java Projects
+* Modern React Frontends
+* Spring Boot REST APIs
+* Responsive User Interfaces
+* Real-World Application Development
+* Industry-Oriented Project Structure
+
+---
+
+# 📬 Connect With Me
+
+**Abhik Mukherjee**
+
+* GitHub: https://github.com/Abhik-08
+* LinkedIn: https://www.linkedin.com/in/abhik-mukherjee-b6a15920a
+
+---
+
+⭐ If you found this repository helpful, consider giving it a star.
