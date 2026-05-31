@@ -1,32 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
-import { GraduationCap, BookOpen, Award, TrendingUp, Zap, Star, ArrowRight, Sparkles } from 'lucide-react';
+import { GraduationCap, BookOpen, Award, TrendingUp, Zap, Star, ArrowRight } from 'lucide-react';
 import styles from './Hero.module.css';
 
 /* ─── split text into animated chars ─── */
-function SplitText({ text, className, delay = 0, stagger = 0.04, fromY = 80, blur = false, reduced = false }) {
-  const chars = text.split('').map((ch, idx) => ({ ch, id: `${ch}-${idx}` }));
-  if (reduced) {
-    return (
-      <span className={className} style={{ display: 'inline-block' }}>
-        {text}
-      </span>
-    );
-  }
+function SplitText({ text, className }) {
   return (
     <span className={className} style={{ display: 'inline-block' }}>
-      {chars.map(({ ch, id }, i) => (
-        <motion.span
-          key={id}
-          style={{ display: 'inline-block', willChange: 'transform, opacity, filter' }}
-          initial={{ opacity: 0, y: fromY, rotateX: -90, filter: blur ? 'blur(12px)' : 'none' }}
-          animate={{ opacity: 1, y: 0, rotateX: 0, filter: 'blur(0px)' }}
-          transition={{ delay: delay + i * stagger, duration: 0.6, ease: 'easeOut' }}
-        >
-          {ch === ' ' ? '\u00A0' : ch}
-        </motion.span>
-      ))}
+      {text}
     </span>
   );
 }
@@ -34,10 +16,6 @@ function SplitText({ text, className, delay = 0, stagger = 0.04, fromY = 80, blu
 SplitText.propTypes = {
   text: PropTypes.string.isRequired,
   className: PropTypes.string,
-  delay: PropTypes.number,
-  stagger: PropTypes.number,
-  fromY: PropTypes.number,
-  blur: PropTypes.bool,
 };
 
 /* ─── typewriter hook ─── */
@@ -69,7 +47,6 @@ const ICONS = [
   { Icon: TrendingUp,    x: '12%', y: '72%', delay: 1.1,  size: 20, color: '#22c55e' },
   { Icon: Zap,           x: '91%', y: '42%', delay: 1.4,  size: 18, color: '#f59e0b' },
   { Icon: Star,          x: '4%',  y: '48%', delay: 1.7,  size: 16, color: '#ec4899' },
-  { Icon: Sparkles,      x: '50%', y: '6%',  delay: 0.9,  size: 18, color: '#ff6b35' },
 ];
 
 const STATS = [
@@ -88,6 +65,32 @@ const heroTextContainer = {
 const heroLine = {
   hidden: { opacity: 0, y: 28 },
   show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } },
+};
+
+const rotatingWord = {
+  enter: {
+    opacity: 0,
+    y: 50,
+    rotateX: -45,
+    scale: 0.95,
+    filter: 'blur(8px)',
+  },
+  center: {
+    opacity: 1,
+    y: 0,
+    rotateX: 0,
+    scale: 1,
+    filter: 'blur(0px)',
+    transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: -50,
+    rotateX: 45,
+    scale: 0.95,
+    filter: 'blur(8px)',
+    transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+  },
 };
 
 const subtitleVariant = {
@@ -120,17 +123,27 @@ export default function Hero() {
 
   useEffect(() => {
     try {
-      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const mq = globalThis.matchMedia('(prefers-reduced-motion: reduce)');
       setPrefersReduced(!!mq && mq.matches);
       const handler = (e) => setPrefersReduced(e.matches);
       mq.addEventListener?.('change', handler);
       return () => mq.removeEventListener?.('change', handler);
     } catch (e) {
-      // ignore
+      console.warn('Failed to detect prefers-reduced-motion', e);
     }
   }, []);
   const [navigating, setNavigating] = useState(false);
   const reducedMotion = prefersReduced || navigating;
+  const [activeHeroLine, setActiveHeroLine] = useState(0);
+
+  useEffect(() => {
+    if (reducedMotion) return undefined;
+    const id = setInterval(() => {
+      setActiveHeroLine((idx) => (idx + 1) % HERO_LINES.length);
+    }, 2400);
+    return () => clearInterval(id);
+  }, [reducedMotion]);
+
   /* parallax */
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start start', 'end start'] });
   const scrollY   = useTransform(scrollYProgress, [0, 1], ['0%', '40%']);
@@ -180,15 +193,6 @@ export default function Hero() {
   /* typewriter */
   const { text: subText, done: subDone } = useTypewriter(SUBTITLE_LINES, 38);
 
-  /* glitch toggle */
-  const [glitch, setGlitch] = useState(false);
-  useEffect(() => {
-    const id = setInterval(() => {
-      setGlitch(true);
-      setTimeout(() => setGlitch(false), 120);
-    }, 8000);
-    return () => clearInterval(id);
-  }, []);
 
   const handleCTA = () => {
     const el = document.querySelector('#calculator');
@@ -248,12 +252,6 @@ export default function Hero() {
           transition={reducedMotion ? undefined : { duration: 3.5, repeat: Infinity, repeatDelay: 4, ease: 'linear' }}
         />
 
-        <motion.div className={styles.heroBrandBadge} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.2 }}>
-          <div className={styles.heroBrandIcon}>
-            <GraduationCap size={20} />
-          </div>
-        </motion.div>
-
         {/* ── 3D tilt card ── */}
         <motion.div
           ref={tiltRef}
@@ -282,11 +280,39 @@ export default function Hero() {
 
           {/* ── HEADING ── */}
           <motion.div className={styles.heading} variants={heroTextContainer} initial="hidden" animate="show">
-            {HERO_LINES.map((line) => (
-              <motion.div key={line} className={styles.headingLine} variants={heroLine}>
-                <SplitText text={line} delay={0.15} stagger={0.05} fromY={100} reduced={reducedMotion} />
-              </motion.div>
-            ))}
+            <motion.div className={styles.headingKicker} variants={heroLine}>
+              Student Grade Calculator
+            </motion.div>
+            <div className={styles.headingStage}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={reducedMotion ? 'static-heading' : HERO_LINES[activeHeroLine]}
+                className={`${styles.headingLine} ${styles.rotatingWord}`}
+                  data-text={HERO_LINES[activeHeroLine]}
+                  variants={reducedMotion ? undefined : rotatingWord}
+                  initial={reducedMotion ? false : 'enter'}
+                  animate={reducedMotion ? {} : 'center'}
+                  exit={reducedMotion ? undefined : 'exit'}
+                >
+                  <SplitText
+                    text={HERO_LINES[activeHeroLine]}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            <motion.div className={styles.wordTrack} variants={heroLine}>
+              {HERO_LINES.map((line, index) => (
+                <button
+                  key={line}
+                  type="button"
+                  className={`${styles.wordChip} ${activeHeroLine === index ? styles.wordChipActive : ''}`}
+                  onClick={() => setActiveHeroLine(index)}
+                  aria-label={`Show ${line}`}
+                >
+                  {line}
+                </button>
+              ))}
+            </motion.div>
           </motion.div>
 
           <motion.div className={styles.subtitle} variants={subtitleVariant} initial="hidden" animate="show">

@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -31,16 +30,24 @@ public class PersistentUserStore {
     }
 
     public boolean userExists(String email) {
-        return userStore.containsKey(email);
+        if (email == null) return false;
+        return userStore.containsKey(email.trim().toLowerCase());
     }
 
     public void saveUser(String email, UserDetails user) {
-        userStore.put(email, user);
+        if (email == null) return;
+        String normalizedEmail = email.trim().toLowerCase();
+        userStore.put(normalizedEmail, user);
         persistUsers();
     }
 
+    @SuppressWarnings("all")
     public UserDetails loadUserByUsername(String username) {
-        UserDetails user = userStore.get(username);
+        if (username == null) {
+            throw new org.springframework.security.core.userdetails.UsernameNotFoundException("Username/email cannot be null");
+        }
+        String normalizedUsername = username.trim().toLowerCase();
+        UserDetails user = userStore.get(normalizedUsername);
         if (user == null) {
             throw new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found with email: " + username);
         }
@@ -55,13 +62,16 @@ public class PersistentUserStore {
 
         try {
             List<StoredUser> storedUsers = objectMapper.readValue(Files.readString(STORAGE_FILE), new TypeReference<>() {});
-            storedUsers.forEach(record -> {
-                UserDetails user = User.builder()
-                        .username(record.email())
-                        .password(record.password())
-                        .roles(record.roles().toArray(String[]::new))
-                        .build();
-                userStore.put(record.email(), user);
+            storedUsers.forEach(storedUser -> {
+                if (storedUser.email() != null) {
+                    String normalizedEmail = storedUser.email().trim().toLowerCase();
+                    UserDetails user = User.builder()
+                            .username(normalizedEmail)
+                            .password(storedUser.password())
+                            .roles(storedUser.roles().toArray(String[]::new))
+                            .build();
+                    userStore.put(normalizedEmail, user);
+                }
             });
             log.info("Loaded {} persisted users from {}", storedUsers.size(), STORAGE_FILE.toAbsolutePath());
         } catch (IOException e) {
@@ -72,10 +82,10 @@ public class PersistentUserStore {
     private void persistUsers() {
         try {
             List<StoredUser> storedUsers = userStore.values().stream()
-                    .map(user -> new StoredUser(user.getUsername(), user.getPassword(), new ArrayList<>(user.getAuthorities().stream()
+                    .map(user -> new StoredUser(user.getUsername().trim().toLowerCase(), user.getPassword(), new ArrayList<>(user.getAuthorities().stream()
                             .map(grantedAuthority -> grantedAuthority.getAuthority().replace("ROLE_", ""))
                             .toList())))
-                    .collect(Collectors.toList());
+                    .toList();
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(STORAGE_FILE.toFile(), storedUsers);
             log.info("Persisted {} users to {}", storedUsers.size(), STORAGE_FILE.toAbsolutePath());
         } catch (IOException e) {

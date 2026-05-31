@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, AlertCircle, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { apiService } from '../utils/apiService';
-import logo from '../assets/task 2 logo.jpeg';
+import logo from '../assets/task_2_logo.png';
 import styles from './AuthPage.module.css';
 
 const formVariants = {
@@ -26,11 +26,6 @@ const formVariants = {
   })
 };
 
-const AUTH_BENEFITS = [
-  { label: 'Secure login', desc: 'JWT-protected access to grade analytics and history.' },
-  { label: 'Fast grade engine', desc: 'Instant calculation with responsive dashboard updates.' },
-  { label: 'Built for students', desc: 'Designed for clear performance insights and easy subject entry.' },
-];
 
 export default function AuthPage({ currentMode, onNavigate, onSuccess, initialAlert = '', canGoBack = true }) {
   const [direction, setDirection] = useState(1); // 1 for register -> login, -1 for login -> register
@@ -116,7 +111,7 @@ export default function AuthPage({ currentMode, onNavigate, onSuccess, initialAl
 
   return (
     <div className={styles.authContainer}>
-      <motion.div 
+      <motion.div
         className={`glass-card ${styles.authCard} ${loading ? styles.isLoading : ''}`}
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -171,14 +166,6 @@ export default function AuthPage({ currentMode, onNavigate, onSuccess, initialAl
           <p className={styles.subText}>Premium Student Grade Calculation Suite</p>
         </div>
 
-        <div className={styles.authBenefits}>
-          {AUTH_BENEFITS.map((item) => (
-            <div key={item.label} className={styles.benefitItem}>
-              <span className={styles.benefitLabel}>{item.label}</span>
-              <p className={styles.benefitDesc}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
 
         {/* Banners */}
         {initialAlert && !serverError && !successMsg && (
@@ -218,8 +205,8 @@ export default function AuthPage({ currentMode, onNavigate, onSuccess, initialAl
                 {currentMode === 'login' ? 'Sign In' : 'Register Account'}
               </h2>
               <p className={styles.formSub}>
-                {currentMode === 'login' 
-                  ? 'Access secure grade calculations and performance metrics.' 
+                {currentMode === 'login'
+                  ? 'Access secure grade calculations and performance metrics.'
                   : 'Get started to calculate subject analytics and GPA distributions.'}
               </p>
 

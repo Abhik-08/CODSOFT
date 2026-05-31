@@ -1,4 +1,8 @@
 [ {
+  "email" : "abhik@gmail.com",
+  "password" : "$2a$10$GtNMrB/OhBHuBDOYo7RgRuJwQc1JnxW5ABIJvu8fckat7FSF5op9i",
+  "roles" : [ "USER" ]
+}, {
   "email" : "test@gmail.com",
   "password" : "$2a$10$8IV5h97iv0uyhf4e0HFa1ukILuWca7ID1JVK4mDZikE21TpbZ.qpO",
   "roles" : [ "USER" ]

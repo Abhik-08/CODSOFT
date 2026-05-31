@@ -6,6 +6,7 @@ import com.abhik.gradecalculator.model.RegisterRequest;
 import com.abhik.gradecalculator.security.CustomUserDetailsService;
 import com.abhik.gradecalculator.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final CustomUserDetailsService userDetailsService;
@@ -23,17 +25,22 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
-        if (userDetailsService.userExists(request.getEmail())) {
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        log.info("[AUTH] Register attempt for email: {}", normalizedEmail);
+
+        if (userDetailsService.userExists(normalizedEmail)) {
+            log.warn("[AUTH] Registration failed: Email already exists: {}", normalizedEmail);
             throw new IllegalArgumentException("User with this email already exists!");
         }
 
         UserDetails user = User.builder()
-                .username(request.getEmail()) // Email is used as principal username in stateless JWT security
+                .username(normalizedEmail) // Email is used as principal username in stateless JWT security
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles("USER") // Sets standard granted authorities
                 .build();
 
-        userDetailsService.saveUser(request.getEmail(), user);
+        userDetailsService.saveUser(normalizedEmail, user);
+        log.info("[AUTH] User registered successfully and persisted: {}", normalizedEmail);
 
         String jwtToken = jwtService.generateToken(user);
         return AuthResponse.builder()
@@ -43,20 +50,30 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        // Trigger Spring Security authentication
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        log.info("[AUTH] Login attempt for email: {}", normalizedEmail);
 
-        UserDetails user = userDetailsService.loadUserByUsername(request.getEmail());
+        try {
+            // Trigger Spring Security authentication
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            normalizedEmail,
+                            request.getPassword()
+                    )
+            );
+            log.info("[AUTH] Spring Security authentication successful for email: {}", normalizedEmail);
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            log.error("[AUTH] Spring Security authentication failed for email: {}. Exception: {}", normalizedEmail, e.getMessage());
+            throw e;
+        }
+
+        UserDetails user = userDetailsService.loadUserByUsername(normalizedEmail);
         String jwtToken = jwtService.generateToken(user);
+        log.info("[AUTH] JWT token generated successfully for email: {}", normalizedEmail);
 
         return AuthResponse.builder()
                 .token(jwtToken)
-                .message("User logged in successfully")
+                .message("Welcome " + (user.getUsername().split("@")[0]))
                 .build();
     }
 }

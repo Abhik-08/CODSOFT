@@ -4,7 +4,8 @@ import { User, RotateCcw, Download, TrendingUp, CheckCircle2, XCircle } from 'lu
 import ProgressRing from './ProgressRing';
 import StatsCards from './StatsCards';
 import AnimatedCounter from './AnimatedCounter';
-import logo from '../assets/task 2 logo.jpeg';
+import logo from '../assets/task_2_logo.png';
+import illustration from '../assets/illustration.jpg';
 import styles from './ResultsDashboard.module.css';
 
 const containerVariants = {
@@ -25,9 +26,6 @@ export default function ResultsDashboard({ results, onReset, isResetting }) {
     const date = new Date().toLocaleString();
     const issueDate = new Date().toLocaleDateString();
     const scholarshipStatus = results.scholarshipEligible ? 'ELIGIBLE FOR SCHOLARSHIP' : 'NOT ELIGIBLE FOR SCHOLARSHIP';
-    const scholarshipMessage = results.scholarshipEligible
-      ? 'Great work! This student qualifies for university scholarship consideration based on overall marks and subject performance.'
-      : 'Scholarship criteria not met. Improve overall percentage above 60% and avoid any failed subjects to qualify.';
 
     const rows = results.subjects.map((subject, index) => `
       <tr>
@@ -424,6 +422,18 @@ export default function ResultsDashboard({ results, onReset, isResetting }) {
             {isPassed ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
             {isPassed ? 'PASSED' : 'FAILED'}
           </motion.div>
+        </div>
+
+        {/* Middle — Illustration */}
+        <div className={styles.heroMiddle}>
+          <motion.img
+            src={illustration}
+            alt="Academic analytics illustration"
+            className={styles.illustrationImg}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 0.85, scale: 1 }}
+            transition={{ duration: 0.65, delay: 0.4, ease: 'easeOut' }}
+          />
         </div>
 
         {/* Right side — Progress Ring */}

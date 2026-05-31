@@ -88,9 +88,9 @@
 
 .navLink {
   position: relative;
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-md);
-  font-size: 0.88rem;
+  font-size: 0.96rem;
   font-weight: 500;
   color: var(--text-secondary);
   text-decoration: none;
@@ -186,10 +186,10 @@
   border: 1px solid #7f1d1d;
   color: #fecaca;
   border-radius: var(--radius-pill);
-  padding: 6px 14px;
+  padding: 8px 16px;
   font-family: var(--font-body);
   font-weight: 500;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;

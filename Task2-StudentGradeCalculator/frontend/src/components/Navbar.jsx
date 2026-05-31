@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart3, Menu, X, Home, Calculator, Info, Mail, User, LogOut } from 'lucide-react';
-import logo from '../assets/task 2 logo.jpeg';
+import { BarChart3, Menu, X, Home, Calculator, LogOut } from 'lucide-react';
+import logo from '../assets/task_2_logo.png';
 import styles from './Navbar.module.css';
 
 const NAV_LINKS = [
   { label: 'Home', href: '#home', icon: Home },
   { label: 'Features', href: '#features', icon: BarChart3 },
   { label: 'Calculator', href: '#calculator', icon: Calculator },
-  { label: 'About', href: '#about', icon: Info },
-  { label: 'Contact', href: '#contact', icon: Mail },
 ];
 
 /* ── Shared spinning icon ── */
@@ -165,10 +163,6 @@ export default function Navbar({ activeSection, user, onSignOut, onLogoClick }) 
         <div className={styles.navRight}>
           {user ? (
             <div className={styles.userSection}>
-              <div className={styles.profileChip}>
-                <User size={13} color="#ff6b35" />
-                <span className={styles.username}>{user.username}</span>
-              </div>
               <LogoutButton isSigningOut={isSigningOut} onLogout={handleLogout} />
             </div>
           ) : null}

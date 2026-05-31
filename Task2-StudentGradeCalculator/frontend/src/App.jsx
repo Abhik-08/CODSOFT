@@ -3,7 +3,6 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import GradeCalculator from './components/GradeCalculator';
 import Features from './components/Features';
-import AboutSection from './components/AboutSection';
 import Footer from './components/Footer';
 import ParticleBackground from './components/ParticleBackground';
 import AuthPage from './components/AuthPage';
@@ -125,8 +124,6 @@ function App() {
               </section>
               <div className="divider" />
               <section id="features"><Features /></section>
-              <div className="divider" />
-              <section id="about"><AboutSection /></section>
             </>
           ) : (
             <AuthPage 

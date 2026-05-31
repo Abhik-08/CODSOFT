@@ -125,13 +125,28 @@ function handleFetchError(err, timeoutMs) {
  * @param {object|null} data — parsed JSON body (may be null)
  * @param {string|null} token — current JWT (used to distinguish 403 scenarios)
  */
-function handleHttpError(response, data, token) {
+/**
+ * Parses an HTTP error response and throws the appropriate ApiError.
+ * Always throws — never returns.
+ *
+ * @param {Response} response
+ * @param {object|null} data — parsed JSON body (may be null)
+ * @param {string|null} token — current JWT (used to distinguish 403 scenarios)
+ * @param {string} endpoint — current API endpoint being called
+ */
+function handleHttpError(response, data, token, endpoint = '') {
   const { status } = response;
+  const isAuthEndpoint = endpoint.includes('/auth/');
 
-  if (status === 401) {
+  if (status === 401 && !isAuthEndpoint) {
     clearToken();
     dispatchAuthExpired();
     throw new ApiError('Your session is invalid or has expired. Please sign in again.', 401, 'Unauthorized');
+  }
+
+  if (status === 401 && isAuthEndpoint) {
+    const errorMsg = data?.message || 'Invalid email or password';
+    throw new ApiError(errorMsg, 401, 'Unauthorized');
   }
 
   if (status === 403 && token) {
@@ -201,7 +216,7 @@ async function apiFetch(endpoint, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) 
   const data = await parseJsonBody(response);
 
   if (!response.ok) {
-    handleHttpError(response, data, token); // always throws
+    handleHttpError(response, data, token, endpoint); // always throws
   }
 
   return data;

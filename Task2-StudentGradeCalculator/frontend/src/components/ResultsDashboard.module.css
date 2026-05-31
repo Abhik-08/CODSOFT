@@ -318,9 +318,29 @@
   font-weight: 700;
 }
 
+.heroMiddle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  max-width: 280px;
+  margin: 0 auto;
+  pointer-events: none;
+}
+
+.illustrationImg {
+  width: 100%;
+  height: auto;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45));
+}
+
 @media (max-width: 768px) {
   .resultHero { flex-direction: column; padding: 24px; text-align: center; }
   .heroLeft { align-items: center; }
+  .heroMiddle { max-width: 180px; margin: 12px auto; }
   .gradeWatermark { display: none; }
   .metricsRow { grid-template-columns: 1fr 1fr 1fr; }
   .breakdownRow { grid-template-columns: 24px 1fr auto; }

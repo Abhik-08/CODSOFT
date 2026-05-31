@@ -74,3 +74,7 @@
   .grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .value { font-size: 1.6rem; }
 }
+
+@media (max-width: 400px) {
+  .grid { grid-template-columns: 1fr; }
+}
