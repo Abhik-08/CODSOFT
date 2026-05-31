@@ -57,8 +57,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
+        configuration.setAllowedOriginPatterns(List.of(
                 "https://codsoft-nt15.vercel.app",
+                "https://codsoft-nt15-774mjfojt-abhik-mukherjees-projects.vercel.app",
+                "https://codsoft-nt15-git-main-abhik-mukherjees-projects.vercel.app",
+                "https://codsoft-nt15-*.vercel.app",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "http://localhost:5174",
