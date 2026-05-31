@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, BarChart3, Menu, X, Home, Cpu, Calculator, Info, Mail } from 'lucide-react';
+import { BarChart3, Menu, X, Home, Calculator, Info, Mail, User, LogOut } from 'lucide-react';
+import logo from '../assets/task 2 logo.jpeg';
 import styles from './Navbar.module.css';
 
 const NAV_LINKS = [
@@ -11,9 +13,89 @@ const NAV_LINKS = [
   { label: 'Contact', href: '#contact', icon: Mail },
 ];
 
-export default function Navbar({ activeSection }) {
+/* ── Shared spinning icon ── */
+function SpinningLogoutIcon({ spinning }) {
+  return (
+    <motion.span
+      style={{ display: 'flex' }}
+      animate={spinning ? { rotate: 360 } : { rotate: 0 }}
+      transition={spinning ? { duration: 0.5, ease: 'linear' } : {}}
+    >
+      <LogOut size={14} />
+    </motion.span>
+  );
+}
+
+SpinningLogoutIcon.propTypes = { spinning: PropTypes.bool.isRequired };
+
+/* ── Desktop logout button ── */
+function LogoutButton({ isSigningOut, onLogout }) {
+  return (
+    <motion.button
+      id="logout-btn"
+      className={`${styles.signOutBtn} ${isSigningOut ? styles.signOutBtnActive : ''}`}
+      onClick={onLogout}
+      disabled={isSigningOut}
+      whileHover={isSigningOut ? {} : { scale: 1.05 }}
+      whileTap={isSigningOut ? {} : { scale: 0.95 }}
+      title="Sign out of GradeIQ"
+    >
+      <SpinningLogoutIcon spinning={isSigningOut} />
+      {isSigningOut ? 'Signing out…' : 'Logout'}
+    </motion.button>
+  );
+}
+
+LogoutButton.propTypes = {
+  isSigningOut: PropTypes.bool.isRequired,
+  onLogout: PropTypes.func.isRequired,
+};
+
+/* ── Mobile logout button ── */
+function MobileLogoutButton({ isSigningOut, onLogout, delay }) {
+  return (
+    <motion.button
+      id="mobile-logout-btn"
+      className={styles.mobileLogoutBtn}
+      onClick={onLogout}
+      disabled={isSigningOut}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay }}
+    >
+      <motion.span
+        style={{ display: 'flex' }}
+        animate={isSigningOut ? { rotate: 360 } : { rotate: 0 }}
+        transition={isSigningOut ? { duration: 0.5, ease: 'linear' } : {}}
+      >
+        <LogOut size={16} />
+      </motion.span>
+      {isSigningOut ? 'Signing out…' : 'Logout'}
+    </motion.button>
+  );
+}
+
+MobileLogoutButton.propTypes = {
+  isSigningOut: PropTypes.bool.isRequired,
+  onLogout: PropTypes.func.isRequired,
+  delay: PropTypes.number.isRequired,
+};
+
+export default function Navbar({ activeSection, user, onSignOut, onLogoClick }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleLogout = () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    setMenuOpen(false);
+    // Brief delay so the button animation plays before the view transitions
+    setTimeout(() => {
+      onSignOut();
+      setIsSigningOut(false);
+    }, 350);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -23,8 +105,11 @@ export default function Navbar({ activeSection }) {
 
   const handleNavClick = (href) => {
     setMenuOpen(false);
-    const el = document.querySelector(href);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (onLogoClick) onLogoClick();
+    setTimeout(() => {
+      const el = document.querySelector(href);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 80);
   };
 
   return (
@@ -40,74 +125,71 @@ export default function Navbar({ activeSection }) {
           href="#home"
           className={styles.logo}
           onClick={(e) => { e.preventDefault(); handleNavClick('#home'); }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
         >
-          <motion.div
-            className={styles.logoIcon}
-            animate={{ rotate: [0, 8, -8, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <GraduationCap size={22} color="#ff6b35" />
-          </motion.div>
-          <span className={styles.logoText}>
-            Grade<span className={styles.logoAccent}>IQ</span>
-          </span>
-          <span className={styles.logoBadge}>Beta</span>
+          <img src={logo} alt="GradeIQ logo" className={styles.logoImage} />
+          <div className={styles.logoTextWrap}>
+            <span className={styles.logoText}>Grade<span className={styles.logoAccent}>IQ</span></span>
+          </div>
         </motion.a>
 
         {/* Desktop Nav */}
-        <nav className={styles.desktopNav}>
-          {NAV_LINKS.map((link, i) => (
-            <motion.a
-              key={link.label}
-              href={link.href}
-              onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
-              className={`${styles.navLink} ${activeSection === link.href.slice(1) ? styles.active : ''}`}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.07 }}
-              whileHover={{ y: -2 }}
-            >
-              {link.label}
-              {activeSection === link.href.slice(1) && (
-                <motion.div
-                  className={styles.activeDot}
-                  layoutId="activeDot"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
-            </motion.a>
-          ))}
-        </nav>
+        {user && (
+          <nav className={styles.desktopNav}>
+            {NAV_LINKS.map((link, i) => (
+              <motion.a
+                key={link.label}
+                href={link.href}
+                onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
+                className={`${styles.navLink} ${activeSection === link.href.slice(1) ? styles.active : ''}`}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.07 }}
+                whileHover={{ y: -2 }}
+              >
+                {link.label}
+                {activeSection === link.href.slice(1) && (
+                  <motion.div
+                    className={styles.activeDot}
+                    layoutId="activeDot"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+              </motion.a>
+            ))}
+          </nav>
+        )}
 
-        {/* CTA */}
+        {/* CTA / Auth Actions */}
         <div className={styles.navRight}>
-          <motion.button
-            className={`btn-glow ${styles.ctaBtn}`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => handleNavClick('#calculator')}
-          >
-            <Calculator size={15} />
-            Start Calculating
-          </motion.button>
+          {user ? (
+            <div className={styles.userSection}>
+              <div className={styles.profileChip}>
+                <User size={13} color="#ff6b35" />
+                <span className={styles.username}>{user.username}</span>
+              </div>
+              <LogoutButton isSigningOut={isSigningOut} onLogout={handleLogout} />
+            </div>
+          ) : null}
 
           {/* Hamburger */}
-          <motion.button
-            className={styles.hamburger}
-            onClick={() => setMenuOpen(!menuOpen)}
-            whileTap={{ scale: 0.9 }}
-            aria-label="Toggle menu"
-            id="hamburger-btn"
-          >
-            <AnimatePresence mode="wait">
-              {menuOpen
-                ? <motion.span key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}><X size={20} /></motion.span>
-                : <motion.span key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}><Menu size={20} /></motion.span>
-              }
-            </AnimatePresence>
-          </motion.button>
+          {user && (
+            <motion.button
+              className={styles.hamburger}
+              onClick={() => setMenuOpen(!menuOpen)}
+              whileTap={{ scale: 0.9 }}
+              aria-label="Toggle menu"
+              id="hamburger-btn"
+            >
+              <AnimatePresence mode="wait">
+                {menuOpen
+                  ? <motion.span key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}><X size={20} /></motion.span>
+                  : <motion.span key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}><Menu size={20} /></motion.span>
+                }
+              </AnimatePresence>
+            </motion.button>
+          )}
         </div>
       </div>
 
@@ -138,9 +220,33 @@ export default function Navbar({ activeSection }) {
                 </motion.a>
               );
             })}
+
+            {/* Mobile logout row */}
+            {user && (
+              <MobileLogoutButton
+                isSigningOut={isSigningOut}
+                onLogout={handleLogout}
+                delay={NAV_LINKS.length * 0.06}
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
     </motion.header>
   );
 }
+
+Navbar.propTypes = {
+  activeSection: PropTypes.string.isRequired,
+  user: PropTypes.shape({
+    username: PropTypes.string.isRequired,
+    email: PropTypes.string,
+  }),
+  onSignOut: PropTypes.func.isRequired,
+  onLogoClick: PropTypes.func,
+};
+
+Navbar.defaultProps = {
+  user: null,
+  onLogoClick: null,
+};

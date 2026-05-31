@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
+import PropTypes from 'prop-types';
 import styles from './ProgressRing.module.css';
 
 export default function ProgressRing({
@@ -31,10 +32,12 @@ export default function ProgressRing({
   };
 
   const ringColor = color || getColor(percentage);
-  const perfLabel =
-    percentage >= 90 ? 'Excellent' :
-    percentage >= 75 ? 'Good' :
-    percentage >= 60 ? 'Average' : 'Needs Improvement';
+
+  let perfLabel;
+  if (percentage >= 90)      perfLabel = 'Excellent';
+  else if (percentage >= 75) perfLabel = 'Good';
+  else if (percentage >= 60) perfLabel = 'Average';
+  else                       perfLabel = 'Needs Improvement';
 
   return (
     <div ref={ref} className={styles.ringWrapper} style={{ width: size, height: size }}>
@@ -81,7 +84,7 @@ export default function ProgressRing({
           animate={animated ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          {animated ? `${parseFloat(percentage).toFixed(1)}%` : '0%'}
+          {animated ? `${Number.parseFloat(percentage).toFixed(1)}%` : '0%'}
         </motion.span>
         {sublabel && (
           <motion.span
@@ -108,3 +111,12 @@ export default function ProgressRing({
     </div>
   );
 }
+
+ProgressRing.propTypes = {
+  percentage: PropTypes.number.isRequired,
+  size:        PropTypes.number,
+  strokeWidth: PropTypes.number,
+  color:       PropTypes.string,
+  label:       PropTypes.string,
+  sublabel:    PropTypes.string,
+};

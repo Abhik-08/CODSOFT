@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 
 export default function AnimatedCounter({ target, duration = 1.5, decimals = 0, suffix = '' }) {
   const [count, setCount] = useState(0);
@@ -8,7 +8,7 @@ export default function AnimatedCounter({ target, duration = 1.5, decimals = 0, 
   useEffect(() => {
     const start = performance.now();
     const startVal = 0;
-    const endVal = parseFloat(target);
+    const endVal = Number.parseFloat(target);
 
     const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 
@@ -31,3 +31,10 @@ export default function AnimatedCounter({ target, duration = 1.5, decimals = 0, 
     </span>
   );
 }
+
+AnimatedCounter.propTypes = {
+  target: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+  duration: PropTypes.number,
+  decimals: PropTypes.number,
+  suffix: PropTypes.string,
+};

@@ -1,9 +1,32 @@
 import { useEffect, useRef } from 'react';
 
 const PARTICLE_COUNT = 60;
+const CONNECTION_DIST = 120;
 
 function random(min, max) {
   return Math.random() * (max - min) + min;
+}
+
+function pickColor() {
+  if (Math.random() > 0.7) return '#ff6b35';
+  if (Math.random() > 0.5) return '#7c3aed';
+  return '#ffffff';
+}
+
+function drawConnections(ctx, particles) {
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dist = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+      if (dist < CONNECTION_DIST) {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(255, 107, 53, ${0.06 * (1 - dist / CONNECTION_DIST)})`;
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
+      }
+    }
+  }
 }
 
 export default function ParticleBackground() {
@@ -28,26 +51,14 @@ export default function ParticleBackground() {
       dx: random(-0.3, 0.3),
       dy: random(-0.3, 0.3),
       opacity: random(0.1, 0.5),
-      color: Math.random() > 0.7 ? '#ff6b35' : Math.random() > 0.5 ? '#7c3aed' : '#ffffff',
+      color: pickColor(),
     }));
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw connections
-      particles.forEach((p, i) => {
-        particles.slice(i + 1).forEach((q) => {
-          const dist = Math.hypot(p.x - q.x, p.y - q.y);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(255, 107, 53, ${0.06 * (1 - dist / 120)})`;
-            ctx.lineWidth = 0.5;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(q.x, q.y);
-            ctx.stroke();
-          }
-        });
-      });
+      // Draw connections (delegated to module-level helper to limit nesting depth)
+      drawConnections(ctx, particles);
 
       // Draw particles
       particles.forEach((p) => {

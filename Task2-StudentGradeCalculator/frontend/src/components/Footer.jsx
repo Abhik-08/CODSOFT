@@ -5,7 +5,7 @@ import styles from './Footer.module.css';
 const FOOTER_LINKS = {
   Platform: ['Calculator', 'Features', 'About', 'Contact'],
   Resources: ['Grade Scale Guide', 'GPA Calculator', 'Study Tips', 'FAQ'],
-  Tech: ['React', 'Vite', 'Framer Motion', 'Spring Boot (soon)'],
+  Tech: ['React', 'Vite', 'Framer Motion', 'Spring Boot'],
 };
 
 export default function Footer() {
@@ -109,9 +109,9 @@ export default function Footer() {
             © 2025 GradeIQ — Built with <Heart size={12} style={{ display: 'inline', color: '#ef4444', marginBottom: -2 }} /> for CODSOFT Internship
           </p>
           <div className={styles.bottomLinks}>
-            <a href="#" className={styles.bottomLink}>Privacy Policy</a>
-            <a href="#" className={styles.bottomLink}>Terms of Use</a>
-            <a href="#" className={styles.bottomLink}>Open Source</a>
+            <button type="button" className={styles.bottomLink}>Privacy Policy</button>
+            <button type="button" className={styles.bottomLink}>Terms of Use</button>
+            <button type="button" className={styles.bottomLink}>Open Source</button>
           </div>
         </div>
 

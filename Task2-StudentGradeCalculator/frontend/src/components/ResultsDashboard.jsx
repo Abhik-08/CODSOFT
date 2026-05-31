@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
-import { Trophy, User, RotateCcw, Download, TrendingUp, CheckCircle2, XCircle } from 'lucide-react';
+import PropTypes from 'prop-types';
+import { User, RotateCcw, Download, TrendingUp, CheckCircle2, XCircle } from 'lucide-react';
 import ProgressRing from './ProgressRing';
 import StatsCards from './StatsCards';
 import AnimatedCounter from './AnimatedCounter';
+import logo from '../assets/task 2 logo.jpeg';
 import styles from './ResultsDashboard.module.css';
 
 const containerVariants = {
@@ -15,11 +17,356 @@ const cardVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 240, damping: 24 } },
 };
 
-export default function ResultsDashboard({ results, onReset }) {
+export default function ResultsDashboard({ results, onReset, isResetting }) {
   const { studentName, grade, gradeInfo, status, percentage, totalMarks, maxTotal, performance, subjects } = results;
   const isPassed = status === 'PASS';
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    const date = new Date().toLocaleString();
+    const issueDate = new Date().toLocaleDateString();
+    const scholarshipStatus = results.scholarshipEligible ? 'ELIGIBLE FOR SCHOLARSHIP' : 'NOT ELIGIBLE FOR SCHOLARSHIP';
+    const scholarshipMessage = results.scholarshipEligible
+      ? 'Great work! This student qualifies for university scholarship consideration based on overall marks and subject performance.'
+      : 'Scholarship criteria not met. Improve overall percentage above 60% and avoid any failed subjects to qualify.';
+
+    const rows = results.subjects.map((subject, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td class="subject-name">${subject.name}</td>
+        <td>100</td>
+        <td>${subject.marks}</td>
+        <td>${results.grade}</td>
+        <td>${Number(subject.marks) >= 40 ? 'PASS' : 'FAIL'}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>GradeIQ Marksheet - ${results.studentName || 'Student'}</title>
+          <style>
+            @page { size: A4; margin: 8mm; }
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              padding: 10px;
+              font-family: Arial, Helvetica, sans-serif;
+              background: #ffffff;
+              color: #000000;
+            }
+            .sheet {
+              max-width: 760px;
+              margin: 0 auto;
+              padding: 0;
+              background: #ffffff;
+              border: 2px solid #111111;
+              position: relative;
+            }
+            .sheet::before {
+              content: "";
+              position: absolute;
+              left: 50%;
+              top: 52%;
+              width: 390px;
+              height: 390px;
+              background: url("${logo}") center / contain no-repeat;
+              opacity: 0.11;
+              transform: translate(-50%, -50%);
+              pointer-events: none;
+              z-index: 0;
+            }
+            .sheet-content {
+              position: relative;
+              z-index: 1;
+            }
+            .school-header {
+              display: grid;
+              grid-template-columns: 108px 1fr;
+              align-items: center;
+              min-height: 108px;
+              border-bottom: 2px solid #111111;
+              padding: 14px 18px 12px;
+            }
+            .logoBox {
+              width: 78px;
+              height: 78px;
+              margin: 0 auto;
+              object-fit: contain;
+            }
+            .school-title {
+              margin: 0;
+              text-align: center;
+              font-size: 31px;
+              line-height: 1.05;
+              font-weight: 900;
+              letter-spacing: 0.01em;
+            }
+            .school-address {
+              margin: 7px 0 0;
+              text-align: center;
+              font-size: 16px;
+            }
+            .progress-title {
+              border-bottom: 2px solid #111111;
+              padding: 8px 10px;
+              text-align: center;
+              font-size: 15px;
+              font-weight: 800;
+              letter-spacing: 0.04em;
+            }
+            .info-table,
+            .marks-table,
+            .result-table,
+            .grade-table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .info-table td {
+              border-right: 1px solid #111111;
+              border-bottom: 1px solid #111111;
+              padding: 7px 10px;
+              font-size: 13px;
+              line-height: 1.25;
+            }
+            .info-table td:last-child { border-right: 0; }
+            .info-table .label {
+              font-weight: 800;
+              white-space: nowrap;
+            }
+            .info-table .value {
+              display: inline-block;
+              min-width: 120px;
+              margin-left: 4px;
+              border-bottom: 1px dotted #555555;
+              padding-bottom: 1px;
+            }
+            .marks-table th,
+            .marks-table td {
+              border: 1px solid #111111;
+              padding: 7px 6px;
+              text-align: center;
+              font-size: 12px;
+              height: 30px;
+            }
+            .marks-table {
+              border-left: 0;
+              border-right: 0;
+            }
+            .marks-table th {
+              font-weight: 800;
+              background: rgba(255, 255, 255, 0.88);
+            }
+            .subject-name { text-align: left; font-weight: 600; }
+            .total-row td {
+              font-weight: 800;
+              background: rgba(255, 255, 255, 0.9);
+            }
+            .result-table td {
+              border: 1px solid #111111;
+              padding: 9px 10px;
+              font-size: 13px;
+              vertical-align: top;
+            }
+            .result-label {
+              display: block;
+              font-weight: 800;
+              transform: rotate(-45deg);
+              width: 54px;
+              margin: 28px auto;
+            }
+            .result-details div {
+              margin-bottom: 4px;
+              line-height: 1.25;
+            }
+            .grade-table {
+              margin: 18px 14px 24px;
+              width: calc(100% - 28px);
+            }
+            .grade-table td {
+              border: 1px solid #111111;
+              padding: 8px 7px;
+              text-align: center;
+              font-size: 13px;
+              font-weight: 700;
+            }
+            .signature-row {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 34px;
+              margin: 48px 28px 28px;
+              text-align: center;
+            }
+            .signature-box {
+              min-height: 82px;
+              display: flex;
+              flex-direction: column;
+              justify-content: flex-end;
+              align-items: center;
+            }
+            .signature-mark {
+              font-size: 22px;
+              line-height: 1;
+              color: #111111;
+              transform: rotate(-4deg);
+              margin-bottom: 5px;
+            }
+            .signature-teacher {
+              font-family: "Segoe Script", "Brush Script MT", "Snell Roundhand", cursive;
+              font-size: 23px;
+              font-style: italic;
+              letter-spacing: 0.02em;
+              transform: rotate(-7deg) skewX(-8deg);
+            }
+            .signature-controller {
+              font-family: "Lucida Handwriting", "Bradley Hand ITC", "Comic Sans MS", cursive;
+              font-size: 18px;
+              letter-spacing: -0.03em;
+              transform: rotate(4deg) skewX(5deg);
+            }
+            .signature-principal {
+              font-family: "Monotype Corsiva", "Brush Script MT", "Palatino Linotype", cursive;
+              font-size: 26px;
+              font-weight: 700;
+              letter-spacing: 0.04em;
+              transform: rotate(-2deg) skewX(-12deg);
+              text-shadow: 0.25px 0 #111111;
+            }
+            .signature-line {
+              width: 100%;
+              border-top: 1px solid #111111;
+              padding-top: 6px;
+              font-size: 12px;
+              font-weight: 800;
+            }
+            .signature-name {
+              display: block;
+              margin-top: 3px;
+              font-size: 12px;
+              font-weight: 700;
+            }
+            @media print {
+              body { padding: 0; }
+              .sheet { border-width: 2px; max-width: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="sheet">
+            <div class="sheet-content">
+              <div class="school-header">
+                <img class="logoBox" src="${logo}" alt="GradeIQ logo" />
+                <div>
+                  <h1 class="school-title">GradeIQ School</h1>
+                  <p class="school-address">Official Academic Performance Report</p>
+                </div>
+              </div>
+
+              <div class="progress-title">PROGRESS REPORT : 2026 - 27</div>
+
+              <table class="info-table">
+                <tr>
+                  <td colspan="2"><span class="label">Student Name :</span><span class="value">${results.studentName || 'Student Name'}</span></td>
+                  <td><span class="label">Subjects :</span><span class="value">${results.totalSubjects}</span></td>
+                </tr>
+                <tr>
+                  <td><span class="label">Issue Date :</span><span class="value">${issueDate}</span></td>
+                  <td><span class="label">Result :</span><span class="value">${results.status}</span></td>
+                  <td><span class="label">Grade :</span><span class="value">${results.grade}</span></td>
+                </tr>
+              </table>
+
+              <table class="marks-table">
+                <thead>
+                  <tr>
+                    <th style="width: 8%;">S.No.</th>
+                    <th>Subject</th>
+                    <th style="width: 16%;">Max Marks</th>
+                    <th style="width: 18%;">Marks Obtained</th>
+                    <th style="width: 14%;">Grade</th>
+                    <th style="width: 14%;">Result</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows}
+                  <tr class="total-row">
+                    <td colspan="2">Total</td>
+                    <td>${results.maxTotal}</td>
+                    <td>${results.totalMarks}</td>
+                    <td>${results.grade}</td>
+                    <td>${results.status}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <table class="result-table">
+                <tr>
+                  <td style="width: 10%;"><span class="result-label">Result</span></td>
+                  <td class="result-details">
+                    <div><strong>Pass/Fail :</strong> ${results.status}</div>
+                    <div><strong>Percentage :</strong> ${results.percentage}%</div>
+                    <div><strong>Division :</strong> ${results.gradeInfo.label}</div>
+                    <div><strong>Rank :</strong> ${results.rankPrediction || 'N/A'}</div>
+                  </td>
+                  <td class="result-details">
+                    <div><strong>Total Marks :</strong> ${results.totalMarks} / ${results.maxTotal}</div>
+                    <div><strong>Grade :</strong> ${results.grade}</div>
+                    <div><strong>GPA :</strong> ${results.gradeInfo.gpa.toFixed(1)}</div>
+                    <div><strong>Scholarship :</strong> ${scholarshipStatus}</div>
+                  </td>
+                  <td class="result-details">
+                    <div><strong>Remarks :</strong> ${results.remark || 'No additional remarks.'}</div>
+                    <div><strong>Generated :</strong> ${date}</div>
+                  </td>
+                </tr>
+              </table>
+
+              <table class="grade-table">
+                <tr>
+                  <td>A - 75% to 100%</td>
+                  <td>B - 60% to 74%</td>
+                  <td>C - 45% to 59</td>
+                  <td>D - 33% to 44%</td>
+                  <td>E - Below 33%</td>
+                </tr>
+              </table>
+
+              <div class="signature-row">
+                <div class="signature-box">
+                  <div class="signature-mark signature-teacher">Priya Sharma</div>
+                  <div class="signature-line">Class Teacher Sign.</div>
+                  <span class="signature-name">Ms. Priya Sharma</span>
+                </div>
+                <div class="signature-box">
+                  <div class="signature-mark signature-controller">Rohan Sen</div>
+                  <div class="signature-line">Controller Sign.</div>
+                  <span class="signature-name">Mr. Rohan Sen</span>
+                </div>
+                <div class="signature-box">
+                  <div class="signature-mark signature-principal">Abhik Mukherjee</div>
+                  <div class="signature-line">Principal Sign & Stamp</div>
+                  <span class="signature-name">Mr. Abhik Mukherjee</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) {
+      globalThis.print();
+      return;
+    }
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  };
 
   return (
     <motion.div
@@ -83,7 +430,7 @@ export default function ResultsDashboard({ results, onReset }) {
         <div className={styles.heroRight}>
           <div className={styles.ringSection}>
             <ProgressRing
-              percentage={parseFloat(percentage)}
+              percentage={Number.parseFloat(percentage)}
               size={180}
               strokeWidth={12}
               color={gradeInfo.color}
@@ -108,7 +455,7 @@ export default function ResultsDashboard({ results, onReset }) {
           { label: 'Subjects', value: results.totalSubjects, suffix: '', color: '#a855f7', icon: '📚' },
         ].map((m, i) => (
           <motion.div
-            key={i}
+            key={m.label}
             className={`sku-card ${styles.metricCard}`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -137,13 +484,92 @@ export default function ResultsDashboard({ results, onReset }) {
         <StatsCards results={results} />
       </motion.div>
 
+      {/* ——— AI Academic Insights ——— */}
+      {results.academicHealthScore !== undefined && (
+        <motion.div variants={cardVariants} className={`glass-card ${styles.insightsCard}`}>
+          <div className={styles.insightsHeader}>
+            <div className={styles.panelIcon} style={{ background: 'rgba(255, 107, 53, 0.12)', borderColor: 'rgba(255, 107, 53, 0.25)' }}>
+              <TrendingUp size={18} color="var(--accent-primary)" />
+            </div>
+            <div>
+              <h3 className={styles.insightsTitle}>AI Academic Insights</h3>
+              <p className={styles.insightsSub}>Powered by GradeIQ Analytics Engine</p>
+            </div>
+          </div>
+
+          <div className={styles.insightsGrid}>
+            <div className={styles.insightStat}>
+              <span className={styles.insightLabel}>Academic Health Score</span>
+              <span className={styles.insightValue} style={{ color: 'var(--accent-primary)' }}>
+                {results.academicHealthScore.toFixed(1)}%
+              </span>
+            </div>
+
+            <div className={styles.insightStat}>
+              <span className={styles.insightLabel}>Scholarship Status</span>
+              <span className={`${styles.insightValue} ${results.scholarshipEligible ? styles.eligible : styles.notEligible}`}>
+                {results.scholarshipEligible ? 'ELIGIBLE 🎉' : 'NOT ELIGIBLE'}
+              </span>
+            </div>
+
+            <div className={styles.insightStat}>
+              <span className={styles.insightLabel}>Strongest Subject</span>
+              <span className={styles.insightValue} style={{ color: '#d1fae5' }}>
+                {results.strongestSubject || 'N/A'}
+              </span>
+            </div>
+
+            <div className={styles.insightStat}>
+              <span className={styles.insightLabel}>Weakest Subject</span>
+              <span className={styles.insightValue} style={{ color: '#fee2e2' }}>
+                {results.weakestSubject || 'N/A'}
+              </span>
+            </div>
+
+            <div className={styles.insightStat}>
+              <span className={styles.insightLabel}>Rank Prediction</span>
+              <span className={styles.insightValue} style={{ color: '#fed7aa' }}>
+                {results.rankPrediction || 'N/A'}
+              </span>
+            </div>
+          </div>
+
+          {results.remark && (
+            <div className={styles.remarkBlock}>
+              <span className={styles.remarkTitle}>Remarks:</span>
+              <p className={styles.remarkText}>"{results.remark}"</p>
+            </div>
+          )}
+
+          {results.improvementSuggestions && results.improvementSuggestions.length > 0 && (
+            <div className={styles.suggestionsBlock}>
+              <span className={styles.suggestionsTitle}>Recommendations for Improvement:</span>
+              <ul className={styles.suggestionsList}>
+                {results.improvementSuggestions.map((sug) => (
+                  <li key={sug} className={styles.suggestionItem}>{sug}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </motion.div>
+      )}
+
       {/* ——— Subject Breakdown ——— */}
       <motion.div variants={cardVariants} className={`glass-card ${styles.breakdownCard}`}>
         <h3 className={styles.breakdownTitle}>Subject Breakdown</h3>
         <div className={styles.breakdownList}>
           {subjects.map((subj, idx) => {
             const pct = Number(subj.marks);
-            const barColor = pct >= 90 ? '#22c55e' : pct >= 75 ? '#4ade80' : pct >= 60 ? '#3b82f6' : pct >= 50 ? '#eab308' : '#ef4444';
+            let barColor = '#ef4444';
+            if (pct >= 90) {
+              barColor = '#22c55e';
+            } else if (pct >= 75) {
+              barColor = '#4ade80';
+            } else if (pct >= 60) {
+              barColor = '#3b82f6';
+            } else if (pct >= 50) {
+              barColor = '#eab308';
+            }
             return (
               <motion.div
                 key={subj.id}
@@ -177,11 +603,18 @@ export default function ResultsDashboard({ results, onReset }) {
           id="dashboard-reset-btn"
           className={styles.resetBtn}
           onClick={onReset}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
+          disabled={isResetting}
+          whileHover={isResetting ? {} : { scale: 1.04 }}
+          whileTap={isResetting ? {} : { scale: 0.96 }}
         >
-          <RotateCcw size={16} />
-          Calculate Again
+          <motion.span
+            style={{ display: 'flex' }}
+            animate={isResetting ? { rotate: 360 } : { rotate: 0 }}
+            transition={isResetting ? { duration: 0.7, repeat: Infinity, ease: 'linear' } : {}}
+          >
+            <RotateCcw size={16} />
+          </motion.span>
+          {isResetting ? 'Resetting…' : 'Calculate Again'}
         </motion.button>
         <motion.button
           id="dashboard-print-btn"
@@ -191,9 +624,49 @@ export default function ResultsDashboard({ results, onReset }) {
           whileTap={{ scale: 0.96 }}
         >
           <Download size={16} />
-          Save Report
+          Save Marksheet
         </motion.button>
       </motion.div>
     </motion.div>
   );
 }
+
+ResultsDashboard.propTypes = {
+  results: PropTypes.shape({
+    studentName: PropTypes.string.isRequired,
+    grade: PropTypes.string.isRequired,
+    gradeInfo: PropTypes.shape({
+      color: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+      gpa: PropTypes.number.isRequired,
+    }).isRequired,
+    status: PropTypes.string.isRequired,
+    percentage: PropTypes.string.isRequired,
+    totalMarks: PropTypes.number.isRequired,
+    maxTotal: PropTypes.number.isRequired,
+    performance: PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      emoji: PropTypes.string.isRequired,
+      color: PropTypes.string.isRequired,
+    }).isRequired,
+    totalSubjects: PropTypes.number.isRequired,
+    subjects: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      name: PropTypes.string.isRequired,
+      marks: PropTypes.number.isRequired,
+    })).isRequired,
+    academicHealthScore: PropTypes.number,
+    scholarshipEligible: PropTypes.bool,
+    strongestSubject: PropTypes.string,
+    weakestSubject: PropTypes.string,
+    remark: PropTypes.string,
+    improvementSuggestions: PropTypes.arrayOf(PropTypes.string),
+    rankPrediction: PropTypes.string,
+  }).isRequired,
+  onReset: PropTypes.func.isRequired,
+  isResetting: PropTypes.bool,
+};
+
+ResultsDashboard.defaultProps = {
+  isResetting: false,
+};

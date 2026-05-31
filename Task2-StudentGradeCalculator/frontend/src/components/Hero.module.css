@@ -10,7 +10,7 @@
   position: relative;
   overflow: hidden;
   padding-top: var(--nav-h);
-  cursor: crosshair;
+  cursor: auto;
 }
 
 /* ── parallax wrapper ── */
@@ -33,7 +33,7 @@
   top: -180px;
   left: -200px;
   pointer-events: none;
-  filter: blur(40px);
+  filter: blur(28px);
   will-change: border-radius;
 }
 
@@ -45,7 +45,7 @@
   bottom: -120px;
   right: -120px;
   pointer-events: none;
-  filter: blur(40px);
+  filter: blur(28px);
   will-change: border-radius;
 }
 
@@ -61,6 +61,44 @@
   filter: blur(1px);
 }
 
+.heroBrandBadge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  z-index: 3;
+}
+
+.heroBrandIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.25), rgba(255, 107, 53, 0.12));
+  color: #ff6b35;
+}
+
+@media (max-width: 768px) {
+  .heroBrandBadge {
+    top: 16px;
+    left: 16px;
+    width: 46px;
+    height: 46px;
+  }
+  .heroBrandIcon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
 /* ── floating icons ── */
 .floatingIcon {
   position: absolute;
@@ -71,10 +109,11 @@
   height: 54px;
   border-radius: 16px;
   border: 1px solid;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.24);
   pointer-events: none;
   z-index: 0;
+  will-change: transform, opacity;
 }
 
 /* ── main content ── */
@@ -86,6 +125,11 @@
   max-width: 980px;
   margin: 0 auto;
   transform-style: preserve-3d;
+}
+
+.heading, .headingLine {
+  cursor: default; /* prevent text cursor in hero headings */
+  user-select: none;
 }
 
 /* ── badge ── */

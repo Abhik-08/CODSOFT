@@ -5,8 +5,15 @@ import { GraduationCap, BookOpen, Award, TrendingUp, Zap, Star, ArrowRight, Spar
 import styles from './Hero.module.css';
 
 /* ─── split text into animated chars ─── */
-function SplitText({ text, className, delay = 0, stagger = 0.04, fromY = 80, blur = true }) {
+function SplitText({ text, className, delay = 0, stagger = 0.04, fromY = 80, blur = false, reduced = false }) {
   const chars = text.split('').map((ch, idx) => ({ ch, id: `${ch}-${idx}` }));
+  if (reduced) {
+    return (
+      <span className={className} style={{ display: 'inline-block' }}>
+        {text}
+      </span>
+    );
+  }
   return (
     <span className={className} style={{ display: 'inline-block' }}>
       {chars.map(({ ch, id }, i) => (
@@ -15,13 +22,7 @@ function SplitText({ text, className, delay = 0, stagger = 0.04, fromY = 80, blu
           style={{ display: 'inline-block', willChange: 'transform, opacity, filter' }}
           initial={{ opacity: 0, y: fromY, rotateX: -90, filter: blur ? 'blur(12px)' : 'none' }}
           animate={{ opacity: 1, y: 0, rotateX: 0, filter: 'blur(0px)' }}
-          transition={{
-            delay: delay + i * stagger,
-            duration: 0.65,
-            type: 'spring',
-            stiffness: 120,
-            damping: 14,
-          }}
+          transition={{ delay: delay + i * stagger, duration: 0.6, ease: 'easeOut' }}
         >
           {ch === ' ' ? '\u00A0' : ch}
         </motion.span>
@@ -77,6 +78,33 @@ const STATS = [
   { value: '∞',    label: 'Subjects'          },
 ];
 
+const HERO_LINES = ['STUDENT', 'GRADE', 'CALCULATOR'];
+
+const heroTextContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.28, delayChildren: 0.16 } },
+};
+
+const heroLine = {
+  hidden: { opacity: 0, y: 28 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } },
+};
+
+const subtitleVariant = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut', delay: 0.85 } },
+};
+
+const statsContainer = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.14, delayChildren: 1.1 } },
+};
+
+const statItem = {
+  hidden: { opacity: 0, y: 22 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: 'easeOut' } },
+};
+
 /* ─── SUBTITLE_LINES for typewriter ─── */
 const SUBTITLE_LINES = [
   'Analyze academic performance instantly.',
@@ -88,6 +116,21 @@ export default function Hero() {
   const containerRef  = useRef(null);
   const tiltRef       = useRef(null);
 
+  const [prefersReduced, setPrefersReduced] = useState(false);
+
+  useEffect(() => {
+    try {
+      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      setPrefersReduced(!!mq && mq.matches);
+      const handler = (e) => setPrefersReduced(e.matches);
+      mq.addEventListener?.('change', handler);
+      return () => mq.removeEventListener?.('change', handler);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+  const [navigating, setNavigating] = useState(false);
+  const reducedMotion = prefersReduced || navigating;
   /* parallax */
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start start', 'end start'] });
   const scrollY   = useTransform(scrollYProgress, [0, 1], ['0%', '40%']);
@@ -96,8 +139,8 @@ export default function Hero() {
   /* mouse 3-D tilt */
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const rotX = useSpring(useTransform(mouseY, [-300, 300], [8, -8]),  { stiffness: 200, damping: 30 });
-  const rotY = useSpring(useTransform(mouseX, [-500, 500], [-8, 8]), { stiffness: 200, damping: 30 });
+  const rotX = useSpring(useTransform(mouseY, [-300, 300], [8, -8]),  { stiffness: 120, damping: 20 });
+  const rotY = useSpring(useTransform(mouseX, [-500, 500], [-8, 8]), { stiffness: 120, damping: 20 });
 
   const handleMouseMove = useCallback((e) => {
     const rect = tiltRef.current?.getBoundingClientRect();
@@ -124,8 +167,8 @@ export default function Hero() {
   /* magnetic CTA */
   const magX = useMotionValue(0);
   const magY = useMotionValue(0);
-  const msx  = useSpring(magX, { stiffness: 300, damping: 20 });
-  const msy  = useSpring(magY, { stiffness: 300, damping: 20 });
+  const msx  = useSpring(magX, { stiffness: 200, damping: 18 });
+  const msy  = useSpring(magY, { stiffness: 200, damping: 18 });
 
   const handleMagMove = (e) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -142,12 +185,23 @@ export default function Hero() {
   useEffect(() => {
     const id = setInterval(() => {
       setGlitch(true);
-      setTimeout(() => setGlitch(false), 180);
-    }, 4500);
+      setTimeout(() => setGlitch(false), 120);
+    }, 8000);
     return () => clearInterval(id);
   }, []);
 
-  const handleCTA = () => document.querySelector('#calculator')?.scrollIntoView({ behavior: 'smooth' });
+  const handleCTA = () => {
+    const el = document.querySelector('#calculator');
+    setNavigating(true);
+    if (el) {
+      el.classList.add('calc-enter');
+      requestAnimationFrame(() => el.classList.remove('calc-enter'));
+      el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      document.querySelector('#calculator')?.scrollIntoView({ behavior: 'smooth' });
+    }
+    setTimeout(() => setNavigating(false), 900);
+  };
 
   return (
     <div
@@ -159,13 +213,13 @@ export default function Hero() {
         {/* ── morphing blob ── */}
         <motion.div
           className={styles.blob1}
-          animate={{ borderRadius: ['40% 60% 70% 30%/30% 30% 70% 70%', '60% 40% 30% 70%/70% 70% 30% 30%', '40% 60% 70% 30%/30% 30% 70% 70%'] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          animate={reducedMotion ? undefined : { borderRadius: ['40% 60% 70% 30%/30% 30% 70% 70%', '60% 40% 30% 70%/70% 70% 30% 30%', '40% 60% 70% 30%/30% 30% 70% 70%'] }}
+          transition={reducedMotion ? undefined : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
           className={styles.blob2}
-          animate={{ borderRadius: ['60% 40% 30% 70%/70% 70% 30% 30%', '40% 60% 70% 30%/30% 30% 70% 70%', '60% 40% 30% 70%/70% 70% 30% 30%'] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          animate={reducedMotion ? undefined : { borderRadius: ['60% 40% 30% 70%/70% 70% 30% 30%', '40% 60% 70% 30%/30% 30% 70% 70%', '60% 40% 30% 70%/70% 70% 30% 30%'] }}
+          transition={reducedMotion ? undefined : { duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
         />
 
         {/* ── floating icons ── */}
@@ -174,13 +228,13 @@ export default function Hero() {
             key={`${x}-${y}`}
             className={styles.floatingIcon}
             style={{ left: x, top: y, borderColor: `${color}35`, background: `${color}12` }}
-            initial={{ opacity: 0, scale: 0, rotate: -30 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ delay, type: 'spring', stiffness: 160, damping: 12 }}
+            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0, rotate: -30 }}
+            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, rotate: 0 }}
+            transition={reducedMotion ? { delay: 0.1 } : { delay, type: 'spring', stiffness: 160, damping: 12 }}
           >
             <motion.div
-              animate={{ y: [0, -14, 0], rotate: [0, 8, -8, 0] }}
-              transition={{ y: { delay: delay + 0.5, duration: 3 + i * 0.4, repeat: Infinity, ease: 'easeInOut' }, rotate: { delay, duration: 5 + i * 0.5, repeat: Infinity, ease: 'easeInOut' } }}
+              animate={reducedMotion ? undefined : { y: [0, -14, 0], rotate: [0, 8, -8, 0] }}
+              transition={reducedMotion ? {} : { y: { delay: delay + 0.5, duration: 3 + i * 0.4, repeat: Infinity, ease: 'easeInOut' }, rotate: { delay, duration: 5 + i * 0.5, repeat: Infinity, ease: 'easeInOut' } }}
             >
               <Icon size={size} color={color} />
             </motion.div>
@@ -190,9 +244,15 @@ export default function Hero() {
         {/* ── scan line sweep ── */}
         <motion.div
           className={styles.scanLine}
-          animate={{ top: ['-5%', '110%'] }}
-          transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 4, ease: 'linear' }}
+          animate={reducedMotion ? undefined : { top: ['-5%', '110%'] }}
+          transition={reducedMotion ? undefined : { duration: 3.5, repeat: Infinity, repeatDelay: 4, ease: 'linear' }}
         />
+
+        <motion.div className={styles.heroBrandBadge} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.2 }}>
+          <div className={styles.heroBrandIcon}>
+            <GraduationCap size={20} />
+          </div>
+        </motion.div>
 
         {/* ── 3D tilt card ── */}
         <motion.div
@@ -221,45 +281,15 @@ export default function Hero() {
           </motion.div>
 
           {/* ── HEADING ── */}
-          <h1 className={styles.heading} style={{ perspective: '800px' }}>
-            {/* STUDENT */}
-            <span className={styles.headingLine}>
-              <SplitText text="STUDENT" delay={0.25} stagger={0.055} fromY={100} />
-            </span>
+          <motion.div className={styles.heading} variants={heroTextContainer} initial="hidden" animate="show">
+            {HERO_LINES.map((line) => (
+              <motion.div key={line} className={styles.headingLine} variants={heroLine}>
+                <SplitText text={line} delay={0.15} stagger={0.05} fromY={100} reduced={reducedMotion} />
+              </motion.div>
+            ))}
+          </motion.div>
 
-            {/* GRADE — gradient + glitch */}
-            <span className={`${styles.headingLine} ${styles.accentLine}`}>
-              <motion.span
-                className={`${styles.gradientWord} ${glitch ? styles.glitch : ''}`}
-                animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                data-text="GRADE"
-              >
-                <SplitText text="GRADE" delay={0.52} stagger={0.07} fromY={120} blur />
-              </motion.span>
-            </span>
-
-            {/* CALCULATOR */}
-            <span className={styles.headingLine}>
-              <SplitText text="CALCULATOR" delay={0.85} stagger={0.045} fromY={90} />
-            </span>
-          </h1>
-
-          {/* animated underline under CALCULATOR */}
-          <motion.div
-            className={styles.headingUnderline}
-            initial={{ scaleX: 0, opacity: 0 }}
-            animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ delay: 1.5, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          />
-
-          {/* ── typewriter subtitle ── */}
-          <motion.div
-            className={styles.subtitle}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.4 }}
-          >
+          <motion.div className={styles.subtitle} variants={subtitleVariant} initial="hidden" animate="show">
             <span>{subText}</span>
             <AnimatePresence>
               {!subDone && (
@@ -278,9 +308,8 @@ export default function Hero() {
             className={styles.ctaGroup}
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.7, type: 'spring', stiffness: 120 }}
+            transition={{ delay: 1.4, type: 'spring', stiffness: 120 }}
           >
-            {/* magnetic primary CTA */}
             <motion.button
               id="hero-cta-btn"
               className={`btn-glow ${styles.primaryCta}`}
@@ -294,7 +323,6 @@ export default function Hero() {
               <GraduationCap size={18} />
               Start Calculating
               <ArrowRight size={16} className={styles.ctaArrow} />
-              {/* ripple shimmer */}
               <motion.span
                 className={styles.ctaShimmer}
                 animate={{ x: ['-120%', '200%'] }}

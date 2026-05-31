@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Hash, Plus, RotateCcw, Calculator, ChevronRight,
@@ -6,7 +7,8 @@ import {
 } from 'lucide-react';
 import SubjectInput from './SubjectInput';
 import ResultsDashboard from './ResultsDashboard';
-import { calculateResults, createEmptySubject, GRADE_SCALE } from '../utils/gradeUtils';
+import { createEmptySubject, GRADE_SCALE } from '../utils/gradeUtils';
+import { apiService } from '../utils/apiService';
 import styles from './GradeCalculator.module.css';
 
 let idCounter = 1;
@@ -67,7 +69,7 @@ function GradeLegendPanel() {
 }
 
 /* ===== Main Calculator ===== */
-export default function GradeCalculator() {
+export default function GradeCalculator({ user, onTriggerAuth }) {
   const [step, setStep] = useState(1);
   const [studentName, setStudentName] = useState('');
   const [subjectCount, setSubjectCount] = useState('');
@@ -75,13 +77,14 @@ export default function GradeCalculator() {
   const [errors, setErrors] = useState({});
   const [results, setResults] = useState(null);
   const [calculating, setCalculating] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Step 1 → 2
   const handleGenerateSubjects = useCallback(() => {
     const errs = {};
     if (!studentName.trim()) errs.studentName = 'Student name is required';
-    const count = parseInt(subjectCount, 10);
-    if (!subjectCount || isNaN(count) || count < 1 || count > 20) {
+    const count = Number.parseInt(subjectCount, 10);
+    if (!subjectCount || Number.isNaN(count) || count < 1 || count > 20) {
       errs.subjectCount = 'Enter a number between 1 and 20';
     }
     if (Object.keys(errs).length) { setErrors(errs); return; }
@@ -100,6 +103,7 @@ export default function GradeCalculator() {
     setErrors((prev) => {
       const next = { ...prev };
       delete next[`subject_${id}_${field}`];
+      delete next.general;
       return next;
     });
   }, []);
@@ -112,45 +116,84 @@ export default function GradeCalculator() {
     setSubjects((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
-  // Validate all subjects
-  const validateSubjects = () => {
-    const errs = {};
-    subjects.forEach((s) => {
-      if (!s.name.trim()) errs[`subject_${s.id}_name`] = 'Required';
-      const m = Number(s.marks);
-      if (s.marks === '') errs[`subject_${s.id}_marks`] = 'Required';
-      else if (isNaN(m) || m < 0 || m > 100) errs[`subject_${s.id}_marks`] = '0–100 only';
-    });
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
   // Calculate
-  const handleCalculate = useCallback(() => {
+  const handleCalculate = useCallback(async () => {
+    const validateSubjects = () => {
+      const errs = {};
+      subjects.forEach((s) => {
+        if (!s.name.trim()) errs[`subject_${s.id}_name`] = 'Required';
+        const m = Number(s.marks);
+        if (s.marks === '') errs[`subject_${s.id}_marks`] = 'Required';
+        else if (Number.isNaN(m) || m < 0 || m > 100) errs[`subject_${s.id}_marks`] = '0–100 only';
+      });
+      setErrors(errs);
+      return Object.keys(errs).length === 0;
+    };
+
+    // Auth Guard
+    if (!user) {
+      onTriggerAuth('Please sign in to calculate grades and view advanced analytics.');
+      return;
+    }
+
     if (!validateSubjects()) return;
     setCalculating(true);
-    setTimeout(() => {
-      const res = calculateResults(studentName.trim(), subjects);
+    setErrors({});
+
+    try {
+      const res = await apiService.calculateGrades(studentName.trim(), subjects);
       setResults(res);
       setStep(3);
       setCalculating(false);
       setTimeout(() => {
         document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
-    }, 900);
-  }, [studentName, subjects]);
+    } catch (err) {
+      setCalculating(false);
+      if (err.validationErrors) {
+        const mappedErrors = {};
+        Object.entries(err.validationErrors).forEach(([key, msg]) => {
+          if (key === 'studentName') {
+            mappedErrors.studentName = msg;
+          } else {
+            // Match backend field: subjects[index].subjectName or subjects[index].marks
+            const match = /subjects\[(\d+)\]\.(subjectName|marks)/.exec(key);
+            if (match) {
+              const idx = Number.parseInt(match[1], 10);
+              const field = match[2] === 'subjectName' ? 'name' : 'marks';
+              if (subjects[idx]) {
+                mappedErrors[`subject_${subjects[idx].id}_${field}`] = msg;
+              }
+            }
+          }
+        });
+        setErrors(mappedErrors);
+      } else {
+        setErrors({ general: err.message || 'An unexpected connection error occurred.' });
+      }
+    }
+  }, [user, onTriggerAuth, studentName, subjects]);
 
-  // Reset
-  const handleReset = () => {
-    setStep(1);
-    setStudentName('');
-    setSubjectCount('');
-    setSubjects([]);
-    setErrors({});
+  // Reset — two-phase: animate out first, then wipe state
+  const handleReset = useCallback(() => {
+    if (isResetting) return;
+    setIsResetting(true);
+
+    // Phase 1: clear results so AnimatePresence exit plays
     setResults(null);
     setCalculating(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    setErrors({});
+
+    // Phase 2: after exit animation (~500 ms), reset everything else
+    setTimeout(() => {
+      setStep(1);
+      setStudentName('');
+      setSubjectCount('');
+      setSubjects([]);
+      setIsResetting(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 480);
+  }, [isResetting]);
 
   const getSubjectError = (id) => {
     const n = errors[`subject_${id}_name`];
@@ -160,7 +203,7 @@ export default function GradeCalculator() {
   };
 
   return (
-    <div className={`section ${styles.calculatorSection}`}>
+    <div id="calculator" className={`section ${styles.calculatorSection}`}>
       <div className="container">
 
         {/* Section Header */}
@@ -259,21 +302,32 @@ export default function GradeCalculator() {
 
             {/* Steps Indicator */}
             <div className={styles.stepsIndicator}>
-              {['Setup', 'Subjects', 'Results'].map((label, i) => (
-                <div key={label} className={styles.stepItem}>
-                  <motion.div
-                    className={`${styles.stepDot} ${step > i + 1 ? styles.stepDone : step === i + 1 ? styles.stepActive : ''}`}
-                    animate={step === i + 1 ? { scale: [1, 1.2, 1] } : {}}
-                    transition={{ duration: 1.2, repeat: Infinity }}
-                  >
-                    {step > i + 1 ? <CheckCircle2 size={12} /> : i + 1}
-                  </motion.div>
-                  <span className={styles.stepLabel}>{label}</span>
-                  {i < 2 && (
-                    <div className={`${styles.stepLine} ${step > i + 1 ? styles.stepLineDone : ''}`} />
-                  )}
-                </div>
-              ))}
+              {['Setup', 'Subjects', 'Results'].map((label, i) => {
+                const isDone = step > i + 1;
+                const isActive = step === i + 1;
+                let stepClass = '';
+                if (isDone) {
+                  stepClass = styles.stepDone;
+                } else if (isActive) {
+                  stepClass = styles.stepActive;
+                }
+                const stepDotClass = `${styles.stepDot} ${stepClass}`;
+                return (
+                  <div key={label} className={styles.stepItem}>
+                    <motion.div
+                      className={stepDotClass}
+                      animate={isActive ? { scale: [1, 1.2, 1] } : {}}
+                      transition={{ duration: 1.2, repeat: Infinity }}
+                    >
+                      {isDone ? <CheckCircle2 size={12} /> : i + 1}
+                    </motion.div>
+                    <span className={styles.stepLabel}>{label}</span>
+                    {i < 2 && (
+                      <div className={`${styles.stepLine} ${isDone ? styles.stepLineDone : ''}`} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
 
@@ -292,21 +346,35 @@ export default function GradeCalculator() {
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className={styles.subjectsSection}
             >
-              <div className={`glass-card ${styles.subjectsCard}`}>
+              <div className={`glass-card ${styles.subjectsCard} ${calculating ? styles.isCalculating : ''}`}>
+                {/* Top sweeping progress bar during calculation */}
+                <AnimatePresence>
+                  {calculating && (
+                    <motion.div
+                      className={styles.calcProgressBar}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  )}
+                </AnimatePresence>
+
                 <div className={styles.subjectsHeader}>
                   <div className={styles.panelIcon}><Calculator size={18} /></div>
                   <div style={{ flex: 1 }}>
                     <h3 className={styles.panelTitle}>Subject Marks Entry</h3>
                     <p className={styles.panelSub}>
-                      {subjects.length} subject{subjects.length !== 1 ? 's' : ''} — fill in all fields
+                      {subjects.length} subject{subjects.length === 1 ? '' : 's'} — fill in all fields
                     </p>
                   </div>
                   <motion.button
                     id="add-subject-btn"
                     className={styles.addSubjectBtn}
                     onClick={handleAddSubject}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    disabled={calculating}
+                    whileHover={calculating ? {} : { scale: 1.05 }}
+                    whileTap={calculating ? {} : { scale: 0.95 }}
                   >
                     <Plus size={15} /> Add Subject
                   </motion.button>
@@ -328,24 +396,54 @@ export default function GradeCalculator() {
                   </AnimatePresence>
                 </div>
 
+                {errors.general && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      border: '1px solid rgba(239, 68, 68, 0.25)',
+                      color: '#fee2e2',
+                      padding: '12px 16px',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: '0.88rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    <AlertCircle size={16} color="#fee2e2" />
+                    <span>{errors.general}</span>
+                  </motion.div>
+                )}
+
                 <div className={styles.calcActions}>
                   <motion.button
                     id="reset-btn"
                     className={styles.resetBtn}
                     onClick={handleReset}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
+                    disabled={isResetting}
+                    whileHover={isResetting ? {} : { scale: 1.03 }}
+                    whileTap={isResetting ? {} : { scale: 0.97 }}
                   >
-                    <RotateCcw size={16} /> Reset All
+                    <motion.span
+                      style={{ display: 'flex' }}
+                      animate={isResetting ? { rotate: 360 } : { rotate: 0 }}
+                      transition={isResetting ? { duration: 0.7, repeat: Infinity, ease: 'linear' } : {}}
+                    >
+                      <RotateCcw size={16} />
+                    </motion.span>
+                    {isResetting ? 'Resetting…' : 'Reset All'}
                   </motion.button>
 
                   <motion.button
                     id="calculate-btn"
                     className={`btn-glow ${styles.calcBtn}`}
                     onClick={handleCalculate}
-                    disabled={calculating}
-                    whileHover={!calculating ? { scale: 1.04 } : {}}
-                    whileTap={!calculating ? { scale: 0.97 } : {}}
+                    disabled={calculating || isResetting}
+                    whileHover={calculating ? {} : { scale: 1.04 }}
+                    whileTap={calculating ? {} : { scale: 0.97 }}
                   >
                     {calculating ? (
                       <>
@@ -356,7 +454,10 @@ export default function GradeCalculator() {
                         >
                           <Loader2 size={17} />
                         </motion.span>
-                        Calculating…
+                        Calculating
+                        <span className={styles.calcDots}>
+                          <span /><span /><span />
+                        </span>
                       </>
                     ) : (
                       <><Calculator size={17} /> Calculate Result</>
@@ -378,7 +479,7 @@ export default function GradeCalculator() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
-              <ResultsDashboard results={results} onReset={handleReset} />
+              <ResultsDashboard results={results} onReset={handleReset} isResetting={isResetting} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -386,3 +487,15 @@ export default function GradeCalculator() {
     </div>
   );
 }
+
+GradeCalculator.propTypes = {
+  user: PropTypes.shape({
+    username: PropTypes.string.isRequired,
+    email: PropTypes.string,
+  }),
+  onTriggerAuth: PropTypes.func.isRequired,
+};
+
+GradeCalculator.defaultProps = {
+  user: null,
+};

@@ -3,6 +3,16 @@
   padding-bottom: 100px;
 }
 
+/* smooth entry when anchored from hero */
+.calculatorSection {
+  transition: opacity 380ms cubic-bezier(.22,1,.36,1), transform 380ms cubic-bezier(.22,1,.36,1);
+}
+
+.calc-enter {
+  opacity: 0 !important;
+  transform: translateY(12px) !important;
+}
+
 .sectionHeader {
   text-align: center;
   margin-bottom: 60px;
@@ -161,9 +171,9 @@
 }
 
 .stepDot.stepDone {
-  border-color: #22c55e;
-  background: rgba(34,197,94,0.15);
-  color: #22c55e;
+  border-color: #4ade80;
+  background: #14532d;
+  color: #ffffff;
 }
 
 .stepLabel {
@@ -249,6 +259,47 @@
 
 .subjectsCard {
   padding: 32px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition-normal);
+}
+
+.subjectsCard.isCalculating {
+  border-color: rgba(255, 107, 53, 0.25);
+}
+
+/* Top sweeping progress bar on subjects card */
+.calcProgressBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+  z-index: 10;
+  border-radius: 0;
+}
+
+.calcProgressBar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent-primary),
+    var(--accent-secondary),
+    transparent
+  );
+  animation: calcProgressSweep 1.2s ease-in-out infinite;
+}
+
+@keyframes calcProgressSweep {
+  0%   { left: -60%; }
+  100% { left: 110%; }
 }
 
 .subjectsHeader {
@@ -314,9 +365,14 @@
   transition: all var(--transition-normal);
 }
 
-.resetBtn:hover {
+.resetBtn:hover:not(:disabled) {
   background: rgba(255,255,255,0.08);
   color: var(--text-primary);
+}
+
+.resetBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .calcBtn {
@@ -333,6 +389,29 @@
 .calcBtn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* Pulsing dots inside calc button */
+.calcDots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.calcDots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: dotPulse 1.2s ease-in-out infinite both;
+}
+
+.calcDots span:nth-child(2) { animation-delay: 0.2s; }
+.calcDots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotPulse {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%            { transform: scale(1);   opacity: 1;   }
 }
 
 @media (max-width: 900px) {

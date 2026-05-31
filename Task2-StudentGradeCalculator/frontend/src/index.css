@@ -89,8 +89,13 @@ html {
 body {
   font-family: var(--font-body);
   background-color: var(--bg-primary);
+  background-image: var(--gradient-bg);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center;
   color: var(--text-primary);
   line-height: 1.6;
+  min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -211,6 +216,11 @@ body {
 .section {
   padding: 100px 0;
   position: relative;
+}
+
+main {
+  position: relative;
+  z-index: 1;
 }
 
 .container {

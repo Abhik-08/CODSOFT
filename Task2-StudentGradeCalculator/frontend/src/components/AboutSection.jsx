@@ -47,7 +47,7 @@ export default function AboutSection() {
 
             {/* Tech Stack Chips */}
             <div className={styles.techStack}>
-              {['React', 'Vite', 'Framer Motion', 'Lucide React', 'CSS Modules', 'Spring Boot (Soon)'].map((t) => (
+              {['React', 'Vite', 'Framer Motion', 'Lucide React', 'CSS Modules', 'Spring Boot'].map((t) => (
                 <span key={t} className={styles.techChip}>{t}</span>
               ))}
             </div>

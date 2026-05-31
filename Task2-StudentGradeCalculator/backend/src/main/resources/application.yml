@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: student-grade-calculator-backend
+
+server:
+  port: 8080
