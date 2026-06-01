@@ -358,12 +358,12 @@ export default function ResultsDashboard({ results, onReset, isResetting }) {
       return;
     }
 
-    printWindow.document.write(html);
-    printWindow.document.close();
+    printWindow.document.documentElement.innerHTML = html;
     printWindow.focus();
-    printWindow.onload = () => {
+    // Wait for the HTML elements to render before opening print dialog
+    setTimeout(() => {
       printWindow.print();
-    };
+    }, 150);
   };
 
   return (

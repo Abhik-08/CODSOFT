@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import AnimatedCounter from './AnimatedCounter';
 import styles from './StatsCards.module.css';
 
@@ -119,3 +120,23 @@ export default function StatsCards({ results }) {
     </motion.div>
   );
 }
+
+StatsCards.propTypes = {
+  results: PropTypes.shape({
+    highest: PropTypes.number.isRequired,
+    lowest: PropTypes.number.isRequired,
+    average: PropTypes.number.isRequired,
+    totalSubjects: PropTypes.number.isRequired,
+    passed: PropTypes.number.isRequired,
+    passPercentage: PropTypes.number.isRequired,
+    totalMarks: PropTypes.number.isRequired,
+    maxTotal: PropTypes.number.isRequired,
+    subjects: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        name: PropTypes.string.isRequired,
+        marks: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+  }).isRequired,
+};
