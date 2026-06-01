@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';

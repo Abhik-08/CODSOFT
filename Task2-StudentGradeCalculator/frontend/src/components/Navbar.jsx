@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart3, Menu, X, Home, Calculator, LogOut } from 'lucide-react';
+import { BarChart3, Menu, X, Home, Calculator } from 'lucide-react';
 import logo from '../assets/task_2_logo.png';
 import styles from './Navbar.module.css';
 
@@ -11,89 +11,9 @@ const NAV_LINKS = [
   { label: 'Calculator', href: '#calculator', icon: Calculator },
 ];
 
-/* ── Shared spinning icon ── */
-function SpinningLogoutIcon({ spinning }) {
-  return (
-    <motion.span
-      style={{ display: 'flex' }}
-      animate={spinning ? { rotate: 360 } : { rotate: 0 }}
-      transition={spinning ? { duration: 0.5, ease: 'linear' } : {}}
-    >
-      <LogOut size={14} />
-    </motion.span>
-  );
-}
-
-SpinningLogoutIcon.propTypes = { spinning: PropTypes.bool.isRequired };
-
-/* ── Desktop logout button ── */
-function LogoutButton({ isSigningOut, onLogout }) {
-  return (
-    <motion.button
-      id="logout-btn"
-      className={`${styles.signOutBtn} ${isSigningOut ? styles.signOutBtnActive : ''}`}
-      onClick={onLogout}
-      disabled={isSigningOut}
-      whileHover={isSigningOut ? {} : { scale: 1.05 }}
-      whileTap={isSigningOut ? {} : { scale: 0.95 }}
-      title="Sign out of GradeIQ"
-    >
-      <SpinningLogoutIcon spinning={isSigningOut} />
-      {isSigningOut ? 'Signing out…' : 'Logout'}
-    </motion.button>
-  );
-}
-
-LogoutButton.propTypes = {
-  isSigningOut: PropTypes.bool.isRequired,
-  onLogout: PropTypes.func.isRequired,
-};
-
-/* ── Mobile logout button ── */
-function MobileLogoutButton({ isSigningOut, onLogout, delay }) {
-  return (
-    <motion.button
-      id="mobile-logout-btn"
-      className={styles.mobileLogoutBtn}
-      onClick={onLogout}
-      disabled={isSigningOut}
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay }}
-    >
-      <motion.span
-        style={{ display: 'flex' }}
-        animate={isSigningOut ? { rotate: 360 } : { rotate: 0 }}
-        transition={isSigningOut ? { duration: 0.5, ease: 'linear' } : {}}
-      >
-        <LogOut size={16} />
-      </motion.span>
-      {isSigningOut ? 'Signing out…' : 'Logout'}
-    </motion.button>
-  );
-}
-
-MobileLogoutButton.propTypes = {
-  isSigningOut: PropTypes.bool.isRequired,
-  onLogout: PropTypes.func.isRequired,
-  delay: PropTypes.number.isRequired,
-};
-
-export default function Navbar({ activeSection, user, onSignOut, onLogoClick }) {
+export default function Navbar({ activeSection, onLogoClick }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
-
-  const handleLogout = () => {
-    if (isSigningOut) return;
-    setIsSigningOut(true);
-    setMenuOpen(false);
-    // Brief delay so the button animation plays before the view transitions
-    setTimeout(() => {
-      onSignOut();
-      setIsSigningOut(false);
-    }, 350);
-  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -133,57 +53,46 @@ export default function Navbar({ activeSection, user, onSignOut, onLogoClick }) 
         </motion.a>
 
         {/* Desktop Nav */}
-        {user && (
-          <nav className={styles.desktopNav}>
-            {NAV_LINKS.map((link, i) => (
-              <motion.a
-                key={link.label}
-                href={link.href}
-                onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
-                className={`${styles.navLink} ${activeSection === link.href.slice(1) ? styles.active : ''}`}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.07 }}
-                whileHover={{ y: -2 }}
-              >
-                {link.label}
-                {activeSection === link.href.slice(1) && (
-                  <motion.div
-                    className={styles.activeDot}
-                    layoutId="activeDot"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
-              </motion.a>
-            ))}
-          </nav>
-        )}
-
-        {/* CTA / Auth Actions */}
-        <div className={styles.navRight}>
-          {user ? (
-            <div className={styles.userSection}>
-              <LogoutButton isSigningOut={isSigningOut} onLogout={handleLogout} />
-            </div>
-          ) : null}
-
-          {/* Hamburger */}
-          {user && (
-            <motion.button
-              className={styles.hamburger}
-              onClick={() => setMenuOpen(!menuOpen)}
-              whileTap={{ scale: 0.9 }}
-              aria-label="Toggle menu"
-              id="hamburger-btn"
+        <nav className={styles.desktopNav}>
+          {NAV_LINKS.map((link, i) => (
+            <motion.a
+              key={link.label}
+              href={link.href}
+              onClick={(e) => { e.preventDefault(); handleNavClick(link.href); }}
+              className={`${styles.navLink} ${activeSection === link.href.slice(1) ? styles.active : ''}`}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.07 }}
+              whileHover={{ y: -2 }}
             >
-              <AnimatePresence mode="wait">
-                {menuOpen
-                  ? <motion.span key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}><X size={20} /></motion.span>
-                  : <motion.span key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}><Menu size={20} /></motion.span>
-                }
-              </AnimatePresence>
-            </motion.button>
-          )}
+              {link.label}
+              {activeSection === link.href.slice(1) && (
+                <motion.div
+                  className={styles.activeDot}
+                  layoutId="activeDot"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+            </motion.a>
+          ))}
+        </nav>
+
+        {/* CTA / Hamburger */}
+        <div className={styles.navRight}>
+          <motion.button
+            className={styles.hamburger}
+            onClick={() => setMenuOpen(!menuOpen)}
+            whileTap={{ scale: 0.9 }}
+            aria-label="Toggle menu"
+            id="hamburger-btn"
+          >
+            <AnimatePresence mode="wait">
+              {menuOpen
+                ? <motion.span key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}><X size={20} /></motion.span>
+                : <motion.span key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}><Menu size={20} /></motion.span>
+              }
+            </AnimatePresence>
+          </motion.button>
         </div>
       </div>
 
@@ -214,15 +123,6 @@ export default function Navbar({ activeSection, user, onSignOut, onLogoClick }) 
                 </motion.a>
               );
             })}
-
-            {/* Mobile logout row */}
-            {user && (
-              <MobileLogoutButton
-                isSigningOut={isSigningOut}
-                onLogout={handleLogout}
-                delay={NAV_LINKS.length * 0.06}
-              />
-            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -232,15 +132,9 @@ export default function Navbar({ activeSection, user, onSignOut, onLogoClick }) 
 
 Navbar.propTypes = {
   activeSection: PropTypes.string.isRequired,
-  user: PropTypes.shape({
-    username: PropTypes.string.isRequired,
-    email: PropTypes.string,
-  }),
-  onSignOut: PropTypes.func.isRequired,
   onLogoClick: PropTypes.func,
 };
 
 Navbar.defaultProps = {
-  user: null,
   onLogoClick: null,
 };

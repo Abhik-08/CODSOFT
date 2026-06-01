@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Hash, Plus, RotateCcw, Calculator, ChevronRight,
@@ -69,7 +68,7 @@ function GradeLegendPanel() {
 }
 
 /* ===== Main Calculator ===== */
-export default function GradeCalculator({ user, onTriggerAuth }) {
+export default function GradeCalculator() {
   const [step, setStep] = useState(1);
   const [studentName, setStudentName] = useState('');
   const [subjectCount, setSubjectCount] = useState('');
@@ -130,12 +129,6 @@ export default function GradeCalculator({ user, onTriggerAuth }) {
       return Object.keys(errs).length === 0;
     };
 
-    // Auth Guard
-    if (!user) {
-      onTriggerAuth('Please sign in to calculate grades and view advanced analytics.');
-      return;
-    }
-
     if (!validateSubjects()) return;
     setCalculating(true);
     setErrors({});
@@ -172,7 +165,7 @@ export default function GradeCalculator({ user, onTriggerAuth }) {
         setErrors({ general: err.message || 'An unexpected connection error occurred.' });
       }
     }
-  }, [user, onTriggerAuth, studentName, subjects]);
+  }, [studentName, subjects]);
 
   // Reset — two-phase: animate out first, then wipe state
   const handleReset = useCallback(() => {
@@ -488,14 +481,6 @@ export default function GradeCalculator({ user, onTriggerAuth }) {
   );
 }
 
-GradeCalculator.propTypes = {
-  user: PropTypes.shape({
-    username: PropTypes.string.isRequired,
-    email: PropTypes.string,
-  }),
-  onTriggerAuth: PropTypes.func.isRequired,
-};
+GradeCalculator.propTypes = {};
 
-GradeCalculator.defaultProps = {
-  user: null,
-};
+GradeCalculator.defaultProps = {};
