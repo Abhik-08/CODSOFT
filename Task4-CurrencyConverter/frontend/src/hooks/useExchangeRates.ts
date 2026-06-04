@@ -1,0 +1,54 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { exchangeApiService } from '../services/exchangeApi';
+
+export function useExchangeRates(baseCurrency: string) {
+  const [rates, setRates] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+
+  // Guard against race conditions from out-of-order fetches
+  const requestCounterRef = useRef<number>(0);
+
+  const fetchRates = useCallback(async (base: string) => {
+    if (!base) return;
+
+    const requestId = ++requestCounterRef.current;
+    setLoading(true);
+    setError(null);
+    setRates({}); // Clear stale rates to prevent transient incorrect conversions
+
+    try {
+      const response = await exchangeApiService.getLatestRates(base);
+      if (requestId === requestCounterRef.current) {
+        setRates(response.rates);
+        setLastUpdated(response.date || new Date().toISOString());
+      }
+    } catch (err: any) {
+      if (requestId === requestCounterRef.current) {
+        setError(err.message || 'Failed to fetch real-time exchange rates.');
+      }
+    } finally {
+      if (requestId === requestCounterRef.current) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  // Fetch rates on mount and whenever base currency changes
+  useEffect(() => {
+    fetchRates(baseCurrency);
+  }, [baseCurrency, fetchRates]);
+
+  const refetch = useCallback(async () => {
+    await fetchRates(baseCurrency);
+  }, [baseCurrency, fetchRates]);
+
+  return {
+    rates,
+    loading,
+    error,
+    lastUpdated,
+    refetch,
+  };
+}
