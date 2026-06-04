@@ -35,6 +35,7 @@ export function useCurrency() {
     error: ratesError,
     lastUpdated,
     refetch: refetchRates,
+    convert,
   } = useExchangeRates(fromCurrency);
 
   // Historical chart states
@@ -66,17 +67,43 @@ export function useCurrency() {
     loadCurrencies();
   }, []);
 
-  // Perform instant client-side conversion whenever amount, rates, or target currency changes
+  // Perform conversion calling the backend API POST /convert
   useEffect(() => {
-    const currentRate = rates[toCurrency];
-    if (currentRate === undefined) {
-      setRate(null);
-      setResult(null);
-    } else {
-      setRate(currentRate);
-      setResult(amount * currentRate);
+    if (amount <= 0) {
+      setResult(0);
+      return;
     }
-  }, [amount, toCurrency, rates]);
+
+    let active = true;
+
+    async function performConversion() {
+      try {
+        const data = await convert(fromCurrency, toCurrency, amount);
+        if (active) {
+          setRate(data.exchangeRate);
+          setResult(data.convertedAmount);
+        }
+      } catch (err) {
+        console.error('Conversion failed, falling back to local calculation:', err);
+        const currentRate = rates[toCurrency];
+        if (active) {
+          if (currentRate === undefined) {
+            setRate(null);
+            setResult(null);
+          } else {
+            setRate(currentRate);
+            setResult(amount * currentRate);
+          }
+        }
+      }
+    }
+
+    performConversion();
+
+    return () => {
+      active = false;
+    };
+  }, [amount, fromCurrency, toCurrency, rates, convert]);
 
   // Fetch historical data for charts
   const fetchHistory = useCallback(async (from: string, to: string, days: number) => {

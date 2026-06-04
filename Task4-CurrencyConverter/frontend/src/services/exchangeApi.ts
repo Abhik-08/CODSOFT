@@ -1,8 +1,6 @@
 import type { ExchangeRate } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const PRIMARY_API_URL = 'https://open.er-api.com/v6/latest';
-
+const BASE_URL = 'http://localhost:8080/api/currency';
 const CACHE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes cache lifetime
 const TIMEOUT_MS = 6000; // 6 seconds fetch timeout
 
@@ -42,7 +40,7 @@ async function fetchWithRetry(
 
 export const exchangeApiService = {
   /**
-   * Fetch latest exchange rates for base currency
+   * Fetch latest exchange rates for base currency from backend
    */
   async getLatestRates(base: string): Promise<ExchangeRate> {
     const upperBase = base.toUpperCase();
@@ -57,10 +55,8 @@ export const exchangeApiService = {
       };
     }
 
-    // 2. Fetch from API (or Spring Boot backend if set)
-    const url = BASE_URL
-      ? `${BASE_URL}/rates/latest/${upperBase}`
-      : `${PRIMARY_API_URL}/${upperBase}`;
+    // 2. Fetch from Spring Boot backend
+    const url = `${BASE_URL}/rates/${upperBase}`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -76,7 +72,8 @@ export const exchangeApiService = {
         throw new Error('Invalid API response: "rates" object not found.');
       }
 
-      const dateStr = data.time_last_update_utc || data.date || new Date().toUTCString();
+      const dateStr = data.timestamp || new Date().toISOString();
+      const baseCode = data.baseCurrency || upperBase;
 
       // 3. Write cache
       ratesCache[upperBase] = {
@@ -86,7 +83,7 @@ export const exchangeApiService = {
       };
 
       return {
-        base: upperBase,
+        base: baseCode,
         rates: data.rates,
         date: dateStr,
       };
@@ -98,5 +95,40 @@ export const exchangeApiService = {
       console.error(`Failed to fetch exchange rates for base: ${upperBase}`, err);
       throw err;
     }
+  },
+
+  /**
+   * Perform currency conversion via Spring Boot backend POST /convert
+   */
+  async convert(
+    fromCurrency: string,
+    toCurrency: string,
+    amount: number
+  ): Promise<{
+    fromCurrency: string;
+    toCurrency: string;
+    amount: number;
+    exchangeRate: number;
+    convertedAmount: number;
+    timestamp: string;
+  }> {
+    const url = `${BASE_URL}/convert`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fromCurrency,
+        toCurrency,
+        amount,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
   },
 };

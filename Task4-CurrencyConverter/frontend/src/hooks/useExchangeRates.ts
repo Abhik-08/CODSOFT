@@ -44,11 +44,16 @@ export function useExchangeRates(baseCurrency: string) {
     await fetchRates(baseCurrency);
   }, [baseCurrency, fetchRates]);
 
+  const convert = useCallback(async (from: string, to: string, amount: number) => {
+    return await exchangeApiService.convert(from, to, amount);
+  }, []);
+
   return {
     rates,
     loading,
     error,
     lastUpdated,
     refetch,
+    convert,
   };
 }
