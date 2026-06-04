@@ -248,9 +248,10 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <footer className="mt-28 py-8 border-t border-cyber-border text-center text-xs text-cyber-muted-fg w-full font-cyber-accent">
-          <p>&copy; {new Date().getFullYear()} CORE_CONVERTER_V6. Made by Abhik. All connections encrypted.</p>
-          <p className="mt-1 font-semibold text-cyber-accent">{"// SECURE TERMINAL FEED • WCAG_COMPLIANT"}</p>
+        <footer className="mt-20 py-6 text-center text-[10px] md:text-xs text-cyber-muted-fg/60 w-full font-cyber-accent tracking-widest uppercase">
+          <p>
+            &copy; {new Date().getFullYear()} CORE_CONVERTER &bull; MADE BY ABHIK &bull; SECURE_TELEMETRY
+          </p>
         </footer>
       </div>
     </div>
