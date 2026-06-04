@@ -13,9 +13,6 @@ interface ResultCardProps {
   lastUpdated?: string | null;
 }
 
-/**
- * Format currency numbers safely using Intl.NumberFormat with local fallback defaults.
- */
 function formatCurrency(val: number, currencyCode: string, fallbackSymbol = ''): string {
   try {
     return new Intl.NumberFormat(undefined, {
@@ -35,9 +32,6 @@ function formatCurrency(val: number, currencyCode: string, fallbackSymbol = ''):
   }
 }
 
-/**
- * Format timestamp to a localized date-time string
- */
 function formatLocalTimestamp(isoString: string | null | undefined): string {
   if (!isoString) return '';
   try {
@@ -66,43 +60,35 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   let content;
 
   if (error) {
-    // 1. Elegant Error Card UI
     content = (
-      <div className="flex flex-col items-center justify-center text-center p-4 gap-3 animate-fade-in">
-        <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-400 text-lg shadow-lg">
+      <div className="flex flex-col items-center justify-center text-center p-4 gap-3">
+        <div className="cyber-chamfer-sm w-12 h-12 bg-cyber-destructive/10 border border-cyber-destructive/30 flex items-center justify-center text-cyber-destructive text-lg">
           ⚠️
         </div>
         <div>
-          <h4 className="text-sm font-bold text-white mb-1">Unable to fetch exchange rates</h4>
-          <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-            Please try again later. Network error or invalid API response detected.
+          <h4 className="text-sm font-bold text-cyber-destructive mb-1 font-cyber-headings uppercase">
+            {"// CONNECTION_ERROR"}
+          </h4>
+          <p className="text-xs text-cyber-muted-fg leading-relaxed font-cyber-body">
+            Failed to sync exchange rates with host. Retrying connection protocol...
           </p>
         </div>
       </div>
     );
   } else if (loading) {
-    // 2. High-fidelity Skeleton Loader Placeholder
     content = (
       <div className="flex flex-col gap-4 animate-pulse">
-        <div>
-          <div className="h-3 w-28 bg-white/10 rounded-md mb-2" />
-          <div className="h-4 w-16 bg-white/5 rounded-md mb-1.5" />
-          <div className="h-9 w-[70%] bg-white/20 rounded-xl mt-1" />
+        <div className="flex flex-col gap-2">
+          <div className="h-3 w-32 bg-cyber-accent/20 border border-cyber-accent/10" />
+          <div className="h-10 w-[80%] bg-cyber-accent-tertiary/20 border border-cyber-accent-tertiary/10" />
         </div>
-        <div className="mt-4 pt-4 border-t border-white/5 flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <div className="h-3.5 w-24 bg-white/5 rounded" />
-            <div className="h-3.5 w-32 bg-white/10 rounded" />
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="h-3.5 w-24 bg-white/5 rounded" />
-            <div className="h-3.5 w-32 bg-white/10 rounded" />
-          </div>
+        <div className="mt-4 pt-4 border-t border-cyber-border/40 flex flex-col gap-3">
+          <div className="h-3.5 w-full bg-cyber-muted-fg/20" />
+          <div className="h-3.5 w-[70%] bg-cyber-muted-fg/20" />
         </div>
       </div>
     );
   } else if (result !== null && rate !== null) {
-    // 3. Conversion Results with Primary & Reverse Rates + Last Updated Time
     const formattedInput = formatCurrency(amount, fromCurrency, fromSymbol);
     const formattedResult = formatCurrency(result, toCurrency, toSymbol);
     
@@ -112,33 +98,32 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     const updatedTime = formatLocalTimestamp(lastUpdated);
 
     content = (
-      <div key={`${fromCurrency}-${toCurrency}-${result}`} className="animate-fade-in flex flex-col gap-3.5">
+      <div key={`${fromCurrency}-${toCurrency}-${result}`} className="flex flex-col gap-3.5 font-cyber-body">
         <div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-            Conversion Result
+          <span className="text-[10px] font-bold text-cyber-accent-tertiary uppercase tracking-widest block mb-1 font-cyber-accent">
+            {"// CONVERSION_SUCCESS"}
           </span>
-          <p className="text-sm text-slate-400 font-medium">
+          <p className="text-xs text-cyber-muted-fg font-medium">
             {formattedInput} =
           </p>
-          <p className="text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-50 to-cyan-300">
+          <p className="text-3xl md:text-4xl font-black text-cyber-accent tracking-widest font-cyber-headings animate-chromatic my-1">
             {formattedResult}
           </p>
         </div>
 
-        {/* Double-Sided Exchange Rates & Local Timestamp */}
-        <div className="mt-3 pt-3.5 border-t border-white/5 flex flex-col gap-2.5 text-xs font-semibold">
+        <div className="mt-3 pt-3.5 border-t border-cyber-border/50 flex flex-col gap-2.5 text-xs font-semibold font-cyber-accent">
           <div className="flex justify-between items-center">
-            <span className="text-slate-400">Primary Rate</span>
-            <span className="text-slate-200">1 {fromCurrency} = {formattedRate} {toCurrency}</span>
+            <span className="text-cyber-muted-fg">PRIMARY_RATE</span>
+            <span className="text-cyber-fg">{"1 "}{fromCurrency}{" = "}{formattedRate}{" "}{toCurrency}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-slate-400">Reverse Rate</span>
-            <span className="text-slate-200">1 {toCurrency} = {formattedReverseRate} {fromCurrency}</span>
+            <span className="text-cyber-muted-fg">REVERSE_RATE</span>
+            <span className="text-cyber-fg">{"1 "}{toCurrency}{" = "}{formattedReverseRate}{" "}{fromCurrency}</span>
           </div>
           
           {updatedTime && (
-            <div className="mt-1 flex justify-between items-center text-[10px] text-slate-500 font-medium">
-              <span>Last Updated</span>
+            <div className="mt-1 flex justify-between items-center text-[10px] text-cyber-muted-fg/80 font-medium">
+              <span>SYNC_TIMESTAMP</span>
               <span>{updatedTime}</span>
             </div>
           )}
@@ -147,17 +132,24 @@ export const ResultCard: React.FC<ResultCardProps> = ({
     );
   } else {
     content = (
-      <div className="text-center py-6 animate-fade-in">
-        <p className="text-slate-400 text-sm font-medium">
-          Enter an amount above to view currency conversions
+      <div className="text-center py-6">
+        <p className="text-cyber-muted-fg text-sm font-medium uppercase tracking-wider font-cyber-accent">
+          {"> Awaiting transaction amount input..."}
+          <span className="w-1.5 h-3 bg-cyber-muted-fg animate-blink inline-block ml-1 align-middle" />
         </p>
       </div>
     );
   }
 
   return (
-    <div className="mt-4 p-5 md:p-6 bg-gradient-to-b from-white/5 to-white/[0.01] border border-white/5 rounded-2xl min-h-[110px] flex flex-col justify-center shadow-inner relative overflow-hidden transition-all duration-300">
-      {content}
+    <div className="cyber-chamfer-sm mt-4 p-[1px] bg-cyber-border hover:bg-cyber-border/80 transition-all duration-300">
+      <div className="cyber-chamfer-sm p-5 md:p-6 bg-cyber-muted min-h-[110px] flex flex-col justify-center relative overflow-hidden">
+        {/* Inside grid overlay */}
+        <div className="absolute inset-0 bg-cyber-grid opacity-[0.25] pointer-events-none" />
+        <div className="relative z-10">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import type { ExchangeRate } from '../types';
+import API_BASE_URL from '../config/api';
 
-const BASE_URL = 'http://localhost:8080/api/currency';
+const BASE_URL = API_BASE_URL;
 const CACHE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes cache lifetime
 const TIMEOUT_MS = 6000; // 6 seconds fetch timeout
 
@@ -87,13 +88,18 @@ export const exchangeApiService = {
         rates: data.rates,
         date: dateStr,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
-        throw new Error('Request timed out due to slow network conditions.');
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          throw new Error('Request timed out due to slow network conditions.', { cause: err });
+        }
+        console.error(`Failed to fetch exchange rates for base: ${upperBase}`, err);
+        throw err;
       }
-      console.error(`Failed to fetch exchange rates for base: ${upperBase}`, err);
-      throw err;
+      const wrappedErr = new Error(String(err), { cause: err });
+      console.error(`Failed to fetch exchange rates for base: ${upperBase}`, wrappedErr);
+      throw wrappedErr;
     }
   },
 

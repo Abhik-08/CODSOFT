@@ -24,14 +24,10 @@ export const CurrencySelect: React.FC<CurrencySelectProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Find currently selected currency object
   const selectedCurrency = useMemo(() => {
     return currencies.find((c) => c.code === value);
   }, [currencies, value]);
 
-
-
-  // Filter list based on code and name case-insensitively
   const filtered = useMemo(() => {
     const query = search.toLowerCase().trim();
     if (!query) return currencies;
@@ -43,23 +39,24 @@ export const CurrencySelect: React.FC<CurrencySelectProps> = ({
     );
   }, [currencies, search]);
 
-  // Reset highlight index when search changes
   useEffect(() => {
-    setHighlightedIndex(0);
+    Promise.resolve().then(() => {
+      setHighlightedIndex(0);
+    });
   }, [search]);
 
-  // Auto-focus search input when dropdown opens
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
         searchInputRef.current?.focus();
       }, 50);
     } else {
-      setSearch('');
+      Promise.resolve().then(() => {
+        setSearch('');
+      });
     }
   }, [isOpen]);
 
-  // Click outside to close listener
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -70,7 +67,6 @@ export const CurrencySelect: React.FC<CurrencySelectProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Keyboard navigation handler
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
 
@@ -105,7 +101,6 @@ export const CurrencySelect: React.FC<CurrencySelectProps> = ({
         setIsOpen(false);
         break;
       case 'Tab':
-        // Let natural tab-out close select
         setIsOpen(false);
         break;
       default:
@@ -113,7 +108,6 @@ export const CurrencySelect: React.FC<CurrencySelectProps> = ({
     }
   };
 
-  // Scroll highlighted item into view if not visible
   useEffect(() => {
     if (isOpen && listRef.current && highlightedIndex >= 0) {
       const list = listRef.current;
@@ -133,88 +127,99 @@ export const CurrencySelect: React.FC<CurrencySelectProps> = ({
   }, [highlightedIndex, isOpen]);
 
   return (
-    <div className="flex flex-col gap-1.5 w-full relative" ref={containerRef}>
-      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-        {label}
+    <div className="flex flex-col gap-1.5 w-full relative font-cyber-body" ref={containerRef}>
+      <span className="text-xs font-semibold text-cyber-muted-fg uppercase tracking-widest block font-cyber-accent">
+        {"// "}{label}
       </span>
 
-      {/* Main Select Button */}
-      <button
-        type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 text-white font-semibold transition-all flex items-center justify-between cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none text-left"
+      {/* Main Select Button - Double Clipped Border Pattern */}
+      <div 
+        className={`cyber-chamfer-sm p-[1px] transition-all duration-300 ${
+          isOpen 
+            ? 'bg-cyber-accent-tertiary shadow-[0_0_10px_rgba(0,212,255,0.4)]' 
+            : 'bg-cyber-border'
+        }`}
       >
-        <span className="truncate">
-          {selectedCurrency ? (
-            <span className="flex items-center gap-2">
-              {selectedCurrency.flagUrl ? (
-                <img
-                  src={selectedCurrency.flagUrl}
-                  alt={`${selectedCurrency.code} flag`}
-                  className="w-5 h-3.5 object-cover rounded border border-white/10 flex-shrink-0"
-                  loading="lazy"
-                />
-              ) : (
-                <span className="text-base select-none">{selectedCurrency.flag}</span>
-              )}
-              <span className="text-white font-bold">{selectedCurrency.code}</span>
-              <span className="text-slate-400 text-xs font-medium truncate">
-                {selectedCurrency.symbol ? `(${selectedCurrency.symbol})` : ''} — {selectedCurrency.name}
-              </span>
-            </span>
-          ) : (
-            <span className="text-slate-400 font-bold">{value}</span>
-          )}
-        </span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2.5}
+        <button
+          type="button"
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          className="cyber-chamfer-sm w-full px-4 py-3 bg-cyber-input focus:outline-none text-cyber-fg font-semibold flex items-center justify-between cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none text-left"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {/* Floating Dropdown List */}
-      {isOpen && (
-        <div className="absolute top-[102%] left-0 w-full bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-50 mt-1 p-2 flex flex-col gap-2 animate-fade-in max-w-full">
-          {/* Search Input Box */}
-          <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Search code or name..."
-              className="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-white placeholder-slate-500 font-medium"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold px-1.5"
-              >
-                ✕
-              </button>
+          <span className="truncate">
+            {selectedCurrency ? (
+              <span className="flex items-center gap-2">
+                {selectedCurrency.flagUrl ? (
+                  <img
+                    src={selectedCurrency.flagUrl}
+                    alt={`${selectedCurrency.code} flag`}
+                    className="w-5 h-3.5 object-cover rounded-none border border-cyber-border flex-shrink-0"
+                    loading="lazy"
+                  />
+                ) : (
+                  <span className="text-base select-none">{selectedCurrency.flag}</span>
+                )}
+                <span className="text-cyber-fg font-bold font-cyber-accent">{selectedCurrency.code}</span>
+                <span className="text-cyber-muted-fg text-xs font-medium truncate">
+                  {selectedCurrency.symbol ? `(${selectedCurrency.symbol})` : ''} — {selectedCurrency.name}
+                </span>
+              </span>
+            ) : (
+              <span className="text-cyber-muted-fg font-bold font-cyber-accent">{value}</span>
             )}
+          </span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`h-4 w-4 text-cyber-accent-tertiary transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Floating Dropdown List - Sharp Terminal Box */}
+      {isOpen && (
+        <div className="absolute top-[102%] left-0 w-full bg-cyber-bg/95 border-2 border-cyber-accent-tertiary shadow-[0_0_15px_rgba(0,212,255,0.25)] z-50 mt-1 p-2 flex flex-col gap-2 max-w-full">
+          {/* Search Input Box */}
+          <div className="relative p-[1px] bg-cyber-border focus-within:bg-cyber-accent-tertiary transition-colors duration-200">
+            <div className="flex items-center bg-cyber-input">
+              <span className="pl-3 text-cyber-accent-tertiary font-bold font-cyber-accent text-sm">&gt;</span>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="FIND_CODE..."
+                className="w-full px-2 py-2 text-sm bg-transparent border-none outline-none focus:outline-none text-cyber-fg placeholder-cyber-muted-fg/40 font-medium"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="text-cyber-muted-fg hover:text-cyber-accent-tertiary text-xs font-bold px-2 py-2"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Currency Items List */}
           <div
             ref={listRef}
-            className="max-h-60 overflow-y-auto divide-y divide-white/5 pr-0.5 flex flex-col"
+            className="max-h-60 overflow-y-auto divide-y divide-cyber-border pr-0.5 flex flex-col font-cyber-accent"
           >
             {filtered.length === 0 ? (
-              <div className="text-slate-500 text-xs py-4 text-center font-semibold">
-                No matching currencies found
+              <div className="text-cyber-muted-fg text-xs py-4 text-center font-semibold uppercase tracking-wider">
+                {"// NO_MATCHES_FOUND"}
               </div>
             ) : (
               filtered.map((currency, idx) => {
@@ -230,30 +235,32 @@ export const CurrencySelect: React.FC<CurrencySelectProps> = ({
                       setIsOpen(false);
                     }}
                     onMouseEnter={() => setHighlightedIndex(idx)}
-                    className={`w-full px-3 py-2.5 rounded-xl transition flex items-center justify-between text-sm text-left ${
-                      isHighlighted ? 'bg-white/10' : ''
-                    } ${isSelected ? 'text-blue-400 font-semibold' : 'text-slate-300'}`}
+                    className={`w-full px-3 py-2.5 transition flex items-center justify-between text-sm text-left border-l-2 cursor-pointer ${
+                      isHighlighted 
+                        ? 'bg-cyber-accent-tertiary/10 border-cyber-accent-tertiary text-cyber-accent-tertiary' 
+                        : 'border-transparent text-cyber-fg'
+                    } ${isSelected ? 'text-cyber-accent-tertiary font-bold bg-cyber-accent-tertiary/5' : ''}`}
                   >
                     <span className="flex items-center gap-2.5 truncate">
                       {currency.flagUrl ? (
                         <img
                           src={currency.flagUrl}
                           alt={`${currency.code} flag`}
-                          className="w-5 h-3.5 object-cover rounded border border-white/10 flex-shrink-0"
+                          className="w-5 h-3.5 object-cover rounded-none border border-cyber-border flex-shrink-0"
                           loading="lazy"
                         />
                       ) : (
                         <span className="text-base select-none">{currency.flag}</span>
                       )}
-                      <span className="font-bold text-white">{currency.code}</span>
-                      <span className="text-xs text-slate-400 truncate">
+                      <span className="font-bold text-cyber-fg">{currency.code}</span>
+                      <span className="text-xs text-cyber-muted-fg truncate">
                         {currency.symbol ? `(${currency.symbol})` : ''} — {currency.name}
                       </span>
                     </span>
                     {isSelected && (
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4 text-blue-400 flex-shrink-0"
+                        className="h-4 w-4 text-cyber-accent-tertiary flex-shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"

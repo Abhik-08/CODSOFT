@@ -16,16 +16,13 @@ export const AmountInput: React.FC<AmountInputProps> = ({
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
 
-    // Allow empty input
     if (val === '') {
       onChange('');
       return;
     }
 
-    // Regex to match only positive decimal numbers
     const regex = /^\d*\.?\d*$/;
     if (regex.test(val)) {
-      // Limit total digits to 15 to prevent overflow and scientific notation issues
       const digitCount = val.replace('.', '').length;
       if (digitCount <= 15) {
         onChange(val);
@@ -34,29 +31,31 @@ export const AmountInput: React.FC<AmountInputProps> = ({
   };
 
   return (
-    <div className="w-full">
-      <label htmlFor="amount-input" className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
-        Amount
+    <div className="w-full font-cyber-body">
+      <label htmlFor="amount-input" className="text-xs font-semibold text-cyber-muted-fg uppercase tracking-widest block mb-2 font-cyber-accent">
+        {"// TRANSACTION_AMOUNT"}
       </label>
-      <div className="relative">
-        {symbol && (
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg select-none pointer-events-none">
-            {symbol}
-          </div>
-        )}
-        <input
-          id="amount-input"
-          type="text"
-          inputMode="decimal"
-          value={value}
-          onChange={handleValueChange}
-          disabled={disabled}
-          className={`w-full py-3 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 text-white font-bold text-lg placeholder-slate-500 transition-all disabled:opacity-50 ${
-            symbol ? 'pl-12 pr-4' : 'px-4'
-          }`}
-          placeholder="1.00"
-          autoComplete="off"
-        />
+      <div className="relative cyber-chamfer-sm p-[1px] bg-cyber-border focus-within:bg-cyber-accent focus-within:shadow-[0_0_10px_rgba(0,255,136,0.4)] transition-all duration-300">
+        <div className="relative cyber-chamfer-sm bg-cyber-input flex items-center w-full">
+          {symbol && (
+            <div className="pl-4 text-cyber-accent-tertiary font-bold text-lg select-none pointer-events-none font-cyber-accent">
+              {symbol}
+            </div>
+          )}
+          <input
+            id="amount-input"
+            type="text"
+            inputMode="decimal"
+            value={value}
+            onChange={handleValueChange}
+            disabled={disabled}
+            className={`w-full py-3.5 bg-transparent border-none outline-none focus:outline-none text-cyber-accent font-bold text-lg placeholder-cyber-muted-fg/40 disabled:opacity-50 ${
+              symbol ? 'pl-2 pr-4' : 'px-4'
+            }`}
+            placeholder="0.00"
+            autoComplete="off"
+          />
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,25 @@
 import type { ConversionResponse, ExchangeRate, HistoricalRate, APIError } from '../types';
+import API_BASE_URL from '../config/api';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = API_BASE_URL;
 const PUBLIC_API_URL = 'https://api.frankfurter.app';
+
+interface FrankfurterLatestResponse {
+  base: string;
+  rates: Record<string, number>;
+  date: string;
+}
+
+interface FrankfurterConvertResponse {
+  amount: number;
+  base: string;
+  date: string;
+  rates: Record<string, number>;
+}
+
+interface FrankfurterHistoricalResponse {
+  rates?: Record<string, Record<string, number>>;
+}
 
 // Helper to handle Fetch responses and potential errors
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -91,11 +109,13 @@ function generateSimulatedRates(from: string, to: string, days: number): Histori
   return rates;
 }
 
-function parseFrankfurterHistorical(data: any, to: string): HistoricalRate[] {
+function parseFrankfurterHistorical(data: unknown, to: string): HistoricalRate[] {
   const historicalRates: HistoricalRate[] = [];
-  if (!data?.rates) return historicalRates;
-  for (const [date, ratesObj] of Object.entries(data.rates)) {
-    const rateVal = (ratesObj as Record<string, number>)[to];
+  if (!data || typeof data !== 'object' || !('rates' in data)) return historicalRates;
+  const ratesData = (data as FrankfurterHistoricalResponse).rates;
+  if (!ratesData) return historicalRates;
+  for (const [date, ratesObj] of Object.entries(ratesData)) {
+    const rateVal = ratesObj[to];
     if (rateVal !== undefined) {
       historicalRates.push({ date, rate: rateVal });
     }
@@ -114,7 +134,7 @@ export const currencyService = {
 
     try {
       return await handleResponse<Record<string, string>>(await fetch(url));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching currencies:', err);
       throw err;
     }
@@ -129,13 +149,13 @@ export const currencyService = {
       : `${PUBLIC_API_URL}/latest?base=${base}`;
 
     try {
-      const data = await handleResponse<any>(await fetch(url));
+      const data = await handleResponse<FrankfurterLatestResponse>(await fetch(url));
       return {
         base: data.base,
         rates: data.rates,
         date: data.date,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching exchange rates:', err);
       throw err;
     }
@@ -163,7 +183,7 @@ export const currencyService = {
       // Public API fallback
       const url = `${PUBLIC_API_URL}/latest?amount=${amount}&from=${from}&to=${to}`;
       try {
-        const data = await handleResponse<any>(await fetch(url));
+        const data = await handleResponse<FrankfurterConvertResponse>(await fetch(url));
         const result = data.rates[to];
         const rate = result / amount;
         return {
@@ -174,7 +194,7 @@ export const currencyService = {
           result,
           timestamp: new Date().toISOString(),
         };
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error performing currency conversion:', err);
         throw err;
       }
@@ -202,13 +222,13 @@ export const currencyService = {
     // Public API fallback
     const url = `${PUBLIC_API_URL}/${startDate}..${endDate}?from=${from}&to=${to}`;
     try {
-      const data = await handleResponse<any>(await fetch(url));
+      const data = await handleResponse<unknown>(await fetch(url));
       const rates = parseFrankfurterHistorical(data, to);
       if (rates.length === 0) {
         return generateSimulatedRates(from, to, days);
       }
       return rates;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching historical rates, falling back to simulated data:', err);
       return generateSimulatedRates(from, to, days);
     }

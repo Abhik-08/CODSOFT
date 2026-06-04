@@ -1,23 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type { ConversionHistoryItem } from '../types';
 
 const STORAGE_KEY = 'currency_converter_history';
 const MAX_HISTORY_ITEMS = 50; // Cap search history size
 
 export function useHistory() {
-  const [history, setHistory] = useState<ConversionHistoryItem[]>([]);
-
-  // Load history on mount
-  useEffect(() => {
+  const [history, setHistory] = useState<ConversionHistoryItem[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setHistory(JSON.parse(stored));
-      }
+      return stored ? JSON.parse(stored) : [];
     } catch (e) {
       console.error('Failed to load currency conversion history', e);
+      return [];
     }
-  }, []);
+  });
 
   // Save history to localStorage whenever state changes
   const saveToStorage = useCallback((items: ConversionHistoryItem[]) => {

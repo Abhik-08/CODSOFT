@@ -70,7 +70,9 @@ export function useCurrency() {
   // Perform conversion calling the backend API POST /convert
   useEffect(() => {
     if (amount <= 0) {
-      setResult(0);
+      Promise.resolve().then(() => {
+        setResult(0);
+      });
       return;
     }
 
@@ -108,13 +110,17 @@ export function useCurrency() {
   // Fetch historical data for charts
   const fetchHistory = useCallback(async (from: string, to: string, days: number) => {
     const requestId = ++historyRequestRef.current;
-    setLoadingHistory(true);
+    Promise.resolve().then(() => {
+      if (requestId === historyRequestRef.current) {
+        setLoadingHistory(true);
+      }
+    });
     try {
       const data = await currencyService.getHistoricalRates(from, to, days);
       if (requestId === historyRequestRef.current) {
         setHistoricalRates(data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (requestId === historyRequestRef.current) {
         console.error('History fetch failed:', err);
       }
@@ -127,7 +133,9 @@ export function useCurrency() {
 
   // Effect to load chart history on source/target changes
   useEffect(() => {
-    fetchHistory(fromCurrency, toCurrency, chartDays);
+    Promise.resolve().then(() => {
+      fetchHistory(fromCurrency, toCurrency, chartDays);
+    });
   }, [fromCurrency, toCurrency, chartDays, fetchHistory]);
 
   // Swap currencies
