@@ -47,9 +47,8 @@ A modern full-stack Student Grade Calculator built using React and Spring Boot.
 
 🌐 **Live Demo:** https://codsoft-nt15.vercel.app/
 
-<img width="1848" height="893" alt="Screenshot 2026-05-31 005436" src="https://github.com/user-attachments/assets/5604fd7f-989d-424c-90fb-ca8b9ab0d9f5" />
+<img width="1710" height="902" alt="Screenshot 2026-06-05 012452" src="https://github.com/user-attachments/assets/7ced8743-7491-4275-b023-a13277417392" />
 
-<img width="1852" height="893" alt="Screenshot 2026-05-31 005458" src="https://github.com/user-attachments/assets/6536440c-cfb7-442b-8d51-b05902811db8" />
 
 ### ✨ Features
 
@@ -84,6 +83,9 @@ A modern full-stack Student Grade Calculator built using React and Spring Boot.
 A modern full-stack Currency Converter built using React, TypeScript, and Spring Boot with real-time exchange rate integration.
 
 🌐 **Live Demo:** https://currency-converter-virid-nu.vercel.app/
+
+<img width="1043" height="897" alt="Screenshot 2026-06-05 012431" src="https://github.com/user-attachments/assets/0fefbbf0-d098-4f5a-8778-aabc4f9f6e53" />
+
 
 ### ✨ Features
 
