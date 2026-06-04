@@ -19,7 +19,6 @@ A modern full-stack Number Guessing Game built using React and Spring Boot.
 
 <img width="926" height="910" alt="Screenshot 2026-05-31 005005" src="https://github.com/user-attachments/assets/108ca626-ccc2-4529-9b6b-ecd3644773f5" />
 
-
 ### ✨ Features
 
 * Random number generation
@@ -47,8 +46,6 @@ A modern full-stack Student Grade Calculator built using React and Spring Boot.
 <img width="1848" height="893" alt="Screenshot 2026-05-31 005436" src="https://github.com/user-attachments/assets/5604fd7f-989d-424c-90fb-ca8b9ab0d9f5" />
 
 <img width="1852" height="893" alt="Screenshot 2026-05-31 005458" src="https://github.com/user-attachments/assets/6536440c-cfb7-442b-8d51-b05902811db8" />
-
-
 
 ### ✨ Features
 
@@ -79,7 +76,36 @@ A modern full-stack Student Grade Calculator built using React and Spring Boot.
 
 ## 💱 Task 4 — Currency Converter
 
-🚧 Under Development
+A modern full-stack Currency Converter built using React, TypeScript, and Spring Boot with real-time exchange rate integration.
+
+### ✨ Features
+
+* Real-time currency conversion
+* Live exchange rate fetching
+* Multi-currency support
+* Currency swap functionality
+* Responsive fintech-style UI
+* Frontend ↔ Backend integration
+* Swagger API documentation
+* Global exception handling
+* Modern glassmorphism design
+* Real-time API-based architecture
+
+### 🛠 Tech Stack
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+* Java 21
+* Spring Boot 3.5
+* Maven
+* OpenAPI / Swagger
+* Exchange Rate API (open.er-api.com)
+
+### 🏗 Architecture
+
+React Frontend → Spring Boot Backend → Exchange Rate API
 
 ---
 
