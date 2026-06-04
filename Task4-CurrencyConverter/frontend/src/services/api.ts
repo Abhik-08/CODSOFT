@@ -214,12 +214,7 @@ export const currencyService = {
       .toISOString()
       .split('T')[0];
 
-    if (BASE_URL) {
-      const url = `${BASE_URL}/historical?from=${from}&to=${to}&start=${startDate}&end=${endDate}`;
-      return handleResponse<HistoricalRate[]>(await fetch(url));
-    }
-
-    // Public API fallback
+    // Public API is queried directly as the backend does not provide a historical trend endpoint.
     const url = `${PUBLIC_API_URL}/${startDate}..${endDate}?from=${from}&to=${to}`;
     try {
       const data = await handleResponse<unknown>(await fetch(url));

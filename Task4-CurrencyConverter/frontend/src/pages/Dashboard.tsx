@@ -249,7 +249,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Footer */}
         <footer className="mt-28 py-8 border-t border-cyber-border text-center text-xs text-cyber-muted-fg w-full font-cyber-accent">
-          <p>&copy; {new Date().getFullYear()} CORE_CONVERTER_V6. Hacked by Abhik. All connections encrypted.</p>
+          <p>&copy; {new Date().getFullYear()} CORE_CONVERTER_V6. Made by Abhik. All connections encrypted.</p>
           <p className="mt-1 font-semibold text-cyber-accent">{"// SECURE TERMINAL FEED • WCAG_COMPLIANT"}</p>
         </footer>
       </div>
