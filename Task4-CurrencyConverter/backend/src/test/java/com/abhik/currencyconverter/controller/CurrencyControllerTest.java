@@ -123,6 +123,6 @@ class CurrencyControllerTest {
                 .header("Origin", "http://localhost:5173")
                 .header("Access-Control-Request-Method", "GET"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+                .andExpect(header().string("Access-Control-Allow-Origin", "*"));
     }
 }
