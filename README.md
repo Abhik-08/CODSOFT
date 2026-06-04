@@ -17,6 +17,8 @@ This repository contains all tasks completed during the CodSoft Java Programming
 
 A modern full-stack Number Guessing Game built using React and Spring Boot.
 
+🌐 **Live Demo:** https://codsoft-eosin-nu.vercel.app/
+
 <img width="926" height="910" alt="Screenshot 2026-05-31 005005" src="https://github.com/user-attachments/assets/108ca626-ccc2-4529-9b6b-ecd3644773f5" />
 
 ### ✨ Features
@@ -43,6 +45,8 @@ A modern full-stack Number Guessing Game built using React and Spring Boot.
 
 A modern full-stack Student Grade Calculator built using React and Spring Boot.
 
+🌐 **Live Demo:** https://codsoft-nt15.vercel.app/
+
 <img width="1848" height="893" alt="Screenshot 2026-05-31 005436" src="https://github.com/user-attachments/assets/5604fd7f-989d-424c-90fb-ca8b9ab0d9f5" />
 
 <img width="1852" height="893" alt="Screenshot 2026-05-31 005458" src="https://github.com/user-attachments/assets/6536440c-cfb7-442b-8d51-b05902811db8" />
@@ -54,6 +58,7 @@ A modern full-stack Student Grade Calculator built using React and Spring Boot.
 * Percentage calculation
 * Grade generation
 * Performance analytics
+* PDF Marksheet Download
 * Responsive dashboard UI
 * Frontend ↔ Backend integration
 * Modern animations and visualizations
@@ -77,6 +82,8 @@ A modern full-stack Student Grade Calculator built using React and Spring Boot.
 ## 💱 Task 4 — Currency Converter
 
 A modern full-stack Currency Converter built using React, TypeScript, and Spring Boot with real-time exchange rate integration.
+
+🌐 **Live Demo:** https://currency-converter-virid-nu.vercel.app/
 
 ### ✨ Features
 
@@ -155,6 +162,9 @@ CODSOFT/
 * Full-Stack Java Projects
 * Modern React Frontends
 * Spring Boot REST APIs
+* Real-Time Currency Conversion
+* PDF Generation & Download
+* External API Integration
 * Responsive User Interfaces
 * Real-World Application Development
 * Industry-Oriented Project Structure
