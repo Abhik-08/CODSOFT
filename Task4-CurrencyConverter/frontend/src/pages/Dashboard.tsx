@@ -116,71 +116,76 @@ export const Dashboard: React.FC = () => {
             {/* Luminous Core Pulse */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-cyber-accent/5 blur-3xl animate-pulse pointer-events-none z-[-2]" />
 
-            <header className="text-center max-w-3xl mx-auto pointer-events-none select-none relative z-10">
-              {/* Logo */}
+            <header className="w-full max-w-4xl mx-auto flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10 pointer-events-none select-none relative z-10 text-center md:text-left">
+              {/* Logo - Circular cropped */}
               <motion.div
-                initial={{ opacity: 0, y: -20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
+                initial={{ opacity: 0, x: -30, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="mb-6 flex justify-center pointer-events-auto"
+                className="flex-shrink-0 pointer-events-auto"
               >
-                <img 
-                  src={logo} 
-                  alt="Global Currency Converter Logo" 
-                  className="h-24 sm:h-28 md:h-32 object-contain select-none pointer-events-none drop-shadow-[0_0_20px_rgba(0,255,136,0.25)]"
-                />
-              </motion.div>
-
-              {/* Core Badge */}
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-                className="mb-6 inline-block"
-              >
-                <div className="cyber-chamfer-sm inline-flex items-center gap-2 px-4 py-2 bg-cyber-accent/10 border border-cyber-accent/30 text-xs font-bold text-cyber-accent uppercase tracking-widest font-cyber-accent backdrop-blur-md">
-                  <span className="w-1.5 h-1.5 bg-cyber-accent animate-ping" />
-                  <span>SYS_ONLINE // LIVE_RATE_FEED</span>
+                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-2 border-cyber-accent p-1.5 bg-cyber-bg/80 shadow-[0_0_20px_rgba(0,255,136,0.3)] flex items-center justify-center overflow-hidden">
+                  <img 
+                    src={logo} 
+                    alt="Global Currency Converter Logo" 
+                    className="w-full h-full object-cover scale-150 rounded-full select-none pointer-events-none" 
+                  />
                 </div>
               </motion.div>
-              
-              {/* Glitched Headline */}
-              <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-widest mb-6 uppercase select-none flex flex-wrap justify-center gap-x-4 md:gap-x-6 relative font-cyber-headings text-white animate-chromatic animate-cyber-glitch">
-                {["GLOBAL", "CURRENCY", "CONVERTER"].map((word, idx) => (
-                  <motion.span
-                    key={word}
-                    initial={{ opacity: 0, rotateX: -75, y: 35, scale: 0.9 }}
-                    animate={{ opacity: 1, rotateX: 0, y: 0, scale: 1 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 85,
-                      damping: 13,
-                      delay: 0.05 + idx * 0.12
-                    }}
-                    whileHover={{ 
-                      scale: 1.025,
-                      filter: "drop-shadow(0 0 15px rgba(0, 255, 136, 0.6))",
-                    }}
-                    className="inline-block pointer-events-auto cursor-default"
-                    style={{
-                      transformOrigin: "center bottom",
-                    }}
-                  >
-                    {word}
-                  </motion.span>
-                ))}
-              </h1>
-              
-              {/* Subheadline */}
-              <motion.div 
-                initial={{ opacity: 0, y: 25 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-              >
-                <p className="text-xs md:text-sm text-cyber-muted-fg font-medium font-cyber-body tracking-wider uppercase">
-                  &gt; Querying high-frequency global exchange matrix. Outputting sanitized conversion telemetry.
-                </p>
-              </motion.div>
+
+              {/* Header Text Content */}
+              <div className="flex-1 flex flex-col items-center md:items-start w-full">
+                {/* Core Badge */}
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.7, ease: "easeOut" }}
+                  className="mb-5 inline-block"
+                >
+                  <div className="cyber-chamfer-sm inline-flex items-center gap-2 px-4 py-2 bg-cyber-accent/10 border border-cyber-accent/30 text-xs font-bold text-cyber-accent uppercase tracking-widest font-cyber-accent backdrop-blur-md">
+                    <span className="w-1.5 h-1.5 bg-cyber-accent animate-ping" />
+                    <span>SYS_ONLINE // LIVE_RATE_FEED</span>
+                  </div>
+                </motion.div>
+                
+                {/* Glitched Headline */}
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-widest mb-5 uppercase select-none flex flex-wrap justify-center md:justify-start gap-x-4 md:gap-x-6 relative font-cyber-headings text-white animate-chromatic animate-cyber-glitch">
+                  {["GLOBAL", "CURRENCY", "CONVERTER"].map((word, idx) => (
+                    <motion.span
+                      key={word}
+                      initial={{ opacity: 0, rotateX: -75, y: 35, scale: 0.9 }}
+                      animate={{ opacity: 1, rotateX: 0, y: 0, scale: 1 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 85,
+                        damping: 13,
+                        delay: 0.05 + idx * 0.12
+                      }}
+                      whileHover={{ 
+                        scale: 1.025,
+                        filter: "drop-shadow(0 0 15px rgba(0, 255, 136, 0.6))",
+                      }}
+                      className="inline-block pointer-events-auto cursor-default"
+                      style={{
+                        transformOrigin: "center bottom",
+                      }}
+                    >
+                      {word}
+                    </motion.span>
+                  ))}
+                </h1>
+                
+                {/* Subheadline */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 25 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                >
+                  <p className="text-xs md:text-sm text-cyber-muted-fg font-medium font-cyber-body tracking-wider uppercase">
+                    &gt; Querying high-frequency global exchange matrix. Outputting sanitized conversion telemetry.
+                  </p>
+                </motion.div>
+              </div>
             </header>
           </div>
 
