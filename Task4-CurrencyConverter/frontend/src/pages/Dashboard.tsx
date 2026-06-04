@@ -6,6 +6,7 @@ import { RateChart } from '../components/RateChart';
 import { HistoryList } from '../components/HistoryList';
 import { motion } from 'motion/react';
 import { TiltCard } from '../components/TiltCard';
+import logo from '../assets/logo.png';
 
 export const Dashboard: React.FC = () => {
   const {
@@ -116,6 +117,20 @@ export const Dashboard: React.FC = () => {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-cyber-accent/5 blur-3xl animate-pulse pointer-events-none z-[-2]" />
 
             <header className="text-center max-w-3xl mx-auto pointer-events-none select-none relative z-10">
+              {/* Logo */}
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="mb-6 flex justify-center pointer-events-auto"
+              >
+                <img 
+                  src={logo} 
+                  alt="Global Currency Converter Logo" 
+                  className="h-24 sm:h-28 md:h-32 object-contain select-none pointer-events-none drop-shadow-[0_0_20px_rgba(0,255,136,0.25)]"
+                />
+              </motion.div>
+
               {/* Core Badge */}
               <motion.div 
                 initial={{ opacity: 0, scale: 0.85 }}
