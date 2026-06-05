@@ -18,6 +18,9 @@ public class TransactionResponseDTO {
     @Schema(description = "Unique identifier of the transaction", example = "txn_987654321")
     private String id;
 
+    @Schema(description = "Explicit transaction ID key", example = "txn_987654321")
+    private String transactionId;
+
     @Schema(description = "Type of transaction (credit or debit)", example = "credit")
     private String type; // credit or debit
 

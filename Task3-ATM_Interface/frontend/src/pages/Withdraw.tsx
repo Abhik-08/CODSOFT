@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiUpload, FiSliders, FiInfo, FiArrowLeft, FiCheck } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'motion/react';
@@ -20,6 +20,23 @@ type ProcessingStage = 'auth' | 'counting' | 'dispensing' | 'success';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const getNoteDistribution = (totalAmount: number, preference: MixPreference) => {
+  if (preference === 'large') {
+    const count500 = Math.floor(totalAmount / 500);
+    const count100 = Math.floor((totalAmount % 500) / 100);
+    return { count500, count100 };
+  }
+  if (preference === 'small') {
+    return { count500: 0, count100: Math.floor(totalAmount / 100) };
+  }
+  // Balanced: ~60% in 500s, rest in 100s
+  const target500Value = totalAmount * 0.6;
+  const count500 = Math.floor(target500Value / 500);
+  const remainingValue = totalAmount - (count500 * 500);
+  const count100 = Math.round(remainingValue / 100);
+  return { count500, count100 };
+};
+
 export const Withdraw: React.FC = () => {
   const [amount, setAmount] = useState<string>('');
   const [mix, setMix] = useState<MixPreference>('balanced');
@@ -29,8 +46,27 @@ export const Withdraw: React.FC = () => {
   const [receipt, setReceipt] = useState<WithdrawReceipt | null>(null);
   const { user, balance, refreshBalance } = useAuth();
 
-  const dailyLimit = 20000;
+  const [dailyLimit, setDailyLimit] = useState(() => {
+    const saved = localStorage.getItem('profile_daily_limit');
+    return saved ? Number.parseInt(saved) : 20000;
+  });
+
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      const saved = localStorage.getItem('profile_daily_limit');
+      setDailyLimit(saved ? Number.parseInt(saved) : 20000);
+    };
+    globalThis.addEventListener('profile_update', handleProfileUpdate);
+    return () => {
+      globalThis.removeEventListener('profile_update', handleProfileUpdate);
+    };
+  }, []);
+
   const currentBalance = balance;
+
+  const parsedAmt = Number.parseFloat(amount);
+  const isValidAmountForPreview = !Number.isNaN(parsedAmt) && parsedAmt > 0 && parsedAmt % 100 === 0 && parsedAmt <= dailyLimit && (currentBalance === undefined || parsedAmt <= currentBalance);
+  const previewNotes = isValidAmountForPreview ? getNoteDistribution(parsedAmt, mix) : null;
 
   // Preset cash options
   const presets = [100, 500, 1000, 2000, 5000, 10000];
@@ -51,23 +87,6 @@ export const Withdraw: React.FC = () => {
   }
 
   const isSubmitDisabled = isProcessing || !amount || validationError !== '' || !user;
-
-  const getNoteDistribution = (totalAmount: number, preference: MixPreference) => {
-    if (preference === 'large') {
-      const count500 = Math.floor(totalAmount / 500);
-      const count100 = Math.floor((totalAmount % 500) / 100);
-      return { count500, count100 };
-    }
-    if (preference === 'small') {
-      return { count500: 0, count100: Math.floor(totalAmount / 100) };
-    }
-    // Balanced: ~60% in 500s, rest in 100s
-    const target500Value = totalAmount * 0.6;
-    const count500 = Math.floor(target500Value / 500);
-    const remainingValue = totalAmount - (count500 * 500);
-    const count100 = Math.round(remainingValue / 100);
-    return { count500, count100 };
-  };
 
   const getMethodName = (preference: MixPreference) => {
     if (preference === 'balanced') return 'Balanced Note Mix';
@@ -117,7 +136,7 @@ export const Withdraw: React.FC = () => {
       setShowSuccess(true);
       toast.success('Withdrawal cleared! Please collect your cash notes.');
     } catch (error) {
-      console.error(error);
+      console.warn('Withdrawal validation/execution failed:', error);
       const errorMsg = error instanceof Error ? error.message : 'Withdrawal failed. System error.';
       toast.error(errorMsg);
       setIsProcessing(false);
@@ -399,6 +418,41 @@ export const Withdraw: React.FC = () => {
                 </button>
               ))}
             </div>
+            {previewNotes && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3 rounded-2xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/40 p-3.5 flex justify-around items-center"
+              >
+                {/* 500 Bills */}
+                <div className="flex flex-col items-center space-y-1">
+                  <span className="text-[9px] font-mono uppercase text-dark-text/40 light:text-light-text/50">₹500 Notes</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-4 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-[9px] text-emerald-400 font-bold select-none shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                      500
+                    </div>
+                    <span className="text-[12px] font-mono font-black text-dark-text light:text-light-text">
+                      {previewNotes.count500}x
+                    </span>
+                  </div>
+                </div>
+
+                <div className="h-6 w-[1px] bg-dark-border/10 light:bg-light-border/40" />
+
+                {/* 100 Bills */}
+                <div className="flex flex-col items-center space-y-1">
+                  <span className="text-[9px] font-mono uppercase text-dark-text/40 light:text-light-text/50">₹100 Notes</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-4 rounded bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-[9px] text-blue-400 font-bold select-none shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                      100
+                    </div>
+                    <span className="text-[12px] font-mono font-black text-dark-text light:text-light-text">
+                      {previewNotes.count100}x
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* Informational Limit Warning Banner */}

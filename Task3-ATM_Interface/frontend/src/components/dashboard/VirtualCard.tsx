@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, useMotionValue, useTransform, useSpring, useMotionTemplate } from 'motion/react';
 import { AnimatedCounter } from '../ui/AnimatedCounter';
-import { FiWifi, FiEye, FiEyeOff, FiCopy, FiLock, FiRotateCw } from 'react-icons/fi';
+import { FiWifi, FiEye, FiEyeOff, FiCopy, FiLock } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
 import toast from 'react-hot-toast';
 
@@ -15,13 +15,15 @@ interface VirtualCardProps {
 }
 
 // Helper 1: Card details and masking calculations
-const getCardDetails = (cardNumber: string, isMasked: boolean, cvvMasked: boolean) => {
-  const lastFour = cardNumber ? cardNumber.replace(/\s+/g, '').slice(-4) : '8910';
-  const fullCardNumber = `4532  7812  9012  ${lastFour}`;
+const getCardDetails = (cardNumber: string, isMasked: boolean) => {
+  const cleanNumber = cardNumber ? cardNumber.replace(/\s+/g, '') : '4532781290128910';
+  const padded = cleanNumber.padEnd(16, '•');
+  const blocks = padded.match(/.{1,4}/g) || [];
+  const fullCardNumber = blocks.join('  ');
+  const lastFour = cleanNumber.slice(-4);
   const maskedCardNumber = `••••  ••••  ••••  ${lastFour}`;
   const displayedNumber = isMasked ? maskedCardNumber : fullCardNumber;
-  const displayedCvv = cvvMasked ? '•••' : '375';
-  return { fullCardNumber, displayedNumber, displayedCvv };
+  return { fullCardNumber, displayedNumber };
 };
 
 interface CardTheme {
@@ -122,12 +124,11 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
   const [hovered, setHovered] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMasked, setIsMasked] = useState(true);
-  const [cvvMasked, setCvvMasked] = useState(true);
 
   const isDark = theme === 'dark';
 
   // Retrieve formatted credentials
-  const { fullCardNumber, displayedNumber, displayedCvv } = getCardDetails(cardNumber, isMasked, cvvMasked);
+  const { fullCardNumber, displayedNumber } = getCardDetails(cardNumber, isMasked);
 
   // Retrieve neumorphic layout classes
   const { cardBorderClass, cardBgClass, chipBgClass, borderOverlayClass, shadowValue } = getCardThemeClasses(isFrozen, isDark, hovered);
@@ -208,15 +209,6 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
     toast.success(isMasked ? 'Card details decrypted!' : 'Card details masked.');
   };
 
-  const handleCvvToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isFrozen) {
-      toast.error('Card is locked. Unlock in Profile to view CVV.');
-      return;
-    }
-    setCvvMasked(prev => !prev);
-    toast.success(cvvMasked ? 'CVV revealed!' : 'CVV hidden.');
-  };
 
   return (
     <div className="w-full max-w-[420px] select-none flex flex-col items-center">
@@ -288,7 +280,7 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
             <div className="flex justify-between items-start relative z-10 px-2" style={{ transform: 'translateZ(30px)' }}>
               <div className="flex flex-col text-left">
                 <span className="text-[9px] font-mono opacity-50 uppercase tracking-widest font-black">
-                  KRONOS VIP PROTOCOL
+                  NEXUS VIP PROTOCOL
                 </span>
                 <span className="font-mono font-bold text-[13px] tracking-wider uppercase mt-0.5">
                   {cardType}
@@ -409,13 +401,11 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
 
               {/* CVV Panel */}
               <div className="flex flex-col items-end gap-1">
-                <span className="text-[7px] font-mono opacity-50 uppercase tracking-widest">
+                <span className="text-[7.5px] font-mono opacity-50 uppercase tracking-widest select-none">
                   CVV Code
                 </span>
-                <div 
-                  className="bg-amber-100/90 dark:bg-[#1e1f29] border border-amber-300/40 dark:border-white/5 rounded-md px-3.5 h-8 flex items-center justify-center font-mono text-[11px] text-slate-800 dark:text-slate-100 font-bold shadow-sm"
-                >
-                  <span className="tracking-widest">{displayedCvv}</span>
+                <div className="bg-amber-100/90 dark:bg-[#1e1f29] border border-amber-300/40 dark:border-white/5 rounded-md px-3.5 h-8 flex items-center justify-center font-mono text-[11px] text-slate-800 dark:text-slate-100 font-bold shadow-sm select-none">
+                  <span className="tracking-widest">{isMasked ? '•••' : '375'}</span>
                 </div>
               </div>
             </div>
@@ -428,8 +418,8 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
                   AUTHORIZED SIGNATURE • NOT VALID UNLESS SIGNED
                 </span>
                 <span className="text-[5.5px] font-mono opacity-30 leading-tight">
-                  This card remains the property of KRONOS AUTOMATED VAULT. Subject to terminal banking terms.
-                  Support node: terminal-node-sf4.kronos.net. Operations logged securely.
+                  This card remains the property of NEXUS SECURE VAULT. Subject to terminal banking terms.
+                  Support node: terminal-node-sf4.nexus.net. Operations logged securely.
                 </span>
               </div>
 
@@ -440,7 +430,7 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
                   : 'bg-gradient-to-tr from-accent via-secondary to-primary animate-pulse-glow'
               }`}>
                 <div className="w-full h-full bg-slate-900/60 dark:bg-black/40 rounded-full border border-white/10 flex items-center justify-center text-[7px] font-mono font-black text-white/50 uppercase tracking-widest">
-                  KRN
+                  NXS
                 </div>
               </div>
             </div>
@@ -464,22 +454,6 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
       <div className="flex justify-center items-center gap-3.5 mt-5 relative z-25 flex-wrap">
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isFrozen) {
-              toast.error('Card is locked. Unlock in Profile to flip.');
-              return;
-            }
-            setIsFlipped(prev => !prev);
-          }}
-          className="px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider tactile-key flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm"
-        >
-          <FiRotateCw className={`w-3.5 h-3.5 text-primary ${isFlipped ? 'rotate-180' : ''} transition-transform duration-300`} />
-          <span>Flip Card</span>
-        </button>
-        
-        <button
-          type="button"
           onClick={handleCopy}
           className="px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider tactile-key flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm"
         >
@@ -494,15 +468,6 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
         >
           {isMasked ? <FiEye className="w-3.5 h-3.5 text-accent" /> : <FiEyeOff className="w-3.5 h-3.5 text-accent" />}
           <span>{isMasked ? 'Reveal details' : 'Mask details'}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleCvvToggle}
-          className="px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider tactile-key flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm"
-        >
-          {cvvMasked ? <FiEye className="w-3.5 h-3.5 text-accent" /> : <FiEyeOff className="w-3.5 h-3.5 text-accent" />}
-          <span>{cvvMasked ? 'Reveal CVV' : 'Mask CVV'}</span>
         </button>
       </div>
     </div>

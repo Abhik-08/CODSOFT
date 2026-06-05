@@ -1,6 +1,7 @@
 package com.apex.atm.security;
 
 import com.apex.atm.service.FirebaseAdminService;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,7 +18,7 @@ import java.util.List;
 
 public class FirebaseTokenFilter extends OncePerRequestFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(FirebaseTokenFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(FirebaseTokenFilter.class);
     private final FirebaseAdminService firebaseAdminService;
 
     public FirebaseTokenFilter(FirebaseAdminService firebaseAdminService) {
@@ -44,7 +45,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
         try {
             // Mock authentication bypass for development/testing
             if (token.startsWith("mock-")) {
-                logger.info("Processing development Mock Token bypass for principal: {}", token);
+                log.info("Processing development Mock Token bypass for principal: {}", token);
                 String mockUid = token.substring(5);
                 FirebaseAuthenticationToken mockAuth = new FirebaseAuthenticationToken(
                         mockUid,
@@ -60,7 +61,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(auth);
 
         } catch (Exception e) {
-            logger.error("Failed to verify Firebase ID token: {}", e.getMessage());
+            log.error("Failed to verify Firebase ID token: {}", e.getMessage());
             SecurityContextHolder.clearContext();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Invalid authorization credentials: " + e.getMessage());
@@ -70,7 +71,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private FirebaseAuthenticationToken authenticateFirebaseToken(String token) throws Exception {
+    private FirebaseAuthenticationToken authenticateFirebaseToken(String token) throws FirebaseAuthException {
         String uid;
         Object principal;
         try {
@@ -78,9 +79,9 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             FirebaseToken decodedToken = firebaseAdminService.verifyToken(token);
             uid = decodedToken.getUid();
             principal = decodedToken;
-        } catch (Exception e) {
-            if (e instanceof IllegalStateException || e.getMessage().contains("not initialized")) {
-                logger.warn("Firebase Admin SDK is not initialized. Decoding JWT payload (UNVERIFIED) for development bypass: {}", e.getMessage());
+        } catch (FirebaseAuthException | RuntimeException e) {
+            if (e instanceof IllegalStateException || (e.getMessage() != null && e.getMessage().contains("not initialized"))) {
+                log.warn("Firebase Admin SDK is not initialized. Decoding JWT payload (UNVERIFIED) for development bypass: {}", e.getMessage());
                 uid = getUidFromUnverifiedToken(token);
                 if (uid == null) {
                     throw e;
@@ -112,7 +113,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            logger.error("Failed to decode unverified JWT token: {}", e.getMessage());
+            log.error("Failed to decode unverified JWT token: {}", e.getMessage());
         }
         return null;
     }

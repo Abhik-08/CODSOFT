@@ -47,9 +47,19 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
           >
             {/* Header */}
             <div className="flex items-center justify-between pb-5 border-b border-dark-border/15 light:border-light-border/40 mb-6">
-              <div className="flex flex-col">
-                <span className="font-mono font-black text-[16px] tracking-wider text-[var(--text-primary)] leading-none uppercase">KRONOS_CORE</span>
-                <span className="text-[10px] font-mono text-[var(--accent)] uppercase font-semibold mt-0.5">ATM_NODE_04</span>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/nexus_symbol.jpg" 
+                  alt="Nexus Logo" 
+                  className="h-11.5 w-11.5 rounded-xl object-contain shadow-[0_0_15px_rgba(6,182,212,0.25)] border border-dark-border/20"
+                />
+                <div className="flex flex-col text-left justify-center">
+                  <span className="font-mono tracking-wider font-extrabold text-[21px] flex items-center leading-none">
+                    <span className="text-dark-text light:text-light-text font-black">NEXUS</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 ml-1.5 font-black">VAULT</span>
+                  </span>
+                  <span className="text-[9.5px] font-mono text-[var(--accent)] uppercase font-semibold mt-1.5 tracking-wider leading-none">NEXUS_NODE_04</span>
+                </div>
               </div>
               <button
                 onClick={onClose}
@@ -98,8 +108,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                   <FiUser className="w-4.5 h-4.5 text-accent" />
                 </div>
                 <div className="flex flex-col overflow-hidden">
-                  <span className="text-[12px] font-bold text-dark-text light:text-light-text truncate">Abhik Mukherjee</span>
-                  <span className="text-[9px] font-mono text-dark-text/50 light:text-light-text/50 truncate">ID: KRONOS_8910</span>
+                  <span className="text-[12px] font-bold text-dark-text light:text-light-text truncate">{localStorage.getItem('profile_name') || 'ABHIK MUKHERJEE'}</span>
+                  <span className="text-[9px] font-mono text-dark-text/50 light:text-light-text/50 truncate">ID: {localStorage.getItem('profile_identity_code') || 'NEXUS_8910'}</span>
                 </div>
               </div>
 

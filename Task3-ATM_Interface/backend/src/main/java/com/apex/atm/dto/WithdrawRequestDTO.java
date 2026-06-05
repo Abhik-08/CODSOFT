@@ -14,7 +14,7 @@ public class WithdrawRequestDTO {
     @Schema(description = "Amount to withdraw from the checking account. Must be greater than zero.", example = "100.00", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "Withdrawal amount cannot be null")
     @Positive(message = "Withdrawal amount must be greater than zero")
-    @Digits(integer = 4, fraction = 2, message = "Invalid monetary format")
+    @Digits(integer = 6, fraction = 2, message = "Invalid monetary format")
     private Double amount;
 
     @Schema(description = "Optional description context for the withdrawal record", example = "ATM cash withdrawal", maxLength = 100)

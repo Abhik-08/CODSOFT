@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import type { TransactionInfo } from '../../services/firestoreService';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -12,25 +14,73 @@ import {
   Legend,
 } from 'recharts';
 
-interface ChartDataItem {
-  month: string;
-  deposits: number;
-  withdrawals: number;
-  balance: number;
+interface AnalyticsSectionProps {
+  transactions: TransactionInfo[];
 }
 
-const analyticsData: ChartDataItem[] = [
-  { month: 'Dec', deposits: 35000, withdrawals: 21000, balance: 34000 },
-  { month: 'Jan', deposits: 48000, withdrawals: 39500, balance: 42500 },
-  { month: 'Feb', deposits: 28000, withdrawals: 19300, balance: 51200 },
-  { month: 'Mar', deposits: 61000, withdrawals: 53200, balance: 59000 },
-  { month: 'Apr', deposits: 42000, withdrawals: 27500, balance: 73500 },
-  { month: 'May', deposits: 55000, withdrawals: 52300, balance: 76200 },
-  { month: 'Jun', deposits: 15000, withdrawals: 8000, balance: 78450.92 }, // Matches user's exact balance
-];
-
-export const AnalyticsSection: React.FC = () => {
+export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ transactions }) => {
   const { theme } = useTheme();
+  const { balance } = useAuth();
+
+  const currentBalance = balance ?? 0;
+
+  const dynamicData = React.useMemo(() => {
+    // Generate the last 6 months names ending with current month
+    const months: { name: string; year: number; monthIndex: number; deposits: number; withdrawals: number; balance: number }[] = [];
+    const date = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(date.getFullYear(), date.getMonth() - i, 1);
+      months.push({
+        name: d.toLocaleString('en-IN', { month: 'short' }),
+        year: d.getFullYear(),
+        monthIndex: d.getMonth(),
+        deposits: 0,
+        withdrawals: 0,
+        balance: 0,
+      });
+    }
+
+    // Helper to extract Date safely from Firestore timestamp or standard inputs
+    const getTxnDate = (createdAt: unknown): Date => {
+      if (!createdAt) return new Date();
+      const tsObj = createdAt as { toDate?: () => Date };
+      if (typeof tsObj.toDate === 'function') {
+        return tsObj.toDate();
+      }
+      return new Date(createdAt as string | number | Date);
+    };
+
+    // Group transaction aggregates by calendar month
+    transactions.forEach((txn) => {
+      const txnDate = getTxnDate(txn.createdAt);
+      const txnYear = txnDate.getFullYear();
+      const txnMonth = txnDate.getMonth();
+
+      const match = months.find((m) => m.year === txnYear && m.monthIndex === txnMonth);
+      if (match) {
+        if (txn.type === 'credit') {
+          match.deposits += txn.amount;
+        } else if (txn.type === 'debit') {
+          match.withdrawals += txn.amount;
+        }
+      }
+    });
+
+    // Work backwards to calculate cumulative balance at the end of each month
+    let runningBalance = currentBalance;
+    for (let i = months.length - 1; i >= 0; i--) {
+      months[i].balance = runningBalance;
+      runningBalance = runningBalance - (months[i].deposits - months[i].withdrawals);
+    }
+
+    return months.map((m) => ({
+      month: m.name,
+      deposits: m.deposits,
+      withdrawals: m.withdrawals,
+      balance: m.balance,
+    }));
+  }, [transactions, currentBalance]);
   const isDark = theme === 'dark';
 
   // Dynamic Theme Colors for Recharts styling
@@ -88,7 +138,7 @@ export const AnalyticsSection: React.FC = () => {
 
           <div className="mb-4 mt-1 px-1">
             <h4 className="font-mono font-bold text-[14px] text-dark-text light:text-light-text uppercase tracking-wider">
-              Liquidity Protocol Flows
+              Transaction Flows
             </h4>
             <p className="text-[10px] text-dark-text/45 light:text-light-text/50 font-mono mt-0.5">
               Deposits vs Withdrawals over the last 6 months
@@ -97,7 +147,7 @@ export const AnalyticsSection: React.FC = () => {
 
           <div className="w-full mt-2 font-mono text-[10px]">
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={analyticsData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+              <AreaChart data={dynamicData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                 <defs>
                   {/* Green Deposit Gradient */}
                   <linearGradient id="colorDeposits" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -206,16 +256,16 @@ export const AnalyticsSection: React.FC = () => {
 
           <div className="mb-4 mt-1 px-1">
             <h4 className="font-mono font-bold text-[14px] text-dark-text light:text-light-text uppercase tracking-wider">
-              Balance Dossier Growth
+              Balance Trend
             </h4>
             <p className="text-[10px] text-dark-text/45 light:text-light-text/50 font-mono mt-0.5">
-              Checking account liquidity trend
+              Checking account balance trend
             </p>
           </div>
 
           <div className="w-full mt-2 font-mono text-[10px]">
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={analyticsData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+              <AreaChart data={dynamicData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                 <defs>
                   {/* Blue/Purple Royal Gradient */}
                   <linearGradient id="colorBalance" x1="0%" y1="0%" x2="0%" y2="100%">

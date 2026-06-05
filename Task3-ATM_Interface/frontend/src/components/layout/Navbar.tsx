@@ -44,31 +44,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
           <FiMenu className="w-6 h-6" />
         </button>
 
-        <div className="flex items-center gap-3">
-          {/* Linear-style geometric crosshair/telemetry ring logo */}
-          <div className="w-9 h-9 rounded-xl bg-[var(--panel)] flex items-center justify-center border border-dark-border/15 shadow-sm relative group overflow-hidden">
-            <svg 
-              className="w-5 h-5 text-[var(--accent)] transition-transform duration-500 group-hover:rotate-45" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="8" className="opacity-30" />
-              <line x1="12" y1="2" x2="12" y2="22" strokeDasharray="3 3" className="opacity-50" />
-              <line x1="2" y1="12" x2="22" y2="12" strokeDasharray="3 3" className="opacity-50" />
-              <polygon points="12,8 16,12 12,16 8,12" className="fill-[var(--accent)]/10" />
-            </svg>
-          </div>
-          <div className="hidden sm:flex flex-col select-none">
-            <span className="font-mono font-black text-[17px] tracking-wider text-[var(--text-primary)] leading-none uppercase">KRONOS_CORE</span>
-            <span className="text-[10.5px] font-mono tracking-widest text-[var(--accent)] uppercase font-semibold flex items-center gap-1 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shadow-[0_0_4px_rgba(94,106,210,0.5)]" />
-              <span>Terminal_Node_04</span>
-            </span>
-          </div>
+        <div className="flex items-center select-none py-1 gap-3.5">
+          <img 
+            src="/nexus_symbol.jpg" 
+            alt="Nexus Logo" 
+            className="h-13.5 w-13.5 rounded-xl object-contain shadow-[0_0_20px_rgba(6,182,212,0.25)] border border-dark-border/20"
+          />
+          <span className="font-mono tracking-wider font-extrabold text-[27px] flex items-center leading-none">
+            <span className="text-dark-text light:text-light-text font-black">NEXUS</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 ml-2 font-black">VAULT</span>
+          </span>
         </div>
       </div>
 

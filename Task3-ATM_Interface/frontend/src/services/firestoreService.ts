@@ -1,4 +1,3 @@
-import { isMockMode } from '../firebase';
 import api from './apiService';
 
 export interface AccountInfo {
@@ -17,25 +16,11 @@ export interface TransactionInfo {
 }
 
 /**
- * Ensures an account exists in the accounts collection with an initial balance of 0.
+ * Ensures an account exists in the accounts collection.
  */
 export const ensureAccountExists = async (userId: string): Promise<void> => {
-  if (isMockMode) {
-    const accounts = JSON.parse(localStorage.getItem('apex_mock_accounts') || '{}');
-    if (!accounts[userId]) {
-      accounts[userId] = {
-        userId,
-        balance: 0, // Initial balance = 0
-        updatedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('apex_mock_accounts', JSON.stringify(accounts));
-      console.log(`[Mock] Created checking account document with $0 initial balance for user ${userId}.`);
-    }
-    return;
-  }
-
+  console.log('[FirestoreService] Ensuring checking account exists for user:', userId);
   try {
-    // The backend automatically ensures account exists, so we call get balance to initialize it if needed.
     await api.get('/account/balance');
   } catch (error) {
     console.error('Error in ensureAccountExists:', error);
@@ -47,11 +32,7 @@ export const ensureAccountExists = async (userId: string): Promise<void> => {
  * Retrieves checking account details for a user.
  */
 export const getAccount = async (userId: string): Promise<AccountInfo | null> => {
-  if (isMockMode) {
-    const accounts = JSON.parse(localStorage.getItem('apex_mock_accounts') || '{}');
-    return (accounts[userId] as AccountInfo) || null;
-  }
-
+  console.log('[FirestoreService] Getting account for user:', userId);
   try {
     const response = await api.get('/account/balance');
     const data = response.data.data;
@@ -75,48 +56,7 @@ export const addTransactionAtomically = async (
   amount: number,
   description: string
 ): Promise<string> => {
-  if (isMockMode) {
-    const accounts = JSON.parse(localStorage.getItem('apex_mock_accounts') || '{}');
-    const account = accounts[userId] || { userId, balance: 0, updatedAt: new Date().toISOString() };
-    
-    let newBalance = account.balance;
-    if (type === 'credit') {
-      newBalance += amount;
-    } else if (type === 'debit') {
-      if (newBalance < amount) {
-        throw new Error('Insufficient funds.');
-      }
-      newBalance -= amount;
-    }
-    
-    account.balance = newBalance;
-    account.updatedAt = new Date().toISOString();
-    accounts[userId] = account;
-    localStorage.setItem('apex_mock_accounts', JSON.stringify(accounts));
-    
-    const transactions = JSON.parse(localStorage.getItem('apex_mock_transactions') || '[]');
-    const txnId = 'mock-txn-' + Math.random().toString(36).slice(2, 11);
-    const newTxn = {
-      id: txnId,
-      userId,
-      type,
-      amount,
-      description,
-      createdAt: new Date().toISOString()
-    };
-    transactions.push(newTxn);
-    localStorage.setItem('apex_mock_transactions', JSON.stringify(transactions));
-    
-    // Dispatch custom event for real-time balance listener syncing
-    globalThis.dispatchEvent(
-      new CustomEvent('apex_mock_balance_update', {
-        detail: { userId, balance: newBalance }
-      })
-    );
-    
-    return txnId;
-  }
-
+  console.log('[FirestoreService] Adding transaction atomically for user:', userId, type, amount);
   try {
     const endpoint = type === 'credit' ? '/account/deposit' : '/account/withdraw';
     const response = await api.post(endpoint, {
@@ -128,7 +68,12 @@ export const addTransactionAtomically = async (
     }
     throw new Error(response.data?.message || 'Transaction execution failed');
   } catch (error: any) {
-    console.error('API Transaction failed:', error);
+    const isClientError = error.response?.status && error.response?.status < 500;
+    if (isClientError) {
+      console.warn('API Transaction validation failed:', error.response?.data?.message || error.message);
+    } else {
+      console.error('API Transaction failed:', error);
+    }
     const serverMessage = error.response?.data?.message;
     throw new Error(serverMessage || error.message || 'Transaction failed');
   }
@@ -145,19 +90,6 @@ export const getTransactions = async (
   direction?: string,
   page?: number
 ): Promise<TransactionInfo[]> => {
-  if (isMockMode) {
-    const transactions = JSON.parse(localStorage.getItem('apex_mock_transactions') || '[]');
-    const filtered = transactions.filter((t: TransactionInfo) => t.userId === userId);
-    // Sort descending by createdAt
-    filtered.sort((a: TransactionInfo, b: TransactionInfo) => {
-      return new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime();
-    });
-    if (limitCount) {
-      return filtered.slice(0, limitCount);
-    }
-    return filtered;
-  }
-
   try {
     const response = await api.get('/account/transactions', {
       params: {

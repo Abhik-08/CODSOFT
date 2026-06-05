@@ -122,15 +122,26 @@ export const Login: React.FC = () => {
     setIsInserting(true);
     const toastId = toast.loading('Authenticating card chip...', { id: 'auth' });
 
+    // Validate against stored PIN (specific to last active user, or fallback)
+    const lastUid = localStorage.getItem('apex_last_uid') || 'mock-anonymous-uid-123';
+    const storedPin = localStorage.getItem(`profile_pin_${lastUid}`) || localStorage.getItem('profile_pin') || '8910';
+    if (pin !== storedPin) {
+      setTimeout(() => {
+        toast.error('Access Denied: Incorrect PIN code', { id: toastId });
+        setIsInserting(false);
+      }, 1000);
+      return;
+    }
+
     try {
-      await signInWithPinBypass();
+      const loggedUser = await signInWithPinBypass();
+      localStorage.setItem('apex_last_uid', loggedUser.uid);
       toast.success('Access Granted. Welcome back!', { id: toastId });
       navigate('/dashboard');
     } catch (error) {
       console.error(error);
       const errorMsg = error instanceof Error ? error.message : 'Authentication failed. Access Denied.';
       toast.error(errorMsg, { id: toastId });
-    } finally {
       setIsInserting(false);
     }
   };
@@ -140,7 +151,8 @@ export const Login: React.FC = () => {
     const toastId = toast.loading('Syncing Google Single Sign-On...', { id: 'auth' });
 
     try {
-      await signInWithGoogle();
+      const loggedUser = await signInWithGoogle();
+      localStorage.setItem('apex_last_uid', loggedUser.uid);
       toast.success('Google Authentication Successful!', { id: toastId });
       navigate('/dashboard');
     } catch (error) {
@@ -174,16 +186,19 @@ export const Login: React.FC = () => {
         
         {/* Left Side: Illustration & Marketing */}
         <div className="md:col-span-6 flex flex-col justify-center text-center md:text-left select-none">
-          <div className="flex items-center gap-3 justify-center md:justify-start mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary via-secondary to-accent p-[1px] flex items-center justify-center shadow-lg shadow-primary/20">
-              <div className="w-full h-full rounded-2xl bg-dark-surface light:bg-light-surface flex items-center justify-center">
-                <span className="font-display font-black text-[22px] bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">A</span>
-              </div>
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="font-display font-extrabold text-[20px] tracking-wider text-dark-text light:text-light-text leading-tight">APEX_BANK</span>
-              <span className="text-[11px] font-mono tracking-widest text-primary font-semibold uppercase flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" /> ATM_NODE_04
+          <div className="flex items-center gap-5 justify-center md:justify-start mb-8">
+            <img 
+              src="/nexus_symbol.jpg" 
+              alt="Nexus Logo" 
+              className="h-24 w-24 rounded-3xl object-contain shadow-[0_0_35px_rgba(6,182,212,0.3)] border border-dark-border/20"
+            />
+            <div className="flex flex-col text-left justify-center">
+              <span className="font-mono tracking-wider font-black text-[44px] flex items-center leading-none mb-2.5">
+                <span className="text-dark-text light:text-light-text font-black">NEXUS</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 ml-3.5 font-black">VAULT</span>
+              </span>
+              <span className="text-[12.5px] font-mono tracking-[0.2em] text-primary font-black uppercase flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse shadow-[0_0_8px_#10b981]" /> NEXUS_NODE_04
               </span>
             </div>
           </div>

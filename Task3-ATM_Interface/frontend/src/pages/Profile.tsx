@@ -83,14 +83,60 @@ const mockActivity: ActivityItem[] = [
   },
 ];
 
+const getDisplayTier = (tierValue: string) => {
+  switch (tierValue) {
+    case 'Premium Checking Tier-1':
+      return 'TIER_1_VIP';
+    case 'Standard Checking Tier-2':
+      return 'TIER_2_STANDARD';
+    case 'VIP Elite Vault':
+      return 'VIP_ELITE_VAULT';
+    case 'Developer Sandbox Node':
+      return 'DEVELOPER_BYPASS';
+    default:
+      return 'TIER_1_VIP';
+  }
+};
+
 export const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, balance, logout } = useAuth();
   const [isFrozen, setIsFrozen] = useState(() => {
     return localStorage.getItem('apex_card_frozen') === 'true';
   });
-  const [limit, setLimit] = useState(20000); // 20k default in INR
+  const [limit, setLimit] = useState(() => {
+    const saved = localStorage.getItem('profile_daily_limit');
+    return saved ? Number.parseInt(saved) : 20000;
+  });
   
+  // Profile editable fields
+  const [profileName, setProfileName] = useState(() => {
+    return localStorage.getItem('profile_name') || user?.displayName || 'ABHIK MUKHERJEE';
+  });
+  const [profileEmail, setProfileEmail] = useState(() => {
+    return localStorage.getItem('profile_email') || user?.email || 'pin.operator@nexus.bank';
+  });
+  const [profileCardNumber, setProfileCardNumber] = useState(() => {
+    return localStorage.getItem('profile_card_number') || '4532781290128910';
+  });
+  const [profileExpiry, setProfileExpiry] = useState(() => {
+    return localStorage.getItem('profile_expiry') || '06/31';
+  });
+  const [profileIdentityCode, setProfileIdentityCode] = useState(() => {
+    return localStorage.getItem('profile_identity_code') || 'NEXUS_8910';
+  });
+  const [profileRoutingNumber, setProfileRoutingNumber] = useState(() => {
+    return localStorage.getItem('profile_routing_number') || 'RTN_021000021';
+  });
+  const [profileNodeAssociation, setProfileNodeAssociation] = useState(() => {
+    return localStorage.getItem('profile_node_association') || 'NEXUS_NODE_04 (SF)';
+  });
+  const [profileClassTier, setProfileClassTier] = useState(() => {
+    return localStorage.getItem('profile_class_tier') || 'Premium Checking Tier-1';
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+
   // PIN change states
   const [oldPin, setOldPin] = useState('');
   const [newPin, setNewPin] = useState('');
@@ -114,7 +160,40 @@ export const Profile: React.FC = () => {
   };
 
   const handleLimitSave = () => {
+    localStorage.setItem('profile_daily_limit', String(limit));
     toast.success(`Daily withdrawal limit set to ₹${limit.toLocaleString('en-IN')}`);
+    globalThis.dispatchEvent(new Event('profile_update'));
+  };
+
+  const handleSaveProfile = (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!profileName.trim()) {
+      toast.error('Cardholder Name cannot be empty');
+      return;
+    }
+    if (profileCardNumber.replace(/\D/g, '').length !== 16) {
+      toast.error('Card Number must be exactly 16 digits');
+      return;
+    }
+    if (!/^\d{2}\/\d{2}$/.test(profileExpiry)) {
+      toast.error('Expiry Date must be in MM/YY format');
+      return;
+    }
+
+    localStorage.setItem('profile_name', profileName);
+    localStorage.setItem('profile_email', profileEmail);
+    localStorage.setItem('profile_card_number', profileCardNumber.replace(/\D/g, ''));
+    localStorage.setItem('profile_expiry', profileExpiry);
+    localStorage.setItem('profile_identity_code', profileIdentityCode);
+    localStorage.setItem('profile_routing_number', profileRoutingNumber);
+    localStorage.setItem('profile_node_association', profileNodeAssociation);
+    localStorage.setItem('profile_class_tier', profileClassTier);
+
+    setIsEditing(false);
+    toast.success('Details updated successfully!');
+    
+    // Dispatch event to sync state across tabs/windows
+    globalThis.dispatchEvent(new Event('profile_update'));
   };
 
   const handlePinChange = (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -123,8 +202,26 @@ export const Profile: React.FC = () => {
       toast.error('All PIN entries must be exactly 4 digits');
       return;
     }
+
+    const userPinKey = user ? `profile_pin_${user.uid}` : 'profile_pin';
+    const storedPin = localStorage.getItem(userPinKey) || localStorage.getItem('profile_pin') || '8910';
+    if (oldPin !== storedPin) {
+      toast.error('Current PIN code is incorrect');
+      return;
+    }
+
+    if (newPin === oldPin) {
+      toast.error('New PIN cannot be the same as current PIN');
+      return;
+    }
+
     if (newPin !== confirmPin) {
       toast.error('New PIN does not match confirmation PIN');
+      return;
+    }
+
+    if (newPin === '1234' || newPin === '0000' || newPin === '1111') {
+      toast.error('Security Alert: Simple PINs (e.g. 1234, 0000) are not allowed.');
       return;
     }
     
@@ -132,6 +229,8 @@ export const Profile: React.FC = () => {
     const toastId = toast.loading('Syncing security database...');
     
     setTimeout(() => {
+      localStorage.setItem(userPinKey, newPin);
+      localStorage.setItem('profile_pin', newPin); // Legacy fallback
       toast.success('Passcode PIN successfully updated!', { id: toastId });
       setIsChangingPin(false);
       setOldPin('');
@@ -153,7 +252,7 @@ export const Profile: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 select-none">
+    <div className="max-w-6xl mx-auto space-y-8">
       
       {/* 1. Header Profile Banner Card */}
       <motion.div
@@ -181,17 +280,17 @@ export const Profile: React.FC = () => {
             <div className="space-y-1.5">
               <div className="flex flex-col sm:flex-row items-center gap-2">
                 <h1 className="font-display font-black text-2xl md:text-3xl text-dark-text light:text-light-text tracking-tight">
-                  {user?.displayName || "APEX Operator"}
+                  {profileName}
                 </h1>
                 <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
-                  {user?.isAnonymous ? 'DEVELOPER_BYPASS' : 'TIER_1_VIP'}
+                  {getDisplayTier(profileClassTier)}
                 </span>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-y-1 gap-x-4 text-xs text-dark-text/60 light:text-light-text/60 font-mono">
                 <div className="flex items-center justify-center sm:justify-start gap-1.5">
                   <FiMail className="w-3.5 h-3.5 text-secondary" />
-                  <span>{user?.email || "pin.operator@apex.bank"}</span>
+                  <span>{profileEmail}</span>
                 </div>
                 <div className="flex items-center justify-center sm:justify-start gap-1.5">
                   <FiCalendar className="w-3.5 h-3.5 text-accent" />
@@ -222,40 +321,188 @@ export const Profile: React.FC = () => {
         <div className="lg:col-span-7 space-y-8">
           
           {/* Section title */}
-          <div className="pl-1">
-            <h2 className="font-display font-extrabold text-[15px] text-dark-text light:text-light-text uppercase tracking-widest flex items-center gap-2">
-              <FiUser className="w-4.5 h-4.5 text-primary" /> Account Overview
-            </h2>
-            <p className="text-[11px] text-dark-text/45 light:text-light-text/50 font-mono mt-0.5">
-              Identity parameters, security settings, and cards
-            </p>
+          <div className="pl-1 flex justify-between items-center">
+            <div>
+              <h2 className="font-display font-extrabold text-[15px] text-dark-text light:text-light-text uppercase tracking-widest flex items-center gap-2">
+                <FiUser className="w-4.5 h-4.5 text-primary" /> Account Overview
+              </h2>
+              <p className="text-[11px] text-dark-text/45 light:text-light-text/50 font-mono mt-0.5">
+                Identity parameters, security settings, and cards
+              </p>
+            </div>
+            
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="py-1.5 px-3.5 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-dark-card/60 hover:bg-dark-card border border-dark-border/15 text-dark-text light:text-light-text cursor-pointer transition-all duration-200"
+            >
+              {isEditing ? 'Cancel Edit' : 'Edit Details'}
+            </button>
           </div>
 
           {/* Overview Grid */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
+            layout
             className="glass-card premium-card-shadow rounded-3xl p-6 border border-dark-border/15 light:border-light-border/40"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
-              <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
-                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">User Identity Code</span>
-                <span className="text-[13px] font-mono font-bold text-dark-text light:text-light-text mt-0.5">APEX_8910</span>
+            {isEditing ? (
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Cardholder Name */}
+                  <div className="space-y-1">
+                    <label htmlFor="profileName" className="text-[9px] font-mono text-dark-text/40 light:text-light-text/40 uppercase tracking-wider block">Cardholder Name</label>
+                    <input
+                      id="profileName"
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 outline-none text-[12px] text-dark-text light:text-light-text focus:border-primary/50"
+                    />
+                  </div>
+
+                  {/* Operator Email */}
+                  <div className="space-y-1">
+                    <label htmlFor="profileEmail" className="text-[9px] font-mono text-dark-text/40 light:text-light-text/40 uppercase tracking-wider block">Operator Email</label>
+                    <input
+                      id="profileEmail"
+                      type="email"
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 outline-none text-[12px] text-dark-text light:text-light-text focus:border-primary/50"
+                    />
+                  </div>
+
+                  {/* Card Number */}
+                  <div className="space-y-1">
+                    <label htmlFor="profileCardNumber" className="text-[9px] font-mono text-dark-text/40 light:text-light-text/40 uppercase tracking-wider block">Debit Card Number (16 digits)</label>
+                    <input
+                      id="profileCardNumber"
+                      type="text"
+                      maxLength={16}
+                      value={profileCardNumber}
+                      onChange={(e) => setProfileCardNumber(e.target.value.replace(/\D/g, ''))}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 outline-none text-[12px] text-dark-text light:text-light-text focus:border-primary/50 font-mono"
+                    />
+                  </div>
+
+                  {/* Expiry Date */}
+                  <div className="space-y-1">
+                    <label htmlFor="profileExpiry" className="text-[9px] font-mono text-dark-text/40 light:text-light-text/40 uppercase tracking-wider block">Expiry Date (MM/YY)</label>
+                    <input
+                      id="profileExpiry"
+                      type="text"
+                      maxLength={5}
+                      placeholder="MM/YY"
+                      value={profileExpiry}
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/[^\d/]/g, '');
+                        if (val.length === 2 && !val.includes('/')) {
+                          val += '/';
+                        }
+                        setProfileExpiry(val);
+                      }}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 outline-none text-[12px] text-dark-text light:text-light-text focus:border-primary/50 font-mono"
+                    />
+                  </div>
+
+                  {/* User Identity Code */}
+                  <div className="space-y-1">
+                    <label htmlFor="profileIdentityCode" className="text-[9px] font-mono text-dark-text/40 light:text-light-text/40 uppercase tracking-wider block">Identity Code</label>
+                    <input
+                      id="profileIdentityCode"
+                      type="text"
+                      value={profileIdentityCode}
+                      onChange={(e) => setProfileIdentityCode(e.target.value)}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 outline-none text-[12px] text-dark-text light:text-light-text focus:border-primary/50 font-mono"
+                    />
+                  </div>
+
+                  {/* Routing Number */}
+                  <div className="space-y-1">
+                    <label htmlFor="profileRoutingNumber" className="text-[9px] font-mono text-dark-text/40 light:text-light-text/40 uppercase tracking-wider block">Routing Number</label>
+                    <input
+                      id="profileRoutingNumber"
+                      type="text"
+                      value={profileRoutingNumber}
+                      onChange={(e) => setProfileRoutingNumber(e.target.value)}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 outline-none text-[12px] text-dark-text light:text-light-text focus:border-primary/50 font-mono"
+                    />
+                  </div>
+
+                  {/* Primary Node Association */}
+                  <div className="space-y-1">
+                    <label htmlFor="profileNodeAssociation" className="text-[9px] font-mono text-dark-text/40 light:text-light-text/40 uppercase tracking-wider block">Node Association</label>
+                    <input
+                      id="profileNodeAssociation"
+                      type="text"
+                      value={profileNodeAssociation}
+                      onChange={(e) => setProfileNodeAssociation(e.target.value)}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 outline-none text-[12px] text-dark-text light:text-light-text focus:border-primary/50 font-mono"
+                    />
+                  </div>
+
+                  {/* Account Class Tier */}
+                  <div className="space-y-1">
+                    <label htmlFor="profileClassTier" className="text-[9px] font-mono text-dark-text/40 light:text-light-text/40 uppercase tracking-wider block">Class Tier</label>
+                    <select
+                      id="profileClassTier"
+                      value={profileClassTier}
+                      onChange={(e) => setProfileClassTier(e.target.value)}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 outline-none text-[12px] text-[var(--text-primary)] light:text-light-text focus:border-primary/50"
+                    >
+                      <option value="Premium Checking Tier-1">Premium Checking Tier-1</option>
+                      <option value="Standard Checking Tier-2">Standard Checking Tier-2</option>
+                      <option value="VIP Elite Vault">VIP Elite Vault</option>
+                      <option value="Developer Sandbox Node">Developer Sandbox Node</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="submit"
+                    className="py-2.5 px-5 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg active:scale-[0.98] transition-all duration-300 cursor-pointer"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileName(localStorage.getItem('profile_name') || user?.displayName || 'ABHIK MUKHERJEE');
+                      setProfileEmail(localStorage.getItem('profile_email') || user?.email || 'pin.operator@nexus.bank');
+                      setProfileCardNumber(localStorage.getItem('profile_card_number') || '4532781290128910');
+                      setProfileExpiry(localStorage.getItem('profile_expiry') || '06/31');
+                      setProfileIdentityCode(localStorage.getItem('profile_identity_code') || 'NEXUS_8910');
+                      setProfileRoutingNumber(localStorage.getItem('profile_routing_number') || 'RTN_021000021');
+                      setProfileNodeAssociation(localStorage.getItem('profile_node_association') || 'NEXUS_NODE_04 (SF)');
+                      setProfileClassTier(localStorage.getItem('profile_class_tier') || 'Premium Checking Tier-1');
+                      setIsEditing(false);
+                    }}
+                    className="py-2.5 px-5 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-dark-surface/30 border border-dark-border/10 text-dark-text light:text-light-text cursor-pointer transition-all duration-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
+                  <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">User Identity Code</span>
+                  <span className="text-[13px] font-mono font-bold text-dark-text light:text-light-text mt-0.5">{profileIdentityCode}</span>
+                </div>
+                <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
+                  <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Account Routing Number</span>
+                  <span className="text-[13px] font-mono font-bold text-dark-text light:text-light-text mt-0.5">{profileRoutingNumber}</span>
+                </div>
+                <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
+                  <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Primary Node Association</span>
+                  <span className="text-[13px] font-mono font-bold text-dark-text light:text-light-text mt-0.5">{profileNodeAssociation}</span>
+                </div>
+                <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
+                  <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Account Class Tier</span>
+                  <span className="text-[13px] font-mono font-bold text-primary mt-0.5">{profileClassTier}</span>
+                </div>
               </div>
-              <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
-                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Account Routing Number</span>
-                <span className="text-[13px] font-mono font-bold text-dark-text light:text-light-text mt-0.5">RTN_021000021</span>
-              </div>
-              <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
-                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Primary Node Association</span>
-                <span className="text-[13px] font-mono font-bold text-dark-text light:text-light-text mt-0.5">ATM_NODE_04 (SF)</span>
-              </div>
-              <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
-                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Account Class Tier</span>
-                <span className="text-[13px] font-mono font-bold text-primary mt-0.5">Premium Checking Tier-1</span>
-              </div>
-            </div>
+            )}
           </motion.div>
 
           {/* Card Controls & Limit Adjuster */}
@@ -363,6 +610,7 @@ export const Profile: React.FC = () => {
                       onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))}
                       disabled={isChangingPin}
                       placeholder="••••"
+                      autoComplete="current-password"
                       className="w-full py-2.5 px-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono tracking-[6px] text-center placeholder-dark-text/15 light:placeholder-light-text/20"
                     />
                   </div>
@@ -380,6 +628,7 @@ export const Profile: React.FC = () => {
                       onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
                       disabled={isChangingPin}
                       placeholder="••••"
+                      autoComplete="new-password"
                       className="w-full py-2.5 px-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono tracking-[6px] text-center placeholder-dark-text/15 light:placeholder-light-text/20"
                     />
                   </div>
@@ -397,6 +646,7 @@ export const Profile: React.FC = () => {
                       onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
                       disabled={isChangingPin}
                       placeholder="••••"
+                      autoComplete="new-password"
                       className="w-full py-2.5 px-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono tracking-[6px] text-center placeholder-dark-text/15 light:placeholder-light-text/20"
                     />
                   </div>
@@ -436,9 +686,10 @@ export const Profile: React.FC = () => {
               className="flex justify-center"
             >
               <VirtualCard
-                name={(user?.displayName || "ABHIK MUKHERJEE").toUpperCase()}
-                cardNumber="••••  ••••  ••••  8910"
-                balance={78450.92}
+                name={profileName.toUpperCase()}
+                cardNumber={profileCardNumber}
+                balance={balance}
+                expiry={profileExpiry}
                 isFrozen={isFrozen}
               />
             </motion.div>
@@ -505,3 +756,5 @@ export const Profile: React.FC = () => {
     </div>
   );
 };
+
+

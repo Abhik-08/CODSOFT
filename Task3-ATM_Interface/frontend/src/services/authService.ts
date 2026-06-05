@@ -4,13 +4,7 @@ import {
   signInAnonymously,
   type User as FirebaseUser 
 } from 'firebase/auth';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  serverTimestamp 
-} from 'firebase/firestore';
-import { auth, db, googleProvider, isMockMode } from '../firebase';
+import { auth, googleProvider, isMockMode } from '../firebase';
 import { ensureAccountExists } from './firestoreService';
 
 export interface UserProfile {
@@ -61,24 +55,6 @@ export const syncUserDocument = async (user: FirebaseUser): Promise<void> => {
   }
 
   try {
-    const userDocRef = doc(db, 'users', user.uid);
-    const docSnap = await getDoc(userDocRef);
-    
-    if (!docSnap.exists()) {
-      await setDoc(userDocRef, {
-        uid: user.uid,
-        name: user.displayName || 'APEX Operator',
-        email: user.email || 'pin.operator@apex.bank',
-        photoURL: user.photoURL || '',
-        createdAt: serverTimestamp(),
-      });
-      console.log('Successfully created new user document in Firestore.');
-    }
-  } catch (error) {
-    console.warn('Non-fatal: Direct Firestore user document sync failed (likely due to security rules). The backend will still manage account access: ', error);
-  }
-
-  try {
     // Automatically guarantee that the corresponding checking accounts document exists
     await ensureAccountExists(user.uid);
   } catch (error) {
@@ -121,7 +97,9 @@ export const signInWithGoogle = async (): Promise<FirebaseUser> => {
  * Signs in the user anonymously for PIN bypass.
  */
 export const signInWithPinBypass = async (): Promise<FirebaseUser> => {
-  if (isMockMode) {
+  const isAnonymousDisabled = localStorage.getItem('apex_anonymous_auth_disabled') === 'true';
+
+  if (isMockMode || isAnonymousDisabled) {
     const mockUser = {
       uid: 'mock-anonymous-uid-123',
       email: 'pin.operator@apex.bank',
@@ -142,7 +120,10 @@ export const signInWithPinBypass = async (): Promise<FirebaseUser> => {
     await syncUserDocument(user);
     return user;
   } catch (error: any) {
-    console.warn('Firebase Anonymous Auth failed. Falling back to local PIN bypass mock user.', error);
+    if (error?.code === 'auth/admin-restricted-operation') {
+      localStorage.setItem('apex_anonymous_auth_disabled', 'true');
+    }
+    console.log('Firebase Anonymous Auth is restricted/disabled. Falling back to local PIN bypass mock user.');
     const mockUser = {
       uid: 'mock-anonymous-uid-123',
       email: 'pin.operator@apex.bank',

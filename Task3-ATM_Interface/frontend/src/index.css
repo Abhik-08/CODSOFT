@@ -26,22 +26,23 @@
 
 /* Modern Linear / Vercel-Style Custom Variables */
 :root, html.light {
-  --background-deep: #e4e4e7;
-  --background-base: #f4f4f5;
+  --background-deep: #cbd5e1;
+  --background-base: #f1f5f9;
   --background-elevated: #ffffff;
-  --text-primary: #09090b;
-  --text-muted: #71717a;
-  --border-dark: rgba(0, 0, 0, 0.06);
-  --border-hover: rgba(0, 0, 0, 0.10);
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --border-dark: rgba(94, 106, 210, 0.08);
+  --border-hover: rgba(94, 106, 210, 0.16);
   --accent: #5e6ad2;
-  --accent-glow: rgba(94, 106, 210, 0.12);
+  --accent-glow: rgba(94, 106, 210, 0.08);
+  --surface-hover: rgba(94, 106, 210, 0.06);
 
   /* Legacy variables mappings for compatibility */
   --chassis: var(--background-base);
   --panel: var(--background-elevated);
-  --recessed: rgba(0, 0, 0, 0.02);
-  --shadow-dark: rgba(0, 0, 0, 0.05);
-  --shadow-light: rgba(255, 255, 255, 0.9);
+  --recessed: rgba(94, 106, 210, 0.04);
+  --shadow-dark: rgba(94, 106, 210, 0.04);
+  --shadow-light: rgba(255, 255, 255, 0.8);
 }
 
 html.dark {
@@ -54,6 +55,7 @@ html.dark {
   --border-hover: rgba(255, 255, 255, 0.10);
   --accent: #5e6ad2;
   --accent-glow: rgba(94, 106, 210, 0.3);
+  --surface-hover: rgba(255, 255, 255, 0.03);
 
   /* Legacy variables mappings for compatibility */
   --chassis: var(--background-base);
@@ -68,6 +70,16 @@ html.dark {
     background-color: var(--background-base);
     color: var(--text-primary);
     @apply font-sans m-0 p-0 overflow-x-hidden antialiased transition-colors duration-300;
+  }
+
+  html.light body {
+    background-image: radial-gradient(circle at 0% 0%, #e0e7ff 0%, #f1f5f9 50%, #ccfbf1 100%);
+    background-attachment: fixed;
+  }
+
+  html.dark body {
+    background-image: radial-gradient(circle at 0% 0%, #03000a 0%, #050506 60%, #00070a 100%);
+    background-attachment: fixed;
   }
 }
 
@@ -104,8 +116,8 @@ html.dark .noise-overlay {
 
 html.light .grid-overlay {
   background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.01) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.01) 1px, transparent 1px);
+    linear-gradient(to right, rgba(94, 106, 210, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(94, 106, 210, 0.025) 1px, transparent 1px);
 }
 
 /* Floating ambient glow lights */
@@ -115,6 +127,13 @@ html.light .grid-overlay {
   pointer-events: none;
   z-index: 0;
   mix-blend-mode: screen;
+  transition: opacity 0.3s ease, mix-blend-mode 0.3s ease;
+}
+
+html.light .ambient-blob {
+  mix-blend-mode: multiply;
+  opacity: 0.22;
+  filter: blur(140px);
 }
 
 /* Linear/Vercel Layout Containers */
@@ -122,6 +141,16 @@ html.light .grid-overlay {
   background-color: var(--background-elevated);
   border: 1px solid var(--border-dark);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+html.light .glass-panel {
+  background-color: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 1px 3px rgba(94, 106, 210, 0.03),
+    0 4px 20px rgba(94, 106, 210, 0.05);
 }
 
 html.dark .glass-panel {
@@ -142,6 +171,16 @@ html.dark .glass-panel {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+html.light .glass-card {
+  background-color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.01),
+    0 8px 32px rgba(94, 106, 210, 0.04);
+}
+
 html.dark .glass-card {
   background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.005) 100%);
   background-color: rgba(10, 10, 12, 0.45);
@@ -158,6 +197,13 @@ html.dark .glass-card {
   box-shadow: 
     0 4px 6px rgba(0, 0, 0, 0.02),
     0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+html.light .glass-card:hover {
+  border-color: rgba(94, 106, 210, 0.25);
+  box-shadow: 
+    0 8px 32px rgba(94, 106, 210, 0.08),
+    0 0 20px rgba(94, 106, 210, 0.05);
 }
 
 html.dark .glass-card:hover {
@@ -203,7 +249,8 @@ html.dark .glass-card:hover {
 }
 
 html.light .btn-secondary {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(94, 106, 210, 0.15);
 }
 
 .btn-secondary:hover {
@@ -212,7 +259,9 @@ html.light .btn-secondary {
 }
 
 html.light .btn-secondary:hover {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(94, 106, 210, 0.08);
+  border-color: rgba(94, 106, 210, 0.3);
+  color: var(--accent);
 }
 
 .btn-secondary:active {
@@ -228,7 +277,8 @@ html.light .btn-secondary:hover {
 }
 
 html.light .modern-input-well {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(94, 106, 210, 0.15);
 }
 
 .modern-input-well:focus-within {
