@@ -223,20 +223,25 @@ export const currencyService = {
       return generateSimulatedRates(from, to, days);
     }
 
-    const endDate = new Date().toISOString().split('T')[0];
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0];
+    // Query our own backend proxy endpoint which handles Frankfurter and avoids CORS restrictions.
+    // If BASE_URL is not set (e.g. running in mock mode), fallback to calling Frankfurter directly.
+    const url = BASE_URL
+      ? `${BASE_URL}/historical?from=${upperFrom}&to=${upperTo}&days=${days}`
+      : `${PUBLIC_API_URL}/${new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}..${new Date().toISOString().split('T')[0]}?from=${upperFrom}&to=${upperTo}`;
 
-    // Public API is queried directly as the backend does not provide a historical trend endpoint.
-    const url = `${PUBLIC_API_URL}/${startDate}..${endDate}?from=${upperFrom}&to=${upperTo}`;
     try {
-      const data = await handleResponse<unknown>(await fetch(url));
-      const rates = parseFrankfurterHistorical(data, upperTo);
-      if (rates.length === 0) {
-        return generateSimulatedRates(from, to, days);
+      if (BASE_URL) {
+        // Query the Spring Boot backend
+        return await handleResponse<HistoricalRate[]>(await fetch(url));
+      } else {
+        // Fallback directly to Frankfurter
+        const data = await handleResponse<unknown>(await fetch(url));
+        const rates = parseFrankfurterHistorical(data, upperTo);
+        if (rates.length === 0) {
+          return generateSimulatedRates(from, to, days);
+        }
+        return rates;
       }
-      return rates;
     } catch (err: unknown) {
       console.error('Error fetching historical rates, falling back to simulated data:', err);
       return generateSimulatedRates(from, to, days);

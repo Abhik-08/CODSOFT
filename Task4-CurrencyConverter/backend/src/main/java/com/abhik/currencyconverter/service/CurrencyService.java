@@ -1,11 +1,14 @@
 package com.abhik.currencyconverter.service;
 
 import com.abhik.currencyconverter.client.ExchangeRateClient;
+import com.abhik.currencyconverter.client.HistoricalRateClient;
 import com.abhik.currencyconverter.dto.ConvertResponse;
+import com.abhik.currencyconverter.dto.HistoricalRateDto;
 import com.abhik.currencyconverter.dto.RatesResponse;
 import com.abhik.currencyconverter.exception.InvalidAmountException;
 import com.abhik.currencyconverter.exception.InvalidCurrencyException;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 public class CurrencyService {
 
     private final ExchangeRateClient exchangeRateClient;
+    private final HistoricalRateClient historicalRateClient;
 
     public RatesResponse getRates(String baseCurrency) {
         if (baseCurrency == null || baseCurrency.trim().isEmpty()) {
@@ -70,5 +74,27 @@ public class CurrencyService {
                 .convertedAmount(convertedAmount)
                 .timestamp(ratesResponse.getTimestamp())
                 .build();
+    }
+
+    public List<HistoricalRateDto> getHistoricalRates(String fromCurrency, String toCurrency, int days) {
+        if (fromCurrency == null || fromCurrency.trim().isEmpty()) {
+            log.error("Validation failed: fromCurrency is blank");
+            throw new InvalidCurrencyException("Source currency must not be empty");
+        }
+        if (toCurrency == null || toCurrency.trim().isEmpty()) {
+            log.error("Validation failed: toCurrency is blank");
+            throw new InvalidCurrencyException("Target currency must not be empty");
+        }
+        if (days <= 0) {
+            log.error("Validation failed: days must be positive ({})", days);
+            throw new IllegalArgumentException("Days must be greater than zero");
+        }
+
+        String normalizedFrom = fromCurrency.trim().toUpperCase();
+        String normalizedTo = toCurrency.trim().toUpperCase();
+
+        log.info("Requesting historical rates from {} to {} for {} days", normalizedFrom, normalizedTo, days);
+
+        return historicalRateClient.getHistoricalRates(normalizedFrom, normalizedTo, days);
     }
 }

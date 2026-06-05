@@ -2,6 +2,7 @@ package com.abhik.currencyconverter.controller;
 
 import com.abhik.currencyconverter.dto.ConvertRequest;
 import com.abhik.currencyconverter.dto.ConvertResponse;
+import com.abhik.currencyconverter.dto.HistoricalRateDto;
 import com.abhik.currencyconverter.dto.RatesResponse;
 import com.abhik.currencyconverter.service.CurrencyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +15,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 @Tag(name = "Currency Converter", description = "REST APIs for querying exchange rates and performing currency conversions")
 @RestController
@@ -41,4 +44,15 @@ public class CurrencyController {
         );
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "Get historical exchange rates", description = "Retrieves historical exchange rates between two currencies over a specified number of days from Frankfurter API.")
+    @GetMapping("/historical")
+    public ResponseEntity<List<HistoricalRateDto>> getHistoricalRates(
+            @RequestParam String from,
+            @RequestParam String to,
+            @RequestParam(defaultValue = "30") int days) {
+        List<HistoricalRateDto> rates = currencyService.getHistoricalRates(from, to, days);
+        return ResponseEntity.ok(rates);
+    }
 }
+
