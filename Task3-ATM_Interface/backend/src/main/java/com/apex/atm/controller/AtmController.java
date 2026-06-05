@@ -6,6 +6,7 @@ import com.apex.atm.dto.BalanceResponseDTO;
 import com.apex.atm.dto.DepositRequestDTO;
 import com.apex.atm.dto.TransactionResponseDTO;
 import com.apex.atm.dto.WithdrawRequestDTO;
+import com.apex.atm.dto.DailyLimitRequestDTO;
 import com.apex.atm.exception.AtmException;
 import com.apex.atm.exception.FirebaseAuthenticationException;
 import com.apex.atm.service.AccountService;
@@ -105,6 +106,26 @@ public class AtmController {
         logger.info("REST Request: Withdraw ${} for user {}", request.getAmount(), userId);
         TransactionResponseDTO response = accountService.withdraw(userId, request.getAmount(), request.getDescription());
         return ResponseEntity.ok(ApiResponseDTO.success(response, "Cash withdrawn successfully"));
+    }
+
+    /**
+     * Updates the daily withdrawal limit for the currently authenticated user.
+     */
+    @PostMapping("/limit")
+    @Operation(summary = "Update Daily ATM Limit", description = "Sets a personalized daily withdrawal limit for the authenticated user session.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Daily withdrawal limit updated successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid format or non-positive limit",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid Firebase authentication context",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResponseEntity<ApiResponseDTO<Void>> updateDailyLimit(@Valid @RequestBody DailyLimitRequestDTO request) {
+        String userId = getAuthenticatedUserId();
+        logger.info("REST Request: Update daily limit to ${} for user {}", request.getLimit(), userId);
+        accountService.updateDailyLimit(userId, request.getLimit());
+        return ResponseEntity.ok(ApiResponseDTO.success(null, "Daily withdrawal limit updated successfully"));
     }
 
     /**

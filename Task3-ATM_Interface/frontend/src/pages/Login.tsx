@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiLock, FiArrowRight } from 'react-icons/fi';
+import { FiShield } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { motion } from 'motion/react';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
@@ -86,10 +86,9 @@ const BankingIllustration: React.FC = () => {
 import { useAuth } from '../context/AuthContext';
 
 export const Login: React.FC = () => {
-  const [pin, setPin] = useState<string>('');
   const [isInserting, setIsInserting] = useState(false);
   const navigate = useNavigate();
-  const { user, signInWithGoogle, signInWithPinBypass } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
 
   // Redirect if user is already authenticated
   React.useEffect(() => {
@@ -97,54 +96,6 @@ export const Login: React.FC = () => {
       navigate('/dashboard');
     }
   }, [user, navigate]);
-
-  const handleKeyPress = (num: string) => {
-    if (pin.length < 4) {
-      setPin(prev => prev + num);
-    }
-  };
-
-  const handleClear = () => {
-    setPin('');
-  };
-
-  const handleBackspace = () => {
-    setPin(prev => prev.slice(0, -1));
-  };
-
-  const handleSubmit = async (e?: React.SyntheticEvent<HTMLFormElement>) => {
-    if (e) e.preventDefault();
-    if (pin.length !== 4) {
-      toast.error('Passcode must be exactly 4 digits');
-      return;
-    }
-
-    setIsInserting(true);
-    const toastId = toast.loading('Authenticating card chip...', { id: 'auth' });
-
-    // Validate against stored PIN (specific to last active user, or fallback)
-    const lastUid = localStorage.getItem('apex_last_uid') || 'mock-anonymous-uid-123';
-    const storedPin = localStorage.getItem(`profile_pin_${lastUid}`) || localStorage.getItem('profile_pin') || '8910';
-    if (pin !== storedPin) {
-      setTimeout(() => {
-        toast.error('Access Denied: Incorrect PIN code', { id: toastId });
-        setIsInserting(false);
-      }, 1000);
-      return;
-    }
-
-    try {
-      const loggedUser = await signInWithPinBypass();
-      localStorage.setItem('apex_last_uid', loggedUser.uid);
-      toast.success('Access Granted. Welcome back!', { id: toastId });
-      navigate('/dashboard');
-    } catch (error) {
-      console.error(error);
-      const errorMsg = error instanceof Error ? error.message : 'Authentication failed. Access Denied.';
-      toast.error(errorMsg, { id: toastId });
-      setIsInserting(false);
-    }
-  };
 
   const handleGoogleLogin = async () => {
     setIsInserting(true);
@@ -208,7 +159,7 @@ export const Login: React.FC = () => {
           </h1>
 
           <p className="text-dark-text/65 light:text-light-text/65 text-[15px] leading-relaxed mb-8 max-w-md mx-auto md:mx-0">
-            Insert your digital debit token and authenticate using your secure 4-digit PIN. Engineered with military-grade encryption and real-time ledger sync.
+            Insert your digital debit token and authenticate using Google Single Sign-On. Engineered with military-grade encryption and real-time ledger sync.
           </p>
 
           {/* Core Banking Illustration */}
@@ -226,92 +177,33 @@ export const Login: React.FC = () => {
             className="w-full max-w-[400px] glass-card premium-card-shadow rounded-3xl p-6 md:p-8 flex flex-col items-center border border-dark-border/20 light:border-light-border/45"
           >
             {/* ATM Console Display Screen */}
-            <div className="w-full glass-panel border border-dark-border/25 light:border-light-border/60 rounded-2xl p-5 mb-5 text-center select-none">
-              <div className="flex items-center justify-center gap-2 mb-3 text-dark-text/40 light:text-light-text/40 font-mono text-xs uppercase tracking-widest">
-                <FiLock className="w-3.5 h-3.5" /> Security Shield Active
+            <div className="w-full glass-panel border border-dark-border/25 light:border-light-border/60 rounded-2xl p-6 mb-6 text-center select-none flex flex-col items-center">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 animate-pulse-glow">
+                <FiShield className="w-6 h-6" />
               </div>
               
-              <div className="text-[13px] font-medium text-dark-text/75 light:text-light-text/75 mb-4 font-sans">
-                ENTER 4-DIGIT SECURITY PIN
+              <div className="text-[14px] font-mono tracking-wider font-bold text-dark-text light:text-light-text mb-2 uppercase">
+                ATM SESSION TERMINAL
               </div>
-
-              {/* Password indicator bubbles */}
-              <div className="flex justify-center gap-3.5 mb-2">
-                {[0, 1, 2, 3].map((index) => (
-                  <motion.div
-                    key={index}
-                    animate={pin.length > index ? { scale: 1.15 } : { scale: 1 }}
-                    className={`w-3.5 h-3.5 rounded-full border border-dark-text/20 light:border-light-text/25 transition-colors duration-200 ${pin.length > index ? 'bg-primary border-primary' : 'bg-transparent'}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Virtual PIN Keypad */}
-            <div className="w-full grid grid-cols-3 gap-2.5 mb-5">
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => handleKeyPress(num)}
-                  disabled={isInserting}
-                  className="py-3.5 rounded-xl border border-dark-border/5 light:border-light-border/40 bg-dark-surface/50 light:bg-light-surface text-[16px] font-bold text-dark-text light:text-light-text hover:bg-dark-card/85 light:hover:bg-light-card/85 hover:border-primary/20 active:scale-95 transition-all duration-150 cursor-pointer flex items-center justify-center"
-                >
-                  {num}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={handleClear}
-                disabled={isInserting}
-                className="py-3.5 rounded-xl border border-dark-border/5 light:border-light-border/40 bg-rose-500/10 hover:bg-rose-500/15 text-rose-500 text-[12px] font-bold tracking-wider uppercase active:scale-95 transition-all duration-150 cursor-pointer flex items-center justify-center"
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                onClick={() => handleKeyPress('0')}
-                disabled={isInserting}
-                className="py-3.5 rounded-xl border border-dark-border/5 light:border-light-border/40 bg-dark-surface/50 light:bg-light-surface text-[16px] font-bold text-dark-text light:text-light-text hover:bg-dark-card/85 light:hover:bg-light-card/85 active:scale-95 transition-all duration-150 cursor-pointer flex items-center justify-center"
-              >
-                0
-              </button>
-              <button
-                type="button"
-                onClick={handleBackspace}
-                disabled={isInserting}
-                className="py-3.5 rounded-xl border border-dark-border/5 light:border-light-border/40 bg-dark-surface/50 light:bg-light-surface text-[14px] font-bold text-dark-text/80 light:text-light-text/80 hover:bg-dark-card/85 light:hover:bg-light-card/85 active:scale-95 transition-all duration-150 cursor-pointer flex items-center justify-center"
-              >
-                ⌫
-              </button>
-            </div>
-
-            {/* Authenticate Submit Button */}
-            <button
-              onClick={() => handleSubmit()}
-              disabled={isInserting || pin.length !== 4}
-              className="w-full py-4 rounded-xl font-display font-bold text-[13px] uppercase tracking-widest bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Verify Secure PIN</span>
-              <FiArrowRight className="w-4 h-4" />
-            </button>
-
-            {/* Divider */}
-            <div className="w-full flex items-center gap-3 my-5">
-              <div className="flex-1 h-[1px] bg-dark-border/10 light:bg-light-border/60" />
-              <span className="text-[10px] font-mono text-dark-text/30 light:text-light-text/30 tracking-widest uppercase">Or authorize via</span>
-              <div className="flex-1 h-[1px] bg-dark-border/10 light:bg-light-border/60" />
+              
+              <p className="text-xs text-dark-text/50 light:text-light-text/50 leading-relaxed">
+                Connect your card ledger. Please authenticate using your secure Google account.
+              </p>
             </div>
 
             {/* Google Sign In Button */}
             <button
               onClick={handleGoogleLogin}
               disabled={isInserting}
-              className="w-full py-3.5 rounded-xl border border-dark-border/20 light:border-light-border/60 bg-dark-surface/40 light:bg-light-surface text-dark-text light:text-light-text hover:bg-dark-card light:hover:bg-light-card hover:border-primary/20 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-3 font-semibold text-xs tracking-wider uppercase"
+              className="w-full py-4 rounded-xl border border-dark-border/20 light:border-light-border/60 bg-dark-surface/40 light:bg-light-surface text-dark-text light:text-light-text hover:bg-dark-card light:hover:bg-light-card hover:border-primary/20 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-3.5 font-bold text-sm tracking-wide shadow-sm"
             >
-              <FcGoogle className="w-5.5 h-5.5" />
+              <FcGoogle className="w-6 h-6" />
               <span>Continue with Google</span>
             </button>
+            
+            <div className="text-[10px] font-mono text-dark-text/30 light:text-light-text/30 mt-6 tracking-widest uppercase">
+              Secure SSL 256-bit Encrypted
+            </div>
           </motion.div>
         </div>
 

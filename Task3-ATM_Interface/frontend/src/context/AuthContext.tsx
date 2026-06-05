@@ -8,6 +8,7 @@ import api from '../services/apiService';
 interface AuthContextType {
   user: FirebaseUser | null;
   balance: number;
+  dailyLimit: number;
   loading: boolean;
   signInWithGoogle: () => Promise<FirebaseUser>;
   signInWithPinBypass: () => Promise<FirebaseUser>;
@@ -29,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [balance, setBalance] = useState<number>(0);
+  const [dailyLimit, setDailyLimit] = useState<number>(20000);
   const [loading, setLoading] = useState<boolean>(true);
 
   const refreshBalance = useCallback(async () => {
@@ -38,6 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const response = await api.get('/account/balance');
         if (response.data?.success) {
           setBalance(response.data.data.balance);
+          setDailyLimit(response.data.data.dailyLimit);
+          localStorage.setItem('profile_daily_limit', String(response.data.data.dailyLimit));
         }
       } catch (error) {
         console.error('Error refreshing balance:', error);
@@ -53,6 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const response = await api.get('/account/balance');
           if (response.data?.success) {
             setBalance(response.data.data.balance);
+            setDailyLimit(response.data.data.dailyLimit);
+            localStorage.setItem('profile_daily_limit', String(response.data.data.dailyLimit));
           }
         } catch (error) {
           console.error('Error fetching initial balance:', error);
@@ -68,6 +74,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const response = await api.get('/account/balance');
             if (response.data?.success) {
               setBalance(response.data.data.balance);
+              setDailyLimit(response.data.data.dailyLimit);
+              localStorage.setItem('profile_daily_limit', String(response.data.data.dailyLimit));
             }
           } catch (error) {
             console.error('Error fetching initial balance for fallback mock user:', error);
@@ -77,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setUser(null);
           setBalance(0);
+          setDailyLimit(20000);
           setLoading(false);
         }
       }
@@ -97,6 +106,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const response = await api.get('/account/balance');
         if (response.data?.success) {
           setBalance(response.data.data.balance);
+          setDailyLimit(response.data.data.dailyLimit);
+          localStorage.setItem('profile_daily_limit', String(response.data.data.dailyLimit));
         }
       } catch (e) {
         console.error('Error fetching balance after Google sign-in:', e);
@@ -120,6 +131,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const response = await api.get('/account/balance');
         if (response.data?.success) {
           setBalance(response.data.data.balance);
+          setDailyLimit(response.data.data.dailyLimit);
+          localStorage.setItem('profile_daily_limit', String(response.data.data.dailyLimit));
         }
       } catch (e) {
         console.error('Error fetching balance after PIN bypass sign-in:', e);
@@ -150,12 +163,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = useMemo(() => ({
     user,
     balance,
+    dailyLimit,
     loading,
     signInWithGoogle,
     signInWithPinBypass,
     logout,
     refreshBalance
-  }), [user, balance, loading, signInWithGoogle, signInWithPinBypass, logout, refreshBalance]);
+  }), [user, balance, dailyLimit, loading, signInWithGoogle, signInWithPinBypass, logout, refreshBalance]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -108,30 +108,19 @@ public class FirestoreTransactionRepository implements TransactionRepository {
     public List<TransactionResponseDTO> findByUserId(String userId, String type, String sortBy, String direction, Integer page, Integer size) {
         try {
             Firestore db = firestoreService.getDb();
+            // Query only by userId (single-field index, no composite index needed)
             Query q = db.collection(COLLECTION_TRANSACTIONS)
                     .whereEqualTo(FIELD_USER_ID, userId);
 
-            if (type != null && !type.trim().isEmpty() && !"all".equalsIgnoreCase(type)) {
-                q = q.whereEqualTo(FIELD_TYPE, type.toLowerCase());
-            }
-
-            String sortField = getSortField(sortBy);
-            Query.Direction dir = "ASC".equalsIgnoreCase(direction) ? Query.Direction.ASCENDING : Query.Direction.DESCENDING;
-            q = q.orderBy(sortField, dir);
-
-            int limitVal = (size != null && size > 0) ? size : 10;
-            q = q.limit(limitVal);
-
-            if (page != null && page > 0) {
-                q = q.offset(page * limitVal);
-            }
-
             QuerySnapshot querySnapshot = q.get().get();
-            List<TransactionResponseDTO> results = new ArrayList<>();
+            List<TransactionResponseDTO> allTxns = new ArrayList<>();
             for (QueryDocumentSnapshot doc : querySnapshot.getDocuments()) {
-                results.add(mapToTransactionResponseDTO(doc));
+                allTxns.add(mapToTransactionResponseDTO(doc));
             }
-            return results;
+
+            List<TransactionResponseDTO> filtered = filterTransactions(allTxns, type);
+            sortTransactions(filtered, getSortField(sortBy), "ASC".equalsIgnoreCase(direction));
+            return paginateTransactions(filtered, page, size);
 
         } catch (Exception e) {
             if (e instanceof InterruptedException || e.getCause() instanceof InterruptedException) {
@@ -142,22 +131,81 @@ public class FirestoreTransactionRepository implements TransactionRepository {
         }
     }
 
+    private List<TransactionResponseDTO> filterTransactions(List<TransactionResponseDTO> allTxns, String type) {
+        List<TransactionResponseDTO> filtered = new ArrayList<>();
+        for (TransactionResponseDTO txn : allTxns) {
+            if (type == null || type.trim().isEmpty() || "all".equalsIgnoreCase(type) ||
+                    type.equalsIgnoreCase(txn.getType())) {
+                filtered.add(txn);
+            }
+        }
+        return filtered;
+    }
+
+    private void sortTransactions(List<TransactionResponseDTO> filtered, String sortField, boolean isAscending) {
+        java.util.Comparator<TransactionResponseDTO> comparator;
+
+        switch (sortField) {
+            case FIELD_AMOUNT:
+                comparator = java.util.Comparator.comparingDouble(TransactionResponseDTO::getAmount);
+                break;
+            case FIELD_TYPE:
+                comparator = java.util.Comparator.comparing(
+                        TransactionResponseDTO::getType,
+                        java.util.Comparator.nullsFirst(String::compareToIgnoreCase)
+                );
+                break;
+            case FIELD_DESCRIPTION:
+                comparator = java.util.Comparator.comparing(
+                        txn -> java.util.Objects.requireNonNullElse(txn.getDescription(), ""),
+                        String::compareToIgnoreCase
+                );
+                break;
+            case FIELD_CREATED_AT:
+            default:
+                comparator = java.util.Comparator.comparing(
+                        txn -> java.util.Objects.requireNonNullElse(txn.getCreatedAt(), LocalDateTime.MIN)
+                );
+                break;
+        }
+
+        if (!isAscending) {
+            comparator = comparator.reversed();
+        }
+        filtered.sort(comparator);
+    }
+
+    private List<TransactionResponseDTO> paginateTransactions(List<TransactionResponseDTO> sorted, Integer page, Integer size) {
+        int limitVal = (size != null && size > 0) ? size : 10;
+        int offset = (page != null && page > 0) ? page * limitVal : 0;
+
+        if (offset >= sorted.size()) {
+            return new ArrayList<>();
+        }
+        int end = Math.min(offset + limitVal, sorted.size());
+        return sorted.subList(offset, end);
+    }
+
     @Override
     public double getTodayWithdrawnAmount(String userId) {
         try {
             Firestore db = firestoreService.getDb();
-            Date dayAgo = Date.from(LocalDateTime.now().minusHours(24).atZone(ZoneId.systemDefault()).toInstant());
+            // Query only by userId to avoid requiring a composite index on (userId, type, createdAt)
             Query limitQuery = db.collection(COLLECTION_TRANSACTIONS)
-                    .whereEqualTo(FIELD_USER_ID, userId)
-                    .whereEqualTo(FIELD_TYPE, TYPE_DEBIT)
-                    .whereGreaterThanOrEqualTo(FIELD_CREATED_AT, dayAgo);
+                    .whereEqualTo(FIELD_USER_ID, userId);
 
             QuerySnapshot qSnap = limitQuery.get().get();
+            Date dayAgo = Date.from(LocalDateTime.now().minusHours(24).atZone(ZoneId.systemDefault()).toInstant());
             double todayWithdrawn = 0.0;
+
             for (QueryDocumentSnapshot doc : qSnap.getDocuments()) {
-                Double amt = doc.getDouble(FIELD_AMOUNT);
-                if (amt != null) {
-                    todayWithdrawn += amt;
+                String tType = doc.getString(FIELD_TYPE);
+                Date date = doc.getDate(FIELD_CREATED_AT);
+                if (TYPE_DEBIT.equalsIgnoreCase(tType) && date != null && date.after(dayAgo)) {
+                    Double amt = doc.getDouble(FIELD_AMOUNT);
+                    if (amt != null) {
+                        todayWithdrawn += amt;
+                    }
                 }
             }
             return todayWithdrawn;

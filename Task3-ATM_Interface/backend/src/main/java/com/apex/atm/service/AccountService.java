@@ -11,4 +11,5 @@ public interface AccountService {
     TransactionResponseDTO withdraw(String userId, double amount, String description);
     List<TransactionResponseDTO> getTransactions(String userId, String type, String sortBy, String direction, Integer page, Integer size);
     void ensureAccountExists(String userId);
+    void updateDailyLimit(String userId, double limit);
 }

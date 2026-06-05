@@ -10,14 +10,9 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to attach Firebase ID Token
+// Request interceptor to attach Firebase ID Token or mock authentication context
 api.interceptors.request.use(
   async (config) => {
-    if (isMockMode) {
-      config.headers.Authorization = 'Bearer mock-session-token';
-      return config;
-    }
-
     const currentUser = auth.currentUser;
     if (currentUser) {
       try {
@@ -37,6 +32,8 @@ api.interceptors.request.use(
         } catch (error) {
           console.error('Failed to parse mock logged in user:', error);
         }
+      } else if (isMockMode) {
+        config.headers.Authorization = 'Bearer mock-session-token';
       }
     }
     return config;

@@ -24,7 +24,6 @@ import java.util.List;
 public class AccountServiceImpl implements AccountService {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
-    private static final double DAILY_WITHDRAWAL_LIMIT = 20000.0;
 
     private static final String TYPE_CREDIT = "credit";
     private static final String TYPE_DEBIT = "debit";
@@ -50,10 +49,12 @@ public class AccountServiceImpl implements AccountService {
                         accountRepository.ensureExists(userId);
                         return 50000.0;
                     });
+            Double dailyLimit = accountRepository.getDailyLimit(userId).orElse(20000.0);
 
             return BalanceResponseDTO.builder()
                     .userId(userId)
                     .balance(balance)
+                    .dailyLimit(dailyLimit)
                     .lastUpdatedAt(LocalDateTime.now())
                     .build();
 
@@ -119,9 +120,10 @@ public class AccountServiceImpl implements AccountService {
         try {
             // Velocity limit check
             double todayWithdrawn = transactionRepository.getTodayWithdrawnAmount(userId);
-            if (todayWithdrawn + amount > DAILY_WITHDRAWAL_LIMIT) {
+            double dailyLimit = accountRepository.getDailyLimit(userId).orElse(20000.0);
+            if (todayWithdrawn + amount > dailyLimit) {
                 throw new DailyLimitExceededException("Withdrawal failed: Exceeds daily ATM limit of $" 
-                        + DAILY_WITHDRAWAL_LIMIT + ". Already withdrawn in last 24h: $" + todayWithdrawn);
+                        + dailyLimit + ". Already withdrawn in last 24h: $" + todayWithdrawn);
             }
 
             String[] txnIdHolder = new String[1];
@@ -171,5 +173,13 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public void ensureAccountExists(String userId) {
         accountRepository.ensureExists(userId);
+    }
+
+    @Override
+    public void updateDailyLimit(String userId, double limit) {
+        if (limit <= 0) {
+            throw new InvalidAmountException("Daily withdrawal limit must be greater than zero");
+        }
+        accountRepository.updateDailyLimit(userId, limit);
     }
 }

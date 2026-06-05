@@ -21,6 +21,9 @@ public class BalanceResponseDTO {
     @Schema(description = "Current available balance of the checking account", example = "1050.75")
     private double balance;
 
+    @Schema(description = "Daily withdrawal limit set by the user", example = "50000.00")
+    private double dailyLimit;
+
     @Schema(description = "Timestamp of the last update to the balance")
     private LocalDateTime lastUpdatedAt;
 }

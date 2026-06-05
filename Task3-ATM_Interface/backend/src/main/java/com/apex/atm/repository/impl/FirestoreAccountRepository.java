@@ -26,6 +26,7 @@ public class FirestoreAccountRepository implements AccountRepository {
     private static final String FIELD_BALANCE = "balance";
     private static final String FIELD_USER_ID = "userId";
     private static final String FIELD_UPDATED_AT = "updatedAt";
+    private static final String FIELD_DAILY_LIMIT = "dailyLimit";
 
     private final FirestoreService firestoreService;
 
@@ -94,6 +95,68 @@ public class FirestoreAccountRepository implements AccountRepository {
     }
 
     @Override
+    public Optional<Double> getDailyLimit(String userId) {
+        try {
+            Firestore db = firestoreService.getDb();
+            DocumentReference accountRef = db.collection(COLLECTION_ACCOUNTS).document(userId);
+            ApiFuture<DocumentSnapshot> future = accountRef.get();
+            DocumentSnapshot document = future.get();
+
+            if (document.exists()) {
+                Double limit = document.getDouble(FIELD_DAILY_LIMIT);
+                return Optional.ofNullable(limit);
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            if (e instanceof InterruptedException || e.getCause() instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            logger.error("Error retrieving daily limit for user: {}", userId, e);
+            throw new FirestoreException("Unable to read account daily limit: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Optional<Double> getDailyLimit(Transaction txn, String userId) {
+        try {
+            Firestore db = firestoreService.getDb();
+            DocumentReference accountRef = db.collection(COLLECTION_ACCOUNTS).document(userId);
+            DocumentSnapshot document = txn.get(accountRef).get();
+
+            if (document.exists()) {
+                Double limit = document.getDouble(FIELD_DAILY_LIMIT);
+                return Optional.ofNullable(limit);
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            if (e instanceof InterruptedException || e.getCause() instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            logger.error("Error retrieving daily limit in transaction for user: {}", userId, e);
+            throw new FirestoreException("Unable to read account daily limit inside transaction: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void updateDailyLimit(String userId, double limit) {
+        try {
+            Firestore db = firestoreService.getDb();
+            DocumentReference accountRef = db.collection(COLLECTION_ACCOUNTS).document(userId);
+            accountRef.set(Map.of(
+                    FIELD_USER_ID, userId,
+                    FIELD_DAILY_LIMIT, limit,
+                    FIELD_UPDATED_AT, FieldValue.serverTimestamp()
+            ), com.google.cloud.firestore.SetOptions.merge()).get();
+        } catch (Exception e) {
+            if (e instanceof InterruptedException || e.getCause() instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            logger.error("Error updating daily limit for user: {}", userId, e);
+            throw new FirestoreException("Unable to write daily limit: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void ensureExists(String userId) {
         try {
             Firestore db = firestoreService.getDb();
@@ -106,6 +169,7 @@ public class FirestoreAccountRepository implements AccountRepository {
                 accountRef.set(Map.of(
                         FIELD_USER_ID, userId,
                         FIELD_BALANCE, 50000.0,
+                        FIELD_DAILY_LIMIT, 20000.0,
                         FIELD_UPDATED_AT, FieldValue.serverTimestamp()
                 )).get();
             }

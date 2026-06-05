@@ -18,6 +18,7 @@ import {
 import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { VirtualCard } from '../components/dashboard/VirtualCard';
+import api from '../services/apiService';
 
 interface ActivityItem {
   id: string;
@@ -159,10 +160,18 @@ export const Profile: React.FC = () => {
     setLimit(val);
   };
 
-  const handleLimitSave = () => {
-    localStorage.setItem('profile_daily_limit', String(limit));
-    toast.success(`Daily withdrawal limit set to ₹${limit.toLocaleString('en-IN')}`);
-    globalThis.dispatchEvent(new Event('profile_update'));
+  const handleLimitSave = async () => {
+    const toastId = toast.loading('Syncing daily limit with secure ledger...');
+    try {
+      await api.post('/account/limit', { limit });
+      localStorage.setItem('profile_daily_limit', String(limit));
+      toast.success(`Daily withdrawal limit set to ₹${limit.toLocaleString('en-IN')}`, { id: toastId });
+      globalThis.dispatchEvent(new Event('profile_update'));
+    } catch (error: any) {
+      console.error(error);
+      const serverMessage = error.response?.data?.message;
+      toast.error(serverMessage || error.message || 'Failed to update daily limit on backend', { id: toastId });
+    }
   };
 
   const handleSaveProfile = (e: React.SyntheticEvent<HTMLFormElement>) => {
