@@ -123,6 +123,11 @@ function parseFrankfurterHistorical(data: unknown, to: string): HistoricalRate[]
   return historicalRates.sort((a, b) => a.date.localeCompare(b.date));
 }
 
+// Set of currencies supported by Frankfurter API to avoid invalid requests
+const FRANKFURTER_SUPPORTED_CURRENCIES = new Set([
+  'AUD', 'BGN', 'BRL', 'CAD', 'CHF', 'CNY', 'CZK', 'DKK', 'EUR', 'GBP', 'HKD', 'HUF', 'IDR', 'ILS', 'INR', 'ISK', 'JPY', 'KRW', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'RON', 'SEK', 'SGD', 'THB', 'TRY', 'USD', 'ZAR'
+]);
+
 export const currencyService = {
   /**
    * Fetch all active currency codes and names.
@@ -209,16 +214,25 @@ export const currencyService = {
       return generateFlatHistoricalRates(days);
     }
 
+    const upperFrom = from.toUpperCase();
+    const upperTo = to.toUpperCase();
+
+    // If either currency is not supported by Frankfurter, bypass the API request and use simulated rates
+    if (!FRANKFURTER_SUPPORTED_CURRENCIES.has(upperFrom) || !FRANKFURTER_SUPPORTED_CURRENCIES.has(upperTo)) {
+      console.info(`Currencies ${upperFrom} or ${upperTo} not supported by Frankfurter API. Using simulated historical rates.`);
+      return generateSimulatedRates(from, to, days);
+    }
+
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
       .toISOString()
       .split('T')[0];
 
     // Public API is queried directly as the backend does not provide a historical trend endpoint.
-    const url = `${PUBLIC_API_URL}/${startDate}..${endDate}?from=${from}&to=${to}`;
+    const url = `${PUBLIC_API_URL}/${startDate}..${endDate}?from=${upperFrom}&to=${upperTo}`;
     try {
       const data = await handleResponse<unknown>(await fetch(url));
-      const rates = parseFrankfurterHistorical(data, to);
+      const rates = parseFrankfurterHistorical(data, upperTo);
       if (rates.length === 0) {
         return generateSimulatedRates(from, to, days);
       }

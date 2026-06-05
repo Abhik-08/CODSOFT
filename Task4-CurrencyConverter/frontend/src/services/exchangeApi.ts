@@ -3,7 +3,7 @@ import API_BASE_URL from '../config/api';
 
 const BASE_URL = API_BASE_URL;
 const CACHE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes cache lifetime
-const TIMEOUT_MS = 6000; // 6 seconds fetch timeout
+const TIMEOUT_MS = 15000; // 15 seconds fetch timeout per attempt
 
 interface CacheEntry {
   rates: Record<string, number>;
@@ -15,25 +15,32 @@ interface CacheEntry {
 const ratesCache: Record<string, CacheEntry> = {};
 
 /**
- * Fetch helper with automatic retries and exponential backoff
+ * Fetch helper with automatic retries, timeout per attempt, and exponential backoff
  */
-async function fetchWithRetry(
+async function fetchWithTimeoutAndRetry(
   url: string,
-  options: RequestInit,
+  options: Omit<RequestInit, 'signal'> = {},
   retries = 3,
-  delay = 1000
+  delay = 1000,
+  timeoutMs = 15000
 ): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     return response;
-  } catch (err) {
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
     if (retries > 0) {
-      console.warn(`Fetch failed. Retrying in ${delay}ms... (${retries} retries left)`);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.warn(`Fetch failed (Reason: ${errorMsg}). Retrying in ${delay}ms... (${retries} retries left)`);
       await new Promise((resolve) => setTimeout(resolve, delay));
-      return fetchWithRetry(url, options, retries - 1, delay * 2);
+      return fetchWithTimeoutAndRetry(url, options, retries - 1, delay * 2, timeoutMs);
     }
     throw err;
   }
@@ -59,15 +66,10 @@ export const exchangeApiService = {
     // 2. Fetch from Spring Boot backend
     const url = `${BASE_URL}/rates/${upperBase}`;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
     try {
-      const response = await fetchWithRetry(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
+      const response = await fetchWithTimeoutAndRetry(url, {}, 3, 1500, TIMEOUT_MS);
       const data = await response.json();
-
+      
       // Validate response structure
       if (!data || typeof data.rates !== 'object') {
         throw new Error('Invalid API response: "rates" object not found.');
@@ -89,7 +91,6 @@ export const exchangeApiService = {
         date: dateStr,
       };
     } catch (err: unknown) {
-      clearTimeout(timeoutId);
       if (err instanceof Error) {
         if (err.name === 'AbortError') {
           throw new Error('Request timed out due to slow network conditions.', { cause: err });
