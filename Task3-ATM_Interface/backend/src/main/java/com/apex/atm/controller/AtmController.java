@@ -1,9 +1,10 @@
 package com.apex.atm.controller;
 
-import com.apex.atm.dto.BalanceResponse;
-import com.apex.atm.dto.DepositRequest;
-import com.apex.atm.dto.TransactionResponse;
-import com.apex.atm.dto.WithdrawRequest;
+import com.apex.atm.dto.ApiResponseDTO;
+import com.apex.atm.dto.BalanceResponseDTO;
+import com.apex.atm.dto.DepositRequestDTO;
+import com.apex.atm.dto.TransactionResponseDTO;
+import com.apex.atm.dto.WithdrawRequestDTO;
 import com.apex.atm.exception.AtmException;
 import com.apex.atm.service.AccountService;
 import com.apex.atm.service.TransactionService;
@@ -42,45 +43,46 @@ public class AtmController {
      * Retrieves the checking account balance for the currently authenticated user.
      */
     @GetMapping("/balance")
-    public ResponseEntity<BalanceResponse> getBalance() {
+    public ResponseEntity<ApiResponseDTO<BalanceResponseDTO>> getBalance() {
         String userId = getAuthenticatedUserId();
         logger.info("REST Request: Get balance for user {}", userId);
-        BalanceResponse response = accountService.getBalance(userId);
-        return ResponseEntity.ok(response);
+        BalanceResponseDTO response = accountService.getBalance(userId);
+        return ResponseEntity.ok(ApiResponseDTO.success(response, "Balance retrieved successfully"));
     }
 
     /**
      * Executes a cash deposit transaction for the currently authenticated user.
      */
     @PostMapping("/deposit")
-    public ResponseEntity<TransactionResponse> deposit(@Valid @RequestBody DepositRequest request) {
+    public ResponseEntity<ApiResponseDTO<TransactionResponseDTO>> deposit(@Valid @RequestBody DepositRequestDTO request) {
         String userId = getAuthenticatedUserId();
         logger.info("REST Request: Deposit ${} for user {}", request.getAmount(), userId);
-        TransactionResponse response = transactionService.deposit(userId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        TransactionResponseDTO response = transactionService.deposit(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponseDTO.success(response, "Cash deposited successfully"));
     }
 
     /**
      * Executes a cash withdrawal transaction for the currently authenticated user.
      */
     @PostMapping("/withdraw")
-    public ResponseEntity<TransactionResponse> withdraw(@Valid @RequestBody WithdrawRequest request) {
+    public ResponseEntity<ApiResponseDTO<TransactionResponseDTO>> withdraw(@Valid @RequestBody WithdrawRequestDTO request) {
         String userId = getAuthenticatedUserId();
         logger.info("REST Request: Withdraw ${} for user {}", request.getAmount(), userId);
-        TransactionResponse response = transactionService.withdraw(userId, request);
-        return ResponseEntity.ok(response);
+        TransactionResponseDTO response = transactionService.withdraw(userId, request);
+        return ResponseEntity.ok(ApiResponseDTO.success(response, "Cash withdrawn successfully"));
     }
 
     /**
      * Retrieves the audit transaction ledger list for the currently authenticated user.
      */
     @GetMapping("/transactions")
-    public ResponseEntity<List<TransactionResponse>> getTransactions(
+    public ResponseEntity<ApiResponseDTO<List<TransactionResponseDTO>>> getTransactions(
             @RequestParam(value = "limit", required = false) Integer limit) {
         String userId = getAuthenticatedUserId();
         logger.info("REST Request: Get transactions history for user {}, limit={}", userId, limit);
-        List<TransactionResponse> history = transactionService.getTransactions(userId, limit);
-        return ResponseEntity.ok(history);
+        List<TransactionResponseDTO> history = transactionService.getTransactions(userId, limit);
+        return ResponseEntity.ok(ApiResponseDTO.success(history, "Transaction history retrieved successfully"));
     }
 
     /**

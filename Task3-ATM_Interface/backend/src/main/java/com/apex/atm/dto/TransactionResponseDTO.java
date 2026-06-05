@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TransactionResponse {
+public class TransactionResponseDTO {
     private String id;
     private String type; // CREDIT or DEBIT
     private double amount;

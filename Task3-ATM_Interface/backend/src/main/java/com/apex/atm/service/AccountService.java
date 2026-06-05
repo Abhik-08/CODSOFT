@@ -1,8 +1,8 @@
 package com.apex.atm.service;
 
-import com.apex.atm.dto.BalanceResponse;
+import com.apex.atm.dto.BalanceResponseDTO;
 
 public interface AccountService {
-    BalanceResponse getBalance(String userId);
+    BalanceResponseDTO getBalance(String userId);
     void ensureAccountExists(String userId);
 }

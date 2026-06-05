@@ -1,8 +1,8 @@
 package com.apex.atm.service.impl;
 
-import com.apex.atm.dto.DepositRequest;
-import com.apex.atm.dto.TransactionResponse;
-import com.apex.atm.dto.WithdrawRequest;
+import com.apex.atm.dto.DepositRequestDTO;
+import com.apex.atm.dto.TransactionResponseDTO;
+import com.apex.atm.dto.WithdrawRequestDTO;
 import com.apex.atm.exception.DailyLimitExceededException;
 import com.apex.atm.exception.InsufficientFundsException;
 import com.apex.atm.exception.ResourceNotFoundException;
@@ -54,10 +54,10 @@ public class TransactionServiceImpl implements TransactionService {
     private static final String TYPE_DEBIT = "debit";
 
     // Thread-safe in-memory list for local development Mock Mode
-    private static final Map<String, List<TransactionResponse>> mockTransactions = new ConcurrentHashMap<>();
+    private static final Map<String, List<TransactionResponseDTO>> mockTransactions = new ConcurrentHashMap<>();
 
     @Override
-    public TransactionResponse deposit(String userId, DepositRequest request) {
+    public TransactionResponseDTO deposit(String userId, DepositRequestDTO request) {
         double depositAmount = request.getAmount();
         String description = request.getDescription() != null ? request.getDescription() : "Cash Deposit";
 
@@ -67,7 +67,7 @@ public class TransactionServiceImpl implements TransactionService {
             double newBalance = currentBalance + depositAmount;
             AccountServiceImpl.updateMockBalance(userId, newBalance);
 
-            TransactionResponse txn = TransactionResponse.builder()
+            TransactionResponseDTO txn = TransactionResponseDTO.builder()
                     .id("mock-txn-" + UUID.randomUUID().toString().substring(0, 8))
                     .type(TYPE_CREDIT)
                     .amount(depositAmount)
@@ -109,7 +109,7 @@ public class TransactionServiceImpl implements TransactionService {
                 return newBalance;
             }).get();
 
-            return TransactionResponse.builder()
+            return TransactionResponseDTO.builder()
                     .id(txnId)
                     .type(TYPE_CREDIT)
                     .amount(depositAmount)
@@ -125,7 +125,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public TransactionResponse withdraw(String userId, WithdrawRequest request) {
+    public TransactionResponseDTO withdraw(String userId, WithdrawRequestDTO request) {
         double withdrawAmount = request.getAmount();
         String description = request.getDescription() != null ? request.getDescription() : "Cash Withdrawal";
 
@@ -146,7 +146,7 @@ public class TransactionServiceImpl implements TransactionService {
             double newBalance = currentBalance - withdrawAmount;
             AccountServiceImpl.updateMockBalance(userId, newBalance);
 
-            TransactionResponse txn = TransactionResponse.builder()
+            TransactionResponseDTO txn = TransactionResponseDTO.builder()
                     .id("mock-txn-" + UUID.randomUUID().toString().substring(0, 8))
                     .type(TYPE_DEBIT)
                     .amount(withdrawAmount)
@@ -196,7 +196,7 @@ public class TransactionServiceImpl implements TransactionService {
                 return newBalance;
             }).get();
 
-            return TransactionResponse.builder()
+            return TransactionResponseDTO.builder()
                     .id(txnId)
                     .type(TYPE_DEBIT)
                     .amount(withdrawAmount)
@@ -214,10 +214,10 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public List<TransactionResponse> getTransactions(String userId, Integer limit) {
+    public List<TransactionResponseDTO> getTransactions(String userId, Integer limit) {
         if (FirebaseApp.getApps().isEmpty()) {
             logger.info("[Mock] Retrieving local memory transactions for user: {}", userId);
-            List<TransactionResponse> txns = mockTransactions.getOrDefault(userId, List.of());
+            List<TransactionResponseDTO> txns = mockTransactions.getOrDefault(userId, List.of());
             if (limit != null && limit < txns.size()) {
                 return txns.subList(0, limit);
             }
@@ -235,7 +235,7 @@ public class TransactionServiceImpl implements TransactionService {
             }
 
             QuerySnapshot querySnapshot = q.get().get();
-            List<TransactionResponse> results = new ArrayList<>();
+            List<TransactionResponseDTO> results = new ArrayList<>();
             for (QueryDocumentSnapshot doc : querySnapshot.getDocuments()) {
                 Date date = doc.getDate(FIELD_CREATED_AT);
                 LocalDateTime ldt = date != null 
@@ -243,7 +243,7 @@ public class TransactionServiceImpl implements TransactionService {
                         : LocalDateTime.now();
 
                 Double amt = doc.getDouble(FIELD_AMOUNT);
-                results.add(TransactionResponse.builder()
+                results.add(TransactionResponseDTO.builder()
                         .id(doc.getId())
                         .type(doc.getString(FIELD_TYPE))
                         .amount(amt != null ? amt : 0.0)
@@ -264,7 +264,7 @@ public class TransactionServiceImpl implements TransactionService {
         return mockTransactions.getOrDefault(userId, List.of()).stream()
                 .filter(t -> TYPE_DEBIT.equals(t.getType()))
                 .filter(t -> t.getCreatedAt().isAfter(LocalDateTime.now().minusHours(24)))
-                .mapToDouble(TransactionResponse::getAmount)
+                .mapToDouble(TransactionResponseDTO::getAmount)
                 .sum();
     }
 

@@ -1,6 +1,6 @@
 package com.apex.atm.service.impl;
 
-import com.apex.atm.dto.BalanceResponse;
+import com.apex.atm.dto.BalanceResponseDTO;
 import com.apex.atm.exception.ResourceNotFoundException;
 import com.apex.atm.service.AccountService;
 import com.google.api.core.ApiFuture;
@@ -30,11 +30,11 @@ public class AccountServiceImpl implements AccountService {
     private static final Map<String, LocalDateTime> mockUpdateTimes = new ConcurrentHashMap<>();
 
     @Override
-    public BalanceResponse getBalance(String userId) {
+    public BalanceResponseDTO getBalance(String userId) {
         if (FirebaseApp.getApps().isEmpty()) {
             logger.info("[Mock] Retrieving local memory balance for user: {}", userId);
             ensureAccountExists(userId);
-            return BalanceResponse.builder()
+            return BalanceResponseDTO.builder()
                     .userId(userId)
                     .balance(mockBalances.get(userId))
                     .lastUpdatedAt(mockUpdateTimes.get(userId))
@@ -49,7 +49,7 @@ public class AccountServiceImpl implements AccountService {
 
             if (!document.exists()) {
                 ensureAccountExists(userId);
-                return BalanceResponse.builder()
+                return BalanceResponseDTO.builder()
                         .userId(userId)
                         .balance(0.0)
                         .lastUpdatedAt(LocalDateTime.now())
@@ -62,7 +62,7 @@ public class AccountServiceImpl implements AccountService {
                     ? LocalDateTime.ofInstant(updatedAt.toInstant(), ZoneId.systemDefault())
                     : LocalDateTime.now();
 
-            return BalanceResponse.builder()
+            return BalanceResponseDTO.builder()
                     .userId(userId)
                     .balance(balance != null ? balance : 0.0)
                     .lastUpdatedAt(lastUpdated)

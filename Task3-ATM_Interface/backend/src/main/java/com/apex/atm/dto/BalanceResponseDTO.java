@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BalanceResponse {
+public class BalanceResponseDTO {
     private String userId;
     private double balance;
     private LocalDateTime lastUpdatedAt;

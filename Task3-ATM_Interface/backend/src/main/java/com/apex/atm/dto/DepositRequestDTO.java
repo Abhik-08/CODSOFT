@@ -7,11 +7,11 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class WithdrawRequest {
+public class DepositRequestDTO {
 
-    @NotNull(message = "Withdrawal amount cannot be null")
-    @DecimalMin(value = "5.00", message = "Minimum withdrawal amount is $5.00")
-    @Digits(integer = 4, fraction = 2, message = "Invalid monetary format")
+    @NotNull(message = "Deposit amount cannot be null")
+    @DecimalMin(value = "1.00", message = "Minimum deposit amount is $1.00")
+    @Digits(integer = 6, fraction = 2, message = "Invalid monetary format")
     private Double amount;
 
     @Size(max = 100, message = "Description cannot exceed 100 characters")

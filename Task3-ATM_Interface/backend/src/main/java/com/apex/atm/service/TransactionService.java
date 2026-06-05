@@ -1,13 +1,13 @@
 package com.apex.atm.service;
 
-import com.apex.atm.dto.DepositRequest;
-import com.apex.atm.dto.TransactionResponse;
-import com.apex.atm.dto.WithdrawRequest;
+import com.apex.atm.dto.DepositRequestDTO;
+import com.apex.atm.dto.TransactionResponseDTO;
+import com.apex.atm.dto.WithdrawRequestDTO;
 
 import java.util.List;
 
 public interface TransactionService {
-    TransactionResponse deposit(String userId, DepositRequest request);
-    TransactionResponse withdraw(String userId, WithdrawRequest request);
-    List<TransactionResponse> getTransactions(String userId, Integer limit);
+    TransactionResponseDTO deposit(String userId, DepositRequestDTO request);
+    TransactionResponseDTO withdraw(String userId, WithdrawRequestDTO request);
+    List<TransactionResponseDTO> getTransactions(String userId, Integer limit);
 }
