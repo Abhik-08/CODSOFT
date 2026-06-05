@@ -1,197 +1,316 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiTrendingUp, FiTrendingDown, FiActivity, FiArrowRight, FiLock, FiCalendar } from 'react-icons/fi';
+import { VirtualCard } from '../components/dashboard/VirtualCard';
+import { StatCard } from '../components/dashboard/StatCard';
+import { AnalyticsSection } from '../components/dashboard/AnalyticsSection';
+import { FiTrendingUp, FiActivity, FiArrowRight, FiDownload, FiUpload, FiList } from 'react-icons/fi';
 import { motion } from 'motion/react';
 
 const recentTransactions = [
-  { id: '1', date: '2026-06-04', desc: 'Cash Withdrawal - Terminal #49', amount: -200, type: 'debit', status: 'completed' },
-  { id: '2', date: '2026-06-03', desc: 'Interbank Cash Deposit', amount: 1500, type: 'credit', status: 'completed' },
-  { id: '3', date: '2026-06-01', desc: 'Pre-Authorized Transfer', amount: 450, type: 'credit', status: 'completed' },
-  { id: '4', date: '2026-05-28', desc: 'Atm Cash Withdrawal', amount: -100, type: 'debit', status: 'completed' },
-  { id: '5', date: '2026-05-25', desc: 'Card Processing Fee', amount: -5.99, type: 'debit', status: 'completed' },
+  { id: '1', date: '2026-06-04', desc: 'Cash Withdrawal - Terminal #49', reference: 'REF_9918231', amount: -200, type: 'debit' },
+  { id: '2', date: '2026-06-03', desc: 'Interbank Cash Deposit', reference: 'REF_0192837', amount: 1500, type: 'credit' },
+  { id: '3', date: '2026-06-01', desc: 'Pre-Authorized Transfer', reference: 'REF_7718290', amount: 450, type: 'credit' },
+  { id: '4', date: '2026-05-28', desc: 'Atm Cash Withdrawal', reference: 'REF_4812390', amount: -100, type: 'debit' },
+  { id: '5', date: '2026-05-25', desc: 'Card Processing Fee', reference: 'REF_9018274', amount: -5.99, type: 'debit' },
 ];
 
+
+
 export const Dashboard: React.FC = () => {
+  const isFrozen = localStorage.getItem('apex_card_frozen') === 'true';
   return (
     <div className="space-y-8 select-none">
       
-      {/* Top Welcome Panel */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display font-black text-[30px] md:text-[36px] text-dark-text light:text-light-text tracking-tight mb-1">
-            Welcome back, Abhik Mukherjee
+      {/* 1. Welcome Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+        >
+          <h1 className="font-mono font-black text-[28px] md:text-[32px] text-dark-text light:text-light-text tracking-tight mb-1.5 uppercase">
+            Welcome, Operator Mukherjee
           </h1>
-          <p className="text-dark-text/60 light:text-light-text/60 text-[14px]">
-            Your session is protected with 256-bit encryption. System online.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 bg-dark-card/50 light:bg-light-surface/90 border border-dark-border/10 light:border-light-border/40 rounded-2xl px-4.5 py-2.5 w-fit">
-          <FiCalendar className="w-4 h-4 text-primary" />
-          <span className="text-xs font-mono text-dark-text/75 light:text-light-text/75">SESSION_EXPIRE: 14m 55s</span>
-        </div>
-      </div>
-
-      {/* Grid: Financial Telemetry Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        
-        {/* Card 1: Balance */}
-        <motion.div
-          whileHover={{ y: -4 }}
-          className="glass-card premium-card-shadow rounded-2xl p-6 relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-xs font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase">Available Balance</span>
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FiTrendingUp className="w-4.5 h-4.5 text-primary" />
-            </div>
-          </div>
-          <h3 className="font-display font-black text-[30px] md:text-[34px] text-dark-text light:text-light-text tracking-wide mb-1">$78,450.92</h3>
-          <span className="text-[11px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-md">APEX_CHECKING_04</span>
-        </motion.div>
-
-        {/* Card 2: Limit available */}
-        <motion.div
-          whileHover={{ y: -4 }}
-          className="glass-card premium-card-shadow rounded-2xl p-6 relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-secondary/5 blur-2xl pointer-events-none" />
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-xs font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase">Daily Withdraw Limit</span>
-            <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
-              <FiTrendingDown className="w-4.5 h-4.5 text-secondary" />
-            </div>
-          </div>
-          <h3 className="font-display font-black text-[30px] md:text-[34px] text-dark-text light:text-light-text tracking-wide mb-1">$2,000.00</h3>
-          <div className="w-full bg-dark-border/20 light:bg-light-border/80 h-1.5 rounded-full overflow-hidden mt-3 mb-1">
-            <div className="bg-secondary h-full rounded-full w-[15%]" />
-          </div>
-          <div className="flex justify-between text-[10px] font-mono text-dark-text/40 light:text-light-text/40">
-            <span>$300.00 spent</span>
-            <span>$1,700.00 left</span>
-          </div>
-        </motion.div>
-
-        {/* Card 3: Security Dossier */}
-        <motion.div
-          whileHover={{ y: -4 }}
-          className="glass-card premium-card-shadow rounded-2xl p-6 sm:col-span-2 lg:col-span-1 relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-accent/5 blur-2xl pointer-events-none" />
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-xs font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase">Shield Telemetry</span>
-            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-              <FiLock className="w-4.5 h-4.5 text-accent" />
-            </div>
-          </div>
-          <h3 className="font-display font-extrabold text-[18px] text-dark-text light:text-light-text mb-2 uppercase tracking-wide">SHIELD STATUS: OK</h3>
-          <p className="text-[12px] text-dark-text/60 light:text-light-text/60 leading-relaxed mb-1">
-            Your card chip security protocol is updated. FaceID authorization option is synced.
+          <p className="text-dark-text/60 light:text-light-text/60 text-[13px] font-mono">
+            Kronos Core automated ATM shell node active. Node state: <span className="text-emerald-500 font-bold">SECURE_SYNC</span>.
           </p>
         </motion.div>
-
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          className="flex items-center gap-3 bg-[var(--panel)] border border-[var(--border-dark)] shadow-recessed rounded-2xl px-4.5 py-2 w-fit"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_1px_#10b981] animate-pulse" />
+          <span className="text-[11px] font-mono text-dark-text/75 light:text-light-text/75 uppercase tracking-wider">Session Active</span>
+        </motion.div>
       </div>
 
-      {/* Main Row: Trend Graph & Recent Transactions */}
+      {/* 2. Top row: Virtual ATM Card & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         
-        {/* Trend Graph - Visual Fintech UI */}
-        <div className="lg:col-span-7 flex">
-          <div className="w-full glass-card premium-card-shadow rounded-2xl p-6 flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h3 className="font-display font-bold text-[18px] text-dark-text light:text-light-text uppercase tracking-wider">Account Analytics</h3>
-                  <span className="text-xs text-dark-text/40 light:text-light-text/40">Real-time credit/debit statistics</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-                    <span className="w-2.5 h-2.5 rounded-full bg-primary" /> Credit
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-secondary font-medium">
-                    <span className="w-2.5 h-2.5 rounded-full bg-secondary" /> Debit
-                  </div>
-                </div>
-              </div>
+        {/* Virtual ATM Card Display */}
+        <motion.div 
+          initial={{ opacity: 0, x: -25, scale: 0.98, filter: 'blur(6px)' }}
+          animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
+          className="lg:col-span-5 flex flex-col justify-center items-center lg:items-start"
+        >
+          <span className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase mb-3 block font-bold self-start pl-1">
+            Active Debit Token Card
+          </span>
+          <VirtualCard
+            name="ABHIK MUKHERJEE"
+            cardNumber="••••  ••••  ••••  8910"
+            balance={78450.92}
+            isFrozen={isFrozen}
+          />
+        </motion.div>
 
-              {/* Graphic Plot using SVG (fintech dashboard style) */}
-              <div className="h-48 w-full relative flex items-end">
-                <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40" preserveAspectRatio="none">
-                  {/* Grid Lines */}
-                  <line x1="0" y1="10" x2="100" y2="10" stroke="rgba(255,255,255,0.03)" strokeWidth="0.2" className="light:stroke-black/5" />
-                  <line x1="0" y1="20" x2="100" y2="20" stroke="rgba(255,255,255,0.03)" strokeWidth="0.2" className="light:stroke-black/5" />
-                  <line x1="0" y1="30" x2="100" y2="30" stroke="rgba(255,255,255,0.03)" strokeWidth="0.2" className="light:stroke-black/5" />
-                  
-                  {/* SVG Gradient paths for charts */}
-                  <defs>
-                    <linearGradient id="chart-grad-1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
-                    </linearGradient>
-                    <linearGradient id="chart-grad-2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-secondary)" stopOpacity="0.15" />
-                      <stop offset="100%" stopColor="var(--color-secondary)" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Credit Line Path */}
-                  <path d="M0,30 Q15,20 30,10 T60,25 T90,5 T100,8 L100,40 L0,40 Z" fill="url(#chart-grad-1)" />
-                  <path d="M0,30 Q15,20 30,10 T60,25 T90,5 T100,8" fill="none" stroke="var(--color-primary)" strokeWidth="1.2" />
-
-                  {/* Debit Line Path */}
-                  <path d="M0,35 Q20,38 40,25 T70,30 T90,15 T100,10 L100,40 L0,40 Z" fill="url(#chart-grad-2)" />
-                  <path d="M0,35 Q20,38 40,25 T70,30 T90,15 T100,10" fill="none" stroke="var(--color-secondary)" strokeWidth="1.2" />
-                </svg>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center border-t border-dark-border/10 light:border-light-border/40 pt-4 mt-6">
-              <span className="text-xs text-dark-text/45 light:text-light-text/45">Data updated 3s ago</span>
-              <button className="text-xs font-mono text-primary font-bold tracking-wider uppercase hover:underline cursor-pointer">Export Telemetry</button>
-            </div>
-          </div>
-        </div>
-
-        {/* Ledger Transaction Log Summary */}
-        <div className="lg:col-span-5 flex">
-          <div className="w-full glass-card premium-card-shadow rounded-2xl p-6 flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="font-display font-bold text-[18px] text-dark-text light:text-light-text uppercase tracking-wider">Recent Logs</h3>
-                  <span className="text-xs text-dark-text/40 light:text-light-text/40">Latest session movements</span>
-                </div>
-                <div className="w-8 h-8 rounded-lg bg-dark-card border border-dark-border/5 light:bg-light-card flex items-center justify-center">
-                  <FiActivity className="w-4.5 h-4.5 text-accent" />
-                </div>
-              </div>
-
-              {/* Transactions List */}
-              <div className="space-y-4">
-                {recentTransactions.map((tx) => (
-                  <div key={tx.id} className="flex justify-between items-center">
-                    <div className="flex flex-col overflow-hidden pr-2">
-                      <span className="text-[13px] font-bold text-dark-text light:text-light-text truncate">{tx.desc}</span>
-                      <span className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 mt-0.5">{tx.date}</span>
-                    </div>
-                    <span className={`text-[14px] font-display font-black whitespace-nowrap ${tx.amount > 0 ? 'text-primary' : 'text-rose-500'}`}>
-                      {tx.amount > 0 ? `+$${tx.amount.toFixed(2)}` : `-$${Math.abs(tx.amount).toFixed(2)}`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <Link
-              to="/history"
-              className="mt-6 pt-4 border-t border-dark-border/10 light:border-light-border/40 flex items-center justify-between text-xs font-mono font-bold text-secondary uppercase tracking-widest hover:text-primary transition-colors duration-200"
+        {/* Quick Actions Panel */}
+        <div className="lg:col-span-7 flex flex-col">
+          <span className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase mb-3 block font-bold pl-1">
+            ATM Console Quick Desk
+          </span>
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Action 1: Deposit */}
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+              className="flex"
             >
-              <span>Full Transaction Ledger</span>
-              <FiArrowRight className="w-4 h-4" />
-            </Link>
+              <Link
+                to="/deposit"
+                className="flex flex-col justify-between w-full glass-card border border-[var(--border-dark)] rounded-2xl p-5 hover:translate-y-[-2px] hover:shadow-[var(--shadow-floating)] active:translate-y-[1px] active:shadow-pressed transition-all duration-200 group relative overflow-hidden"
+              >
+                {/* Corner Screws */}
+                <div className="absolute top-2 left-2 corner-screw opacity-35 z-20" />
+                <div className="absolute top-2 right-2 corner-screw opacity-35 z-20" />
+                <div className="absolute bottom-2 left-2 corner-screw opacity-35 z-20" />
+                <div className="absolute bottom-2 right-2 corner-screw opacity-35 z-20" />
+
+                <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-primary bg-primary/10 border border-dark-border/20 shadow-recessed transition-all duration-300 group-hover:scale-105 mt-1">
+                  <FiDownload className="w-4 h-4" />
+                </div>
+
+                {/* Deposit Schematic Illustration Image */}
+                <div className="w-full h-36 my-3.5 rounded-xl overflow-hidden border border-dark-border/10 bg-dark-surface/30 relative flex items-center justify-center">
+                  <img 
+                    src="/deposit.png" 
+                    alt="Deposit mechatronic illustration" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                </div>
+
+                <div className="mb-1 px-1">
+                  <h4 className="font-mono font-bold text-[14.5px] text-dark-text light:text-light-text group-hover:text-primary transition-colors duration-200 uppercase tracking-wider leading-none">
+                    Deposit / Credit
+                  </h4>
+                  <p className="text-[11.5px] text-dark-text/50 light:text-light-text/50 mt-1.5 leading-normal font-sans font-medium">
+                    Insert cash envelopes / checks
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Action 2: Withdraw */}
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
+              className="flex"
+            >
+              <Link
+                to="/withdraw"
+                className="flex flex-col justify-between w-full glass-card border border-[var(--border-dark)] rounded-2xl p-5 hover:translate-y-[-2px] hover:shadow-[var(--shadow-floating)] active:translate-y-[1px] active:shadow-pressed transition-all duration-200 group relative overflow-hidden"
+              >
+                {/* Corner Screws */}
+                <div className="absolute top-2 left-2 corner-screw opacity-35 z-20" />
+                <div className="absolute top-2 right-2 corner-screw opacity-35 z-20" />
+                <div className="absolute bottom-2 left-2 corner-screw opacity-35 z-20" />
+                <div className="absolute bottom-2 right-2 corner-screw opacity-35 z-20" />
+
+                <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-secondary bg-secondary/10 border border-dark-border/20 shadow-recessed transition-all duration-300 group-hover:scale-105 mt-1">
+                  <FiUpload className="w-4 h-4" />
+                </div>
+
+                {/* Withdraw Schematic Illustration Image */}
+                <div className="w-full h-36 my-3.5 rounded-xl overflow-hidden border border-dark-border/10 bg-dark-surface/30 relative flex items-center justify-center">
+                  <img 
+                    src="/withdraw.png" 
+                    alt="Withdraw mechatronic illustration" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                </div>
+
+                <div className="mb-1 px-1">
+                  <h4 className="font-mono font-bold text-[14.5px] text-dark-text light:text-light-text group-hover:text-secondary transition-colors duration-200 uppercase tracking-wider leading-none">
+                    Withdraw / Debit
+                  </h4>
+                  <p className="text-[11.5px] text-dark-text/50 light:text-light-text/50 mt-1.5 leading-normal font-sans font-medium">
+                    Dispense vault paper bills
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Action 3: Ledger */}
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.26 }}
+              className="flex"
+            >
+              <Link
+                to="/history"
+                className="flex flex-col justify-between w-full glass-card border border-[var(--border-dark)] rounded-2xl p-5 hover:translate-y-[-2px] hover:shadow-[var(--shadow-floating)] active:translate-y-[1px] active:shadow-pressed transition-all duration-200 group relative overflow-hidden"
+              >
+                {/* Corner Screws */}
+                <div className="absolute top-2 left-2 corner-screw opacity-35 z-20" />
+                <div className="absolute top-2 right-2 corner-screw opacity-35 z-20" />
+                <div className="absolute bottom-2 left-2 corner-screw opacity-35 z-20" />
+                <div className="absolute bottom-2 right-2 corner-screw opacity-35 z-20" />
+
+                <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-accent bg-accent/10 border border-dark-border/20 shadow-recessed transition-all duration-300 group-hover:scale-105 mt-1">
+                  <FiList className="w-4 h-4" />
+                </div>
+
+                {/* Ledger Schematic Illustration Image */}
+                <div className="w-full h-36 my-3.5 rounded-xl overflow-hidden border border-dark-border/10 bg-dark-surface/30 relative flex items-center justify-center">
+                  <img 
+                    src="/ledger.png" 
+                    alt="Ledger mechatronic illustration" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                </div>
+
+                <div className="mb-1 px-1">
+                  <h4 className="font-mono font-bold text-[14.5px] text-dark-text light:text-light-text group-hover:text-accent transition-colors duration-200 uppercase tracking-wider leading-none">
+                    Account / Ledger
+                  </h4>
+                  <p className="text-[11.5px] text-dark-text/50 light:text-light-text/50 mt-1.5 leading-normal font-sans font-medium">
+                    Full transaction search audit
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
           </div>
         </div>
 
+      </div>
+
+      {/* 3. Statistics Cards */}
+      <div className="space-y-3">
+        <span className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase block font-bold pl-1">
+          Ledger Balance Statistics
+        </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <StatCard
+            title="Total Net Balance"
+            value={78450.92}
+            icon={FiTrendingUp}
+            gradientId="primary-grad"
+            isCurrency={true}
+            trendText="+4.8%"
+            trendType="up"
+            delay={0.05}
+          />
+          <StatCard
+            title="Total Liquidity Deposited"
+            value={115200}
+            icon={FiDownload}
+            gradientId="secondary-grad"
+            isCurrency={true}
+            trendText="+12.4%"
+            trendType="up"
+            delay={0.1}
+          />
+          <StatCard
+            title="Total Liquidity Withdrawn"
+            value={36749.08}
+            icon={FiUpload}
+            gradientId="rose-grad"
+            isCurrency={true}
+            trendText="-1.2%"
+            trendType="down"
+            delay={0.15}
+          />
+          <StatCard
+            title="Total System Operations"
+            value={154}
+            icon={FiActivity}
+            gradientId="accent-grad"
+            isCurrency={false}
+            trendText="+8 logs"
+            trendType="neutral"
+            delay={0.2}
+          />
+        </div>
+      </div>
+
+      {/* 3.5 Analytics Section */}
+      <AnalyticsSection />
+
+      {/* 4. Recent Activity Log - styled as a CRT Green-Screen Terminal */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center pl-1">
+          <span className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase font-bold">
+            Recent Terminal Dossier Logs
+          </span>
+          <Link
+            to="/history"
+            className="flex items-center gap-1 text-[9px] font-mono font-bold text-secondary uppercase tracking-widest hover:text-primary transition-colors duration-200"
+          >
+            <span>Full Ledger Audit</span>
+            <FiArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="crt-screen rounded-2xl border border-[var(--border-dark)] overflow-hidden shadow-recessed p-1"
+        >
+          {/* CRT Screen Frame overlay shine */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/30 pointer-events-none z-10" />
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse font-mono">
+              <thead>
+                <tr className="border-b border-dark-border/30 bg-black/60 text-[9px] text-emerald-500/60 uppercase tracking-widest">
+                  <th className="py-3.5 px-6">Timestamp</th>
+                  <th className="py-3.5 px-6">Activity details</th>
+                  <th className="py-3.5 px-6">Reference token</th>
+                  <th className="py-3.5 px-6 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-emerald-500/10 text-emerald-400 bg-black/45">
+                {recentTransactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-emerald-500/5 transition-colors duration-150">
+                    <td className="py-3.5 px-6 whitespace-nowrap text-[12px] opacity-80">
+                      {tx.date}
+                    </td>
+                    <td className="py-3.5 px-6 text-[12px] font-bold">
+                      {tx.desc}
+                    </td>
+                    <td className="py-3.5 px-6 text-[10px] opacity-65">
+                      {tx.reference}
+                    </td>
+                    <td className="py-3.5 px-6 text-right whitespace-nowrap">
+                      <span className={`text-[12.5px] font-bold ${tx.amount > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {tx.amount > 0 ? `+₹${tx.amount.toLocaleString('en-IN')}` : `-₹${Math.abs(tx.amount).toLocaleString('en-IN')}`}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
       </div>
 
     </div>

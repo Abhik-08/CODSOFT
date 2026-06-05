@@ -1,98 +1,316 @@
 import React, { useState } from 'react';
-import { FiUpload, FiDollarSign, FiInfo, FiSliders } from 'react-icons/fi';
-import { motion } from 'motion/react';
+import { Link } from 'react-router-dom';
+import { FiUpload, FiSliders, FiInfo, FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
+
+interface WithdrawReceipt {
+  id: string;
+  amount: number;
+  method: string;
+  timestamp: string;
+  notes500: number;
+  notes100: number;
+}
+
+type MixPreference = 'balanced' | 'large' | 'small';
+type ProcessingStage = 'auth' | 'counting' | 'dispensing' | 'success';
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const Withdraw: React.FC = () => {
   const [amount, setAmount] = useState<string>('');
-  const [mix, setMix] = useState<'balanced' | 'large' | 'small'>('balanced');
+  const [mix, setMix] = useState<MixPreference>('balanced');
   const [isProcessing, setIsProcessing] = useState(false);
-  const currentBalance = 78450.92;
-  const dailyLimit = 2000;
+  const [processingStage, setProcessingStage] = useState<ProcessingStage>('auth');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [receipt, setReceipt] = useState<WithdrawReceipt | null>(null);
 
-  const handleQuickCash = (value: number) => {
-    setAmount(value.toString());
+  const dailyLimit = 20000;
+  const currentBalance = 78450.92;
+
+  // Preset cash options
+  const presets = [100, 500, 1000, 2000, 5000, 10000];
+
+  // Validation rules
+  const numAmount = Number.parseFloat(amount);
+  let validationError = '';
+  if (amount !== '') {
+    if (Number.isNaN(numAmount) || numAmount <= 0) {
+      validationError = 'Please enter a valid positive withdrawal amount';
+    } else if (numAmount % 100 !== 0) {
+      validationError = 'ATM note mix only dispenses multiples of ₹100';
+    } else if (numAmount > dailyLimit) {
+      validationError = `Transaction exceeds your daily limit of ₹${dailyLimit.toLocaleString('en-IN')}`;
+    } else if (numAmount > currentBalance) {
+      validationError = 'Insufficient funds in checking dossier';
+    }
+  }
+
+  const isSubmitDisabled = isProcessing || !amount || validationError !== '';
+
+  const generateTxnId = () => {
+    return `TXN_WTH_${Math.floor(10000000 + Math.random() * 90000000)}`;
   };
 
-  const handleClear = () => setAmount('');
+  const getNoteDistribution = (totalAmount: number, preference: MixPreference) => {
+    if (preference === 'large') {
+      const count500 = Math.floor(totalAmount / 500);
+      const count100 = Math.floor((totalAmount % 500) / 100);
+      return { count500, count100 };
+    }
+    if (preference === 'small') {
+      return { count500: 0, count100: Math.floor(totalAmount / 100) };
+    }
+    // Balanced: ~60% in 500s, rest in 100s
+    const target500Value = totalAmount * 0.6;
+    const count500 = Math.floor(target500Value / 500);
+    const remainingValue = totalAmount - (count500 * 500);
+    const count100 = Math.round(remainingValue / 100);
+    return { count500, count100 };
+  };
 
-  const handleWithdraw = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const getMethodName = (preference: MixPreference) => {
+    if (preference === 'balanced') return 'Balanced Note Mix';
+    if (preference === 'large') return 'Large Bills (₹500s)';
+    return 'Small Bills (₹100s)';
+  };
+
+  const handleWithdrawSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const val = Number.parseFloat(amount);
-    
-    if (Number.isNaN(val) || val <= 0) {
-      toast.error('Please enter a valid positive withdrawal amount');
-      return;
-    }
-
-    if (val % 10 !== 0) {
-      toast.error('ATM note mix only dispenses multiples of $10 ($10, $20, $50 bills)');
-      return;
-    }
-
-    if (val > dailyLimit) {
-      toast.error(`Transaction exceeds your daily limit of $${dailyLimit.toLocaleString()}`);
-      return;
-    }
-
-    if (val > currentBalance) {
-      toast.error('Insufficient funds in checking account');
-      return;
-    }
+    if (isSubmitDisabled) return;
 
     setIsProcessing(true);
-    const toastId = toast.loading('Authenticating secure transaction...');
+    setProcessingStage('auth');
 
-    setTimeout(() => {
-      toast.loading('Dispensing cash from slot...', { id: toastId });
-      setTimeout(() => {
-        toast.success(`Dispense successful! Please collect your cash.`, {
-          id: toastId,
-          duration: 5000,
-        });
-        setIsProcessing(false);
-        setAmount('');
-      }, 2000);
-    }, 1200);
+    // Staged async flow to count/dispense cash and avoid nested setTimeout callbacks
+    await sleep(800);
+    setProcessingStage('counting');
+    
+    await sleep(1000);
+    setProcessingStage('dispensing');
+    
+    await sleep(1200);
+    const { count500, count100 } = getNoteDistribution(numAmount, mix);
+    setReceipt({
+      id: generateTxnId(),
+      amount: numAmount,
+      method: getMethodName(mix),
+      timestamp: new Date().toLocaleString('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }),
+      notes500: count500,
+      notes100: count100,
+    });
+    setProcessingStage('success');
+    setIsProcessing(false);
+    setShowSuccess(true);
+    toast.success('Withdrawal cleared! Please collect your cash notes.');
   };
 
-  return (
-    <div className="max-w-xl mx-auto space-y-8 select-none">
-      
-      {/* Title */}
-      <div>
-        <h1 className="font-display font-black text-[32px] text-dark-text light:text-light-text tracking-tight mb-2">
-          Withdraw Debit Desk
-        </h1>
-        <p className="text-dark-text/60 light:text-light-text/60 text-[14px]">
-          Dispense paper bills from the safe cash vault. Multiples of $10 only.
-        </p>
-      </div>
+  const handleReset = () => {
+    setAmount('');
+    setShowSuccess(false);
+    setReceipt(null);
+  };
 
+  // Helper render method to keep visual blocks flat and satisfy ternary restrictions
+  const renderContent = () => {
+    if (showSuccess) {
+      return (
+        /* ==================== SUCCESS STATE RECEIPT ==================== */
+        <motion.div
+          key="withdraw-success"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 25 }}
+          className="glass-card premium-card-shadow rounded-3xl p-6 md:p-8 border border-dark-border/15 light:border-light-border/40 flex flex-col items-center text-center space-y-6"
+        >
+          {/* Shimmering success icon container */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+            className="w-16 h-16 rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shadow-lg shadow-primary/10"
+          >
+            <FiCheck className="w-8 h-8 stroke-[3]" />
+          </motion.div>
+
+          <div>
+            <h3 className="font-display font-black text-[22px] tracking-tight text-dark-text light:text-light-text uppercase">
+              Dispense Successful
+            </h3>
+            <p className="text-[12px] text-dark-text/50 light:text-light-text/50 mt-1">
+              Please collect your cash bundles from the dispenser slot.
+            </p>
+          </div>
+
+          {/* Receipt details layout */}
+          <div className="w-full rounded-2xl bg-dark-surface/40 light:bg-light-card/40 border border-dark-border/10 light:border-light-border/30 p-5 space-y-3.5 text-left font-mono">
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="text-dark-text/35 light:text-light-text/40 uppercase">Transaction ID</span>
+              <span className="text-dark-text light:text-light-text font-bold">{receipt?.id}</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="text-dark-text/35 light:text-light-text/40 uppercase">Dispense Channel</span>
+              <span className="text-dark-text light:text-light-text font-bold">{receipt?.method}</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="text-dark-text/35 light:text-light-text/40 uppercase">Timestamp</span>
+              <span className="text-dark-text light:text-light-text font-bold">{receipt?.timestamp}</span>
+            </div>
+            
+            {/* Note bundle distribution breakdown */}
+            <div className="border-t border-dark-border/10 light:border-light-border/30 pt-3.5 space-y-2 text-[11px]">
+              <span className="text-dark-text/35 light:text-light-text/40 uppercase block mb-1">
+                Vault Note Distribution
+              </span>
+              <div className="flex justify-between items-center bg-white/[0.02] dark:bg-black/10 border border-white/5 rounded-lg px-3 py-1.5">
+                <span className="text-dark-text/75 light:text-light-text/75">₹500 Notes</span>
+                <span className="font-bold text-secondary">{receipt?.notes500}x</span>
+              </div>
+              <div className="flex justify-between items-center bg-white/[0.02] dark:bg-black/10 border border-white/5 rounded-lg px-3 py-1.5">
+                <span className="text-dark-text/75 light:text-light-text/75">₹100 Notes</span>
+                <span className="font-bold text-secondary">{receipt?.notes100}x</span>
+              </div>
+            </div>
+
+            <div className="border-t border-dark-border/10 light:border-light-border/30 pt-3.5 flex justify-between items-end">
+              <span className="text-[11px] text-dark-text/35 light:text-light-text/40 uppercase">Amount Dispensed</span>
+              <span className="font-display font-black text-[22px] text-primary leading-none">
+                ₹{receipt?.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+
+          {/* Receipt Footer Notice */}
+          <div className="flex gap-2 items-center text-[10.5px] text-dark-text/40 light:text-light-text/40 leading-relaxed max-w-sm">
+            <FiInfo className="w-4.5 h-4.5 text-secondary flex-shrink-0" />
+            <span>Ensure notes correspond to your receipt summary before leaving the ATM console.</span>
+          </div>
+
+          {/* Actions */}
+          <div className="w-full grid grid-cols-2 gap-3.5 pt-2">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="py-3 rounded-xl font-display font-bold text-[11.5px] uppercase tracking-wider bg-dark-card/60 hover:bg-dark-card dark:bg-dark-card/50 dark:hover:bg-dark-card/85 light:bg-light-surface light:hover:bg-light-card border border-dark-border/20 light:border-light-border/50 text-dark-text light:text-light-text transition-all duration-200 cursor-pointer text-center"
+            >
+              New Withdrawal
+            </button>
+
+            <Link
+              to="/"
+              className="py-3 rounded-xl font-display font-bold text-[11.5px] uppercase tracking-wider bg-gradient-to-r from-primary to-secondary text-white hover:shadow-md transition-all duration-200 text-center flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <FiArrowLeft className="w-4 h-4" />
+              <span>Dashboard</span>
+            </Link>
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (isProcessing) {
+      return (
+        /* ==================== VAULT DISPENSER LOADER PANEL ==================== */
+        <motion.div
+          key="withdraw-processing"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 25 }}
+          className="glass-card premium-card-shadow rounded-3xl p-6 md:p-8 border border-dark-border/15 light:border-light-border/40 flex flex-col items-center text-center space-y-6"
+        >
+          {/* Spinning Loader */}
+          <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin mb-2" />
+          
+          <div className="space-y-1.5">
+            <h3 className="font-display font-black text-lg text-dark-text light:text-light-text uppercase">
+              Executing Cash Dispense
+            </h3>
+            <p className="text-xs text-dark-text/45 light:text-light-text/45 max-w-sm">
+              Securing node connection to safe vaults. Please wait while notes are counted.
+            </p>
+          </div>
+
+          {/* Checklist of stages */}
+          <div className="w-full max-w-sm bg-dark-surface/40 light:bg-light-card/45 border border-dark-border/10 rounded-2xl p-5 space-y-4 text-left font-mono text-[11px]">
+            {[
+              { key: 'auth', label: 'Security Verification & Token Check' },
+              { key: 'counting', label: 'Vault Note Counter (Multi-Bill Audit)' },
+              { key: 'dispensing', label: 'Safe Dispenser Gate Activation' },
+            ].map((s, index) => {
+              const isDone = (processingStage === 'counting' && index === 0) || 
+                             (processingStage === 'dispensing' && index <= 1) || 
+                             (processingStage === 'success');
+              const isActive = (processingStage === 'auth' && index === 0) ||
+                               (processingStage === 'counting' && index === 1) ||
+                               (processingStage === 'dispensing' && index === 2);
+              
+              let textClass = 'text-dark-text/30';
+              if (isDone) {
+                textClass = 'text-primary font-bold';
+              } else if (isActive) {
+                textClass = 'text-secondary font-bold animate-pulse';
+              }
+
+              let statusLabel = 'PENDING';
+              if (isDone) {
+                statusLabel = '✓ OK';
+              } else if (isActive) {
+                statusLabel = 'RUNNING...';
+              }
+
+              return (
+                <div key={s.key} className="flex items-center justify-between">
+                  <span className={textClass}>
+                    {index + 1}. {s.label}
+                  </span>
+                  <span className="font-bold text-[10px]">
+                    {statusLabel}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      );
+    }
+
+    return (
+      /* ==================== FORM VIEW PANEL ==================== */
       <motion.div
+        key="withdraw-form"
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -15 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         className="glass-card premium-card-shadow rounded-3xl p-6 md:p-8 border border-dark-border/15 light:border-light-border/40"
       >
-        <form onSubmit={handleWithdraw} className="space-y-6">
+        <form onSubmit={handleWithdrawSubmit} className="space-y-6">
           
           {/* Quick Cash Presets */}
           <div className="space-y-2.5">
-            <span className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase block">Quick Cash Presets</span>
+            <span className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase block font-bold">
+              Quick Cash Presets
+            </span>
             <div className="grid grid-cols-3 gap-2.5">
-              {[20, 50, 100, 200, 500, 1000].map((val) => (
+              {presets.map((val) => (
                 <button
                   key={val}
                   type="button"
-                  onClick={() => handleQuickCash(val)}
+                  onClick={() => setAmount(val.toString())}
                   disabled={isProcessing}
                   className={`py-3 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer ${
                     amount === val.toString()
                       ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/5'
-                      : 'border-dark-border/5 light:border-light-border/40 bg-dark-surface/60 light:bg-light-surface text-dark-text/80 light:text-light-text/80 hover:border-primary/20 hover:bg-dark-card'
+                      : 'border-dark-border/10 light:border-light-border/40 bg-dark-surface/40 light:bg-light-card/40 text-dark-text/80 light:text-light-text/85 hover:border-primary/30 hover:bg-dark-card light:hover:bg-light-card'
                   }`}
                 >
-                  ${val}
+                  ₹{val.toLocaleString('en-IN')}
                 </button>
               ))}
             </div>
@@ -100,16 +318,18 @@ export const Withdraw: React.FC = () => {
 
           {/* Custom Amount Input */}
           <div className="space-y-2.5">
-            <label htmlFor="withdraw-amount" className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase block">Custom Cash Amount</label>
-            <div className="relative rounded-xl border border-dark-border/15 light:border-light-border/60 bg-dark-surface/50 light:bg-light-surface flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-300">
-              <div className="pl-4 text-dark-text/40 light:text-light-text/40">
-                <FiDollarSign className="w-6 h-6" />
+            <label htmlFor="withdraw-amount" className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase block font-bold">
+              Custom Cash Amount
+            </label>
+            <div className={`relative rounded-xl border bg-dark-surface/50 light:bg-light-surface flex items-center overflow-hidden transition-all duration-300 ${
+              validationError ? 'border-rose-500/50' : 'border-dark-border/15 light:border-light-border/60 focus-within:border-primary/50'
+            }`}>
+              <div className="pl-4 font-display font-black text-[22px] text-primary select-none">
+                ₹
               </div>
               <input
                 id="withdraw-amount"
                 type="number"
-                step="10"
-                min="10"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 disabled={isProcessing}
@@ -119,34 +339,45 @@ export const Withdraw: React.FC = () => {
               {amount && (
                 <button
                   type="button"
-                  onClick={handleClear}
+                  onClick={() => setAmount('')}
                   className="pr-4 text-xs font-mono text-rose-500 hover:underline cursor-pointer"
                 >
                   CLEAR
                 </button>
               )}
             </div>
+            {/* Visual Real-Time Error Message */}
+            {validationError && (
+              <motion.p 
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-[11px] font-mono text-rose-500 font-bold pl-1"
+              >
+                {validationError}
+              </motion.p>
+            )}
           </div>
 
           {/* Note Mix Preference (Fintech sliders/options) */}
           <div className="space-y-2.5">
-            <span className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase flex items-center gap-1">
+            <span className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase flex items-center gap-1 font-bold">
               <FiSliders className="w-3.5 h-3.5" /> Note Dispenser Mix
             </span>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2.5">
               {[
                 { id: 'balanced', label: 'Balanced Mix' },
-                { id: 'large', label: 'Large Bills ($100s)' },
-                { id: 'small', label: 'Small Bills ($20s)' },
+                { id: 'large', label: 'Large Bills (₹500s)' },
+                { id: 'small', label: 'Small Bills (₹100s)' },
               ].map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setMix(item.id as 'balanced' | 'large' | 'small')}
-                  className={`py-2 rounded-lg border text-[10px] font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
+                  onClick={() => setMix(item.id as MixPreference)}
+                  disabled={isProcessing}
+                  className={`py-2 rounded-lg border text-[9.5px] font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
                     mix === item.id
                       ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-transparent bg-dark-card/30 light:bg-light-card/45 text-dark-text/50 light:text-light-text/55 hover:bg-dark-card'
+                      : 'border-dark-border/10 light:border-light-border/40 text-dark-text/50 light:text-light-text/55 hover:bg-dark-card'
                   }`}
                 >
                   {item.label}
@@ -159,22 +390,41 @@ export const Withdraw: React.FC = () => {
           <div className="flex items-start gap-3 rounded-xl bg-dark-card/30 light:bg-light-card/45 border border-dark-border/5 p-4 text-[11px] leading-relaxed text-dark-text/50 light:text-light-text/55">
             <FiInfo className="w-5.5 h-5.5 text-secondary flex-shrink-0 mt-0.5" />
             <div>
-              Daily cash withdrawals are capped at $2,000 for debit card security. Double check note mix selector before dispensing. Multiples of $10, $20, or $50 will be distributed.
+              Daily cash withdrawals are capped at ₹20,000 for debit card security. Double check note mix selector before dispensing. Multiples of ₹100 will be distributed.
             </div>
           </div>
 
           {/* Action Button */}
           <button
             type="submit"
-            disabled={isProcessing || !amount || Number.parseFloat(amount) <= 0}
-            className="w-full py-4.5 rounded-xl font-display font-bold text-[14px] uppercase tracking-widest bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+            disabled={isSubmitDisabled}
+            className="w-full py-4 rounded-xl font-display font-bold text-[13px] uppercase tracking-widest bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg hover:shadow-primary/20 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
           >
             <FiUpload className="w-4.5 h-4.5" />
-            <span>Dispense Cash</span>
+            <span>{isProcessing ? 'Dispensing Notes...' : 'Dispense Cash'}</span>
           </button>
 
         </form>
       </motion.div>
+    );
+  };
+
+  return (
+    <div className="max-w-xl mx-auto space-y-8 select-none">
+      
+      {/* Title */}
+      <div>
+        <h1 className="font-display font-black text-[32px] text-dark-text light:text-light-text tracking-tight mb-2">
+          Withdraw Debit Desk
+        </h1>
+        <p className="text-dark-text/60 light:text-light-text/60 text-[14px]">
+          Dispense paper bills from the safe cash vault. Multiples of ₹100 only.
+        </p>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {renderContent()}
+      </AnimatePresence>
 
     </div>
   );

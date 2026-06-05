@@ -48,12 +48,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
             {/* Header */}
             <div className="flex items-center justify-between pb-5 border-b border-dark-border/15 light:border-light-border/40 mb-6">
               <div className="flex flex-col">
-                <span className="font-display font-extrabold text-[16px] tracking-wide text-dark-text light:text-light-text leading-tight">APEX_BANK</span>
-                <span className="text-[10px] font-mono text-primary/80 uppercase font-semibold">ATM_NODE_04</span>
+                <span className="font-mono font-black text-[16px] tracking-wider text-[var(--text-primary)] leading-none uppercase">KRONOS_CORE</span>
+                <span className="text-[10px] font-mono text-[var(--accent)] uppercase font-semibold mt-0.5">ATM_NODE_04</span>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl text-dark-text/70 light:text-light-text/70 hover:bg-dark-card/30 light:hover:bg-light-card/45 cursor-pointer"
+                className="p-2 rounded-xl text-[var(--text-primary)] hover:bg-[var(--surface-hover)] border border-transparent cursor-pointer"
                 aria-label="Close Navigation Menu"
               >
                 <FiX className="w-5 h-5" />
@@ -61,7 +61,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
             </div>
 
             {/* Navigation links */}
-            <nav className="flex-1 space-y-1.5">
+            <nav className="flex-1 space-y-3">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -70,20 +70,20 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                     to={item.path}
                     onClick={onClose}
                     className={({ isActive }) =>
-                      `flex items-center gap-4 px-4 py-3.5 rounded-xl font-medium tracking-wide text-[15px] transition-all duration-300 relative group overflow-hidden ${
+                      `flex items-center gap-4 px-4 py-3 rounded-xl font-mono text-[12px] uppercase tracking-widest transition-all duration-300 relative group overflow-hidden ${
                         isActive
-                          ? 'text-primary'
-                          : 'text-dark-text/60 light:text-light-text/60 hover:text-dark-text light:hover:text-light-text hover:bg-dark-card/30 light:hover:bg-light-card/45'
+                          ? 'text-[var(--accent)] bg-[var(--surface-hover)] border border-[var(--border-hover)]'
+                          : 'text-[var(--text-muted)] border border-transparent hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]'
                       }`
                     }
                   >
                     {({ isActive }) => (
                       <>
                         {isActive && (
-                          <div className="absolute inset-0 bg-primary/10 border-l-[3px] border-primary rounded-xl" />
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--accent)] shadow-[0_0_8px_2px_rgba(94,106,210,0.5)]" />
                         )}
-                        <Icon className={`w-5.5 h-5.5 relative z-10 ${isActive ? 'text-primary' : 'text-dark-text/40 light:text-light-text/40'}`} />
-                        <span className="relative z-10">{item.label}</span>
+                        <Icon className={`w-5 h-5 relative z-10 ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
+                        <span className="relative z-10 font-bold">{item.label}</span>
                       </>
                     )}
                   </NavLink>
@@ -93,22 +93,22 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
 
             {/* Footer */}
             <div className="pt-4 border-t border-dark-border/15 light:border-light-border/40">
-              <div className="flex items-center gap-3 px-4 py-3.5 mb-4 rounded-xl bg-dark-card/30 light:bg-light-card/35 border border-dark-border/5">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <FiUser className="w-4.5 h-4.5 text-primary" />
+              <div className="flex items-center gap-3 px-4 py-3 mb-4 rounded-xl bg-dark-surface/30 light:bg-light-card/35 border border-dark-border/10">
+                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
+                  <FiUser className="w-4.5 h-4.5 text-accent" />
                 </div>
                 <div className="flex flex-col overflow-hidden">
                   <span className="text-[12px] font-bold text-dark-text light:text-light-text truncate">Abhik Mukherjee</span>
-                  <span className="text-[10px] font-mono text-dark-text/50 light:text-light-text/50 truncate">User ID: APEX_8910</span>
+                  <span className="text-[9px] font-mono text-dark-text/50 light:text-light-text/50 truncate">ID: KRONOS_8910</span>
                 </div>
               </div>
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3.5 w-full px-4 py-3.5 rounded-xl text-[14px] font-medium tracking-wide text-rose-500/80 hover:text-rose-500 hover:bg-rose-500/5 cursor-pointer transition-all duration-300 group"
+                className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl font-mono text-[11px] uppercase tracking-widest text-rose-500 bg-rose-500/5 hover:bg-rose-500 hover:text-white border border-rose-500/15 hover:border-transparent hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] cursor-pointer transition-all duration-300 active:translate-y-[1px] active:shadow-pressed group"
               >
-                <FiLogOut className="w-5 h-5" />
-                <span>Logout Session</span>
+                <FiLogOut className="w-4.5 h-4.5" />
+                <span className="font-bold">Logout Session</span>
               </button>
             </div>
           </motion.div>

@@ -1,28 +1,109 @@
 import React, { useState } from 'react';
-import { FiUser, FiShield, FiLock, FiSliders, FiCreditCard, FiCheck } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { 
+  FiUser, 
+  FiShield, 
+  FiLock, 
+  FiSliders, 
+  FiCreditCard, 
+  FiCheck, 
+  FiLogOut, 
+  FiMail, 
+  FiCalendar, 
+  FiClock, 
+  FiArrowUpRight, 
+  FiArrowDownLeft 
+} from 'react-icons/fi';
 import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
+import { VirtualCard } from '../components/dashboard/VirtualCard';
+
+interface ActivityItem {
+  id: string;
+  type: 'security' | 'transaction' | 'settings';
+  icon: React.ComponentType<{ className?: string }>;
+  desc: string;
+  detail: string;
+  date: string;
+  status: 'success' | 'warning' | 'info';
+  colorClass: string;
+}
+
+const mockActivity: ActivityItem[] = [
+  { 
+    id: 'act-1', 
+    type: 'security', 
+    icon: FiLock, 
+    desc: 'ATM PIN code updated', 
+    detail: 'Authorized at Node_04 SF', 
+    date: '2 hours ago', 
+    status: 'success',
+    colorClass: 'text-accent bg-accent/10 border-accent/15'
+  },
+  { 
+    id: 'act-2', 
+    type: 'transaction', 
+    icon: FiArrowUpRight, 
+    desc: 'Cash Withdrawal Outflow', 
+    detail: 'Dispensed ₹200.00 | Ref: REF_9918231', 
+    date: '1 day ago', 
+    status: 'success',
+    colorClass: 'text-rose-500 bg-rose-500/10 border-rose-500/15'
+  },
+  { 
+    id: 'act-3', 
+    type: 'settings', 
+    icon: FiSliders, 
+    desc: 'Withdrawal Limit Updated', 
+    detail: 'Daily limit cap set to ₹20,000.00', 
+    date: '2 days ago', 
+    status: 'success',
+    colorClass: 'text-primary bg-primary/10 border-primary/15'
+  },
+  { 
+    id: 'act-4', 
+    type: 'transaction', 
+    icon: FiArrowDownLeft, 
+    desc: 'Cash Deposit Inflow', 
+    detail: 'Envelope audit ₹1,500.00 | Ref: REF_0192837', 
+    date: '3 days ago', 
+    status: 'success',
+    colorClass: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15'
+  },
+  { 
+    id: 'act-5', 
+    type: 'security', 
+    icon: FiShield, 
+    desc: 'Card Freeze Status Synced', 
+    detail: 'Local encryption database locked/unlocked', 
+    date: 'Last week', 
+    status: 'success',
+    colorClass: 'text-secondary bg-secondary/10 border-secondary/15'
+  },
+];
 
 export const Profile: React.FC = () => {
-  const [isFrozen, setIsFrozen] = useState(false);
-  const [limit, setLimit] = useState(2000);
+  const navigate = useNavigate();
+  const [isFrozen, setIsFrozen] = useState(() => {
+    return localStorage.getItem('apex_card_frozen') === 'true';
+  });
+  const [limit, setLimit] = useState(20000); // 20k default in INR
   
-  // Password change states
+  // PIN change states
   const [oldPin, setOldPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [isChangingPin, setIsChangingPin] = useState(false);
 
   const handleCardFreeze = () => {
-    setIsFrozen(prev => {
-      const next = !prev;
-      if (next) {
-        toast.success('Debit card frozen. All terminal operations suspended.');
-      } else {
-        toast.success('Debit card active. Terminal access restored.');
-      }
-      return next;
-    });
+    const next = !isFrozen;
+    setIsFrozen(next);
+    localStorage.setItem('apex_card_frozen', String(next));
+    if (next) {
+      toast.success('Debit card frozen. All terminal operations suspended.');
+    } else {
+      toast.success('Debit card active. Terminal access restored.');
+    }
   };
 
   const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,7 +112,7 @@ export const Profile: React.FC = () => {
   };
 
   const handleLimitSave = () => {
-    toast.success(`Daily withdrawal limit set to $${limit.toLocaleString()}`);
+    toast.success(`Daily withdrawal limit set to ₹${limit.toLocaleString('en-IN')}`);
   };
 
   const handlePinChange = (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -57,79 +138,138 @@ export const Profile: React.FC = () => {
     }, 1500);
   };
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-8 select-none">
-      
-      {/* Title */}
-      <div>
-        <h1 className="font-display font-black text-[32px] text-dark-text light:text-light-text tracking-tight mb-2">
-          Account Dossier
-        </h1>
-        <p className="text-dark-text/60 light:text-light-text/60 text-[14px]">
-          Review account privileges, configure security parameters, and manage cards.
-        </p>
-      </div>
+  const handleLogout = () => {
+    toast.success('Logged out successfully. Secure session ended.');
+    navigate('/login');
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+  return (
+    <div className="max-w-6xl mx-auto space-y-8 select-none">
+      
+      {/* 1. Header Profile Banner Card */}
+      <motion.div
+        initial={{ opacity: 0, y: -15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-card premium-card-shadow rounded-3xl p-6 border border-dark-border/15 light:border-light-border/40 relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
         
-        {/* Left column: User Info & Limit controls */}
-        <div className="md:col-span-7 space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           
-          {/* Card 1: User Info Dossier */}
+          <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+            {/* Avatar Photo Frame with Glow */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary to-secondary rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300" />
+              <img 
+                src="/avatar.png" 
+                alt="Abhik Mukherjee Profile" 
+                className="w-24 h-24 rounded-2xl border-2 border-white/10 relative z-10 object-cover shadow-2xl transition-transform duration-300 group-hover:scale-105"
+              />
+            </div>
+
+            {/* Profile Info */}
+            <div className="space-y-1.5">
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <h1 className="font-display font-black text-2xl md:text-3xl text-dark-text light:text-light-text tracking-tight">
+                  Abhik Mukherjee
+                </h1>
+                <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                  TIER_1_VIP
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-y-1 gap-x-4 text-xs text-dark-text/60 light:text-light-text/60 font-mono">
+                <div className="flex items-center justify-center sm:justify-start gap-1.5">
+                  <FiMail className="w-3.5 h-3.5 text-secondary" />
+                  <span>abhik.mukherjee@apexbank.io</span>
+                </div>
+                <div className="flex items-center justify-center sm:justify-start gap-1.5">
+                  <FiCalendar className="w-3.5 h-3.5 text-accent" />
+                  <span>Joined Sept 24, 2024</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Premium Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="w-full sm:w-auto py-3 px-6 rounded-2xl font-display font-bold text-xs uppercase tracking-widest text-rose-500 bg-rose-500/10 hover:bg-rose-500 hover:text-white border border-rose-500/20 hover:border-transparent hover:shadow-[0_0_20px_rgba(244,63,94,0.35)] flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 active:scale-[0.98]"
+          >
+            <FiLogOut className="w-4 h-4" />
+            <span>Terminate Session</span>
+          </button>
+          
+        </div>
+      </motion.div>
+
+      {/* 2. Main content split layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* Left Column: Account Overview & Configs */}
+        <div className="lg:col-span-7 space-y-8">
+          
+          {/* Section title */}
+          <div className="pl-1">
+            <h2 className="font-display font-extrabold text-[15px] text-dark-text light:text-light-text uppercase tracking-widest flex items-center gap-2">
+              <FiUser className="w-4.5 h-4.5 text-primary" /> Account Overview
+            </h2>
+            <p className="text-[11px] text-dark-text/45 light:text-light-text/50 font-mono mt-0.5">
+              Identity parameters, security settings, and cards
+            </p>
+          </div>
+
+          {/* Overview Grid */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
             className="glass-card premium-card-shadow rounded-3xl p-6 border border-dark-border/15 light:border-light-border/40"
           >
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <FiUser className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-display font-bold text-[18px] text-dark-text light:text-light-text">Abhik Mukherjee</h3>
-                <span className="text-xs font-mono text-primary/80 bg-primary/5 px-2 py-0.5 rounded-md">TIER_1_VIP_STATUS</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-y-4 gap-x-6">
-              <div className="flex flex-col">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+              <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
                 <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">User Identity Code</span>
-                <span className="text-[13px] font-bold text-dark-text light:text-light-text mt-0.5">APEX_8910</span>
+                <span className="text-[13px] font-mono font-bold text-dark-text light:text-light-text mt-0.5">APEX_8910</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Card Association</span>
-                <span className="text-[13px] font-mono text-dark-text light:text-light-text mt-0.5">•••• •••• •••• 8910</span>
+              <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
+                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Account Routing Number</span>
+                <span className="text-[13px] font-mono font-bold text-dark-text light:text-light-text mt-0.5">RTN_021000021</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Checking Route</span>
-                <span className="text-[13px] font-mono text-dark-text light:text-light-text mt-0.5">RTN_021000021</span>
+              <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
+                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Primary Node Association</span>
+                <span className="text-[13px] font-mono font-bold text-dark-text light:text-light-text mt-0.5">ATM_NODE_04 (SF)</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Primary Node Node</span>
-                <span className="text-[13px] font-bold text-dark-text light:text-light-text mt-0.5">ATM_NODE_04 (SF)</span>
+              <div className="flex flex-col bg-dark-card/25 light:bg-light-card/15 p-3 rounded-2xl border border-dark-border/5 light:border-light-border/20">
+                <span className="text-[10px] font-mono text-dark-text/40 light:text-light-text/40 uppercase">Account Class Tier</span>
+                <span className="text-[13px] font-mono font-bold text-primary mt-0.5">Premium Checking Tier-1</span>
               </div>
             </div>
           </motion.div>
 
-          {/* Card 2: Security Switches (Card Freeze & Slider) */}
+          {/* Card Controls & Limit Adjuster */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="glass-card premium-card-shadow rounded-3xl p-6 border border-dark-border/15 light:border-light-border/40 space-y-6"
           >
+            {/* Card Freeze Toggle */}
             <div className="flex justify-between items-center">
-              <div>
-                <h3 className="font-display font-bold text-[16px] text-dark-text light:text-light-text uppercase tracking-wider flex items-center gap-2">
+              <div className="space-y-0.5">
+                <h3 className="font-display font-bold text-[15px] text-dark-text light:text-light-text uppercase tracking-wider flex items-center gap-2">
                   <FiCreditCard className="w-5 h-5 text-secondary" /> Card Lockdown
                 </h3>
-                <span className="text-[11px] text-dark-text/40 light:text-light-text/40">Freeze debit transactions instantly</span>
+                <p className="text-[11px] text-dark-text/40 light:text-light-text/40">
+                  Instantly freeze debit actions across all ATM terminals
+                </p>
               </div>
               <button
                 type="button"
                 onClick={handleCardFreeze}
-                className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 ${
-                  isFrozen ? 'bg-rose-500' : 'bg-dark-border/40 light:bg-light-border/60'
+                aria-label="Toggle card lockdown freeze status"
+                className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary/45 ${
+                  isFrozen ? 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.35)]' : 'bg-dark-border/40 light:bg-light-border/60'
                 }`}
               >
                 <div
@@ -140,34 +280,39 @@ export const Profile: React.FC = () => {
               </button>
             </div>
 
+            {/* Withdrawal Adjuster Slider */}
             <div className="border-t border-dark-border/10 light:border-light-border/40 pt-6 space-y-4">
-              <div>
-                <h3 className="font-display font-bold text-[16px] text-dark-text light:text-light-text uppercase tracking-wider flex items-center gap-2">
+              <div className="space-y-0.5">
+                <h3 className="font-display font-bold text-[15px] text-dark-text light:text-light-text uppercase tracking-wider flex items-center gap-2">
                   <FiSliders className="w-5 h-5 text-accent" /> Withdrawal Adjuster
                 </h3>
-                <span className="text-[11px] text-dark-text/40 light:text-light-text/40">Configure maximum daily cash limit</span>
+                <p className="text-[11px] text-dark-text/40 light:text-light-text/40">
+                  Configure maximum daily banknotes value you can withdraw
+                </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3 bg-dark-surface/30 light:bg-light-surface/40 p-4.5 rounded-2xl border border-dark-border/5 light:border-light-border/20">
                 <input
                   type="range"
-                  min="200"
-                  max="5000"
-                  step="100"
+                  min="1000"
+                  max="50000"
+                  step="1000"
                   value={limit}
                   onChange={handleLimitChange}
-                  className="w-full h-1.5 bg-dark-border/20 light:bg-light-border/80 rounded-lg appearance-none cursor-pointer accent-primary"
+                  className="w-full h-1.5 bg-dark-border/20 light:bg-light-border/80 rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
                 />
-                <div className="flex justify-between text-xs font-mono text-dark-text/50 light:text-light-text/50">
-                  <span>Min: $200</span>
-                  <span className="font-bold text-primary font-display text-sm">${limit.toLocaleString()}</span>
-                  <span>Max: $5,000</span>
+                <div className="flex justify-between text-xs font-mono text-dark-text/50 light:text-light-text/50 items-center">
+                  <span>Min: ₹1,000</span>
+                  <span className="font-black text-primary font-display text-[15px] bg-primary/10 border border-primary/15 px-3 py-1 rounded-lg">
+                    ₹{limit.toLocaleString('en-IN')}
+                  </span>
+                  <span>Max: ₹50,000</span>
                 </div>
               </div>
 
               <button
                 onClick={handleLimitSave}
-                className="w-fit py-2 px-4.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-dark-card/60 hover:bg-dark-card border border-dark-border/15 light:border-light-border/40 text-dark-text light:text-light-text flex items-center gap-2 cursor-pointer transition-all duration-200"
+                className="py-2.5 px-5 rounded-xl text-xs font-bold uppercase tracking-wider bg-dark-card/60 hover:bg-dark-card hover:border-primary/50 border border-dark-border/15 light:border-light-border/40 text-dark-text light:text-light-text flex items-center gap-2 cursor-pointer transition-all duration-200"
               >
                 <FiCheck className="w-4 h-4 text-primary" />
                 <span>Save Limit Preference</span>
@@ -175,13 +320,10 @@ export const Profile: React.FC = () => {
             </div>
           </motion.div>
 
-        </div>
-
-        {/* Right column: Reset PIN panel */}
-        <div className="md:col-span-5 w-full">
+          {/* Secure Passcode Reset Form */}
           <motion.div
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
             className="glass-card premium-card-shadow rounded-3xl p-6 border border-dark-border/15 light:border-light-border/40"
           >
@@ -189,62 +331,64 @@ export const Profile: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
                 <FiLock className="w-5 h-5 text-accent" />
               </div>
-              <div>
-                <h3 className="font-display font-bold text-[16px] text-dark-text light:text-light-text uppercase tracking-wider">Passcode Vault</h3>
-                <span className="text-[11px] text-dark-text/40 light:text-light-text/40 font-mono">Reset terminal 4-digit PIN</span>
+              <div className="space-y-0.5">
+                <h3 className="font-display font-bold text-[15px] text-dark-text light:text-light-text uppercase tracking-wider">Passcode Vault</h3>
+                <p className="text-[11px] text-dark-text/40 light:text-light-text/40 font-mono">Configure secure 4-digit PIN credentials</p>
               </div>
             </div>
 
-            <form onSubmit={handlePinChange} className="space-y-4.5">
+            <form onSubmit={handlePinChange} className="space-y-4">
               
-              {/* Old Pin */}
-              <div className="space-y-1.5">
-                <label htmlFor="old-pin-input" className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase">Current 4-Digit PIN</label>
-                <div className="relative rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-200">
-                  <input
-                    id="old-pin-input"
-                    type="password"
-                    maxLength={4}
-                    value={oldPin}
-                    onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))}
-                    disabled={isChangingPin}
-                    placeholder="••••"
-                    className="w-full py-3 px-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono tracking-[8px] text-[15px] placeholder-dark-text/15 light:placeholder-light-text/20"
-                  />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Old Pin */}
+                <div className="space-y-1.5">
+                  <label htmlFor="old-pin-input" className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase">Current PIN</label>
+                  <div className="relative rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-200">
+                    <input
+                      id="old-pin-input"
+                      type="password"
+                      maxLength={4}
+                      value={oldPin}
+                      onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))}
+                      disabled={isChangingPin}
+                      placeholder="••••"
+                      className="w-full py-2.5 px-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono tracking-[6px] text-center placeholder-dark-text/15 light:placeholder-light-text/20"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* New Pin */}
-              <div className="space-y-1.5">
-                <label htmlFor="new-pin-input" className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase">New 4-Digit PIN</label>
-                <div className="relative rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-200">
-                  <input
-                    id="new-pin-input"
-                    type="password"
-                    maxLength={4}
-                    value={newPin}
-                    onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-                    disabled={isChangingPin}
-                    placeholder="••••"
-                    className="w-full py-3 px-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono tracking-[8px] text-[15px] placeholder-dark-text/15 light:placeholder-light-text/20"
-                  />
+                {/* New Pin */}
+                <div className="space-y-1.5">
+                  <label htmlFor="new-pin-input" className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase">New PIN</label>
+                  <div className="relative rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-200">
+                    <input
+                      id="new-pin-input"
+                      type="password"
+                      maxLength={4}
+                      value={newPin}
+                      onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                      disabled={isChangingPin}
+                      placeholder="••••"
+                      className="w-full py-2.5 px-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono tracking-[6px] text-center placeholder-dark-text/15 light:placeholder-light-text/20"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Confirm Pin */}
-              <div className="space-y-1.5">
-                <label htmlFor="confirm-pin-input" className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase">Confirm New PIN</label>
-                <div className="relative rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-200">
-                  <input
-                    id="confirm-pin-input"
-                    type="password"
-                    maxLength={4}
-                    value={confirmPin}
-                    onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
-                    disabled={isChangingPin}
-                    placeholder="••••"
-                    className="w-full py-3 px-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono tracking-[8px] text-[15px] placeholder-dark-text/15 light:placeholder-light-text/20"
-                  />
+                {/* Confirm Pin */}
+                <div className="space-y-1.5">
+                  <label htmlFor="confirm-pin-input" className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase">Confirm PIN</label>
+                  <div className="relative rounded-xl border border-dark-border/10 light:border-light-border/40 bg-dark-surface/30 light:bg-light-surface/80 flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-200">
+                    <input
+                      id="confirm-pin-input"
+                      type="password"
+                      maxLength={4}
+                      value={confirmPin}
+                      onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                      disabled={isChangingPin}
+                      placeholder="••••"
+                      className="w-full py-2.5 px-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono tracking-[6px] text-center placeholder-dark-text/15 light:placeholder-light-text/20"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -258,13 +402,91 @@ export const Profile: React.FC = () => {
               <button
                 type="submit"
                 disabled={isChangingPin || oldPin.length !== 4 || newPin.length !== 4 || confirmPin.length !== 4}
-                className="w-full py-3.5 rounded-xl font-display font-bold text-[12px] uppercase tracking-widest bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 rounded-xl font-display font-bold text-[11px] uppercase tracking-widest bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Commit PIN Update</span>
               </button>
 
             </form>
           </motion.div>
+        </div>
+
+        {/* Right Column: Recent Activity & Virtual Card display */}
+        <div className="lg:col-span-5 space-y-8">
+          
+          {/* Card Presentation Desk */}
+          <div className="space-y-3">
+            <span className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase block font-bold pl-1">
+              Interactive Card Desk
+            </span>
+            <motion.div
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex justify-center"
+            >
+              <VirtualCard
+                name="ABHIK MUKHERJEE"
+                cardNumber="••••  ••••  ••••  8910"
+                balance={78450.92}
+                isFrozen={isFrozen}
+              />
+            </motion.div>
+          </div>
+
+          {/* Recent Activity Logs */}
+          <div className="space-y-3">
+            <div className="pl-1">
+              <h2 className="font-display font-extrabold text-[15px] text-dark-text light:text-light-text uppercase tracking-widest flex items-center gap-2">
+                <FiClock className="w-4.5 h-4.5 text-secondary" /> Recent Activity
+              </h2>
+              <p className="text-[11px] text-dark-text/45 light:text-light-text/50 font-mono mt-0.5">
+                Audit history of recent actions and logs
+              </p>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="glass-card premium-card-shadow rounded-3xl p-5 border border-dark-border/15 light:border-light-border/40 space-y-4"
+            >
+              <div className="flow-root">
+                <ul className="-mb-8">
+                  {mockActivity.map((act, actIdx) => {
+                    const Icon = act.icon;
+                    return (
+                      <li key={act.id}>
+                        <div className="relative pb-8">
+                          {actIdx < mockActivity.length - 1 && (
+                            <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-dark-border/10 light:bg-light-border/40" aria-hidden="true" />
+                          )}
+                          <div className="relative flex space-x-3.5">
+                            <div>
+                              <span className={`h-8.5 w-8.5 rounded-xl flex items-center justify-center border ${act.colorClass}`}>
+                                <Icon className="w-4 h-4" />
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0 pt-0.5">
+                              <div className="text-[12px] font-bold text-dark-text light:text-light-text flex justify-between items-start">
+                                <span>{act.desc}</span>
+                                <span className="text-[10px] font-mono font-medium text-dark-text/35 light:text-light-text/40 whitespace-nowrap pl-2">
+                                  {act.date}
+                                </span>
+                              </div>
+                              <p className="text-[10px] font-mono text-dark-text/50 light:text-light-text/50 mt-0.5 leading-normal">
+                                {act.detail}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </motion.div>
+          </div>
+
         </div>
 
       </div>

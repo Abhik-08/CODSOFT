@@ -7,6 +7,11 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
+        <div className="noise-overlay" />
+        <div className="grid-overlay" />
+        {/* Animated ambient light blobs */}
+        <div className="ambient-blob animate-blob-1 bg-[#5e6ad2]/10 dark:bg-[#5e6ad2]/15 w-[60vw] h-[60vw] max-w-[900px] max-h-[900px] top-[-10%] left-[20%] blur-[120px]" />
+        <div className="ambient-blob animate-blob-2 bg-purple-500/5 dark:bg-purple-500/10 w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] bottom-[-10%] right-[10%] blur-[100px]" />
         <AppRoutes />
         <Toaster
           position="bottom-right"

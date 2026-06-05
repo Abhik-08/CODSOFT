@@ -1,30 +1,71 @@
 import React, { useState, useMemo } from 'react';
-import { FiActivity, FiSearch, FiCheckCircle } from 'react-icons/fi';
-import { motion } from 'motion/react';
+import { FiActivity, FiSearch, FiCheckCircle, FiArrowUpRight, FiArrowDownLeft, FiSliders } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'motion/react';
 
-const ledgerData = [
-  { id: '1', date: '2026-06-04', time: '14:23:10', desc: 'Cash Withdrawal - Terminal #49', reference: 'REF_9918231', amount: -200, type: 'debit', status: 'completed' },
-  { id: '2', date: '2026-06-03', time: '09:41:55', desc: 'Interbank Cash Deposit', reference: 'REF_0192837', amount: 1500, type: 'credit', status: 'completed' },
-  { id: '3', date: '2026-06-01', time: '18:15:30', desc: 'Pre-Authorized Transfer', reference: 'REF_7718290', amount: 450, type: 'credit', status: 'completed' },
-  { id: '4', date: '2026-05-28', time: '11:02:41', desc: 'Atm Cash Withdrawal', reference: 'REF_4812390', amount: -100, type: 'debit', status: 'completed' },
-  { id: '5', date: '2026-05-25', time: '03:10:04', desc: 'Card Processing Fee', reference: 'REF_9018274', amount: -5.99, type: 'debit', status: 'completed' },
-  { id: '6', date: '2026-05-22', time: '15:20:12', desc: 'Secure Mobile Deposit', reference: 'REF_3129847', amount: 3200, type: 'credit', status: 'completed' },
-  { id: '7', date: '2026-05-18', time: '10:04:10', desc: 'Cash Withdrawal - Terminal #12', reference: 'REF_0091823', amount: -400, type: 'debit', status: 'completed' },
-  { id: '8', date: '2026-05-15', time: '13:55:00', desc: 'Online Refund - Apex Tech', reference: 'REF_8812736', amount: 49.99, type: 'credit', status: 'completed' },
+interface LedgerItem {
+  id: string;
+  date: string;
+  time: string;
+  desc: string;
+  reference: string;
+  amount: number;
+  type: 'credit' | 'debit';
+  status: 'completed' | 'pending';
+}
+
+type FilterOption = 'all' | 'credit' | 'debit';
+type SortOption = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';
+
+const ledgerData: LedgerItem[] = [
+  { id: 'TXN_DEP_88192301', date: '2026-06-04', time: '14:23:10', desc: 'Cash Deposit Vault Slot', reference: 'REF_9918231', amount: 5000, type: 'credit', status: 'completed' },
+  { id: 'TXN_WTH_22108390', date: '2026-06-03', time: '09:41:55', desc: 'Interbank Cash Withdrawal', reference: 'REF_0192837', amount: -2000, type: 'debit', status: 'completed' },
+  { id: 'TXN_DEP_01928372', date: '2026-06-01', time: '18:15:30', desc: 'Pre-Authorized Transfer Credit', reference: 'REF_7718290', amount: 15000, type: 'credit', status: 'completed' },
+  { id: 'TXN_WTH_90182739', date: '2026-05-28', time: '11:02:41', desc: 'ATM Vault Cash Dispense', reference: 'REF_4812390', amount: -1000, type: 'debit', status: 'completed' },
+  { id: 'TXN_WTH_77182901', date: '2026-05-25', time: '03:10:04', desc: 'Debit Card Node Processing Fee', reference: 'REF_9018274', amount: -500, type: 'debit', status: 'completed' },
+  { id: 'TXN_DEP_48123902', date: '2026-05-22', time: '15:20:12', desc: 'Secure Mobile QR Deposit', reference: 'REF_3129847', amount: 12000, type: 'credit', status: 'completed' },
+  { id: 'TXN_WTH_00918233', date: '2026-05-18', time: '10:04:10', desc: 'Terminal Cash Dispense', reference: 'REF_0091823', amount: -4000, type: 'debit', status: 'completed' },
+  { id: 'TXN_DEP_88127364', date: '2026-05-15', time: '13:55:00', desc: 'Refund - Apex Merchants Node', reference: 'REF_8812736', amount: 3500, type: 'credit', status: 'completed' },
 ];
 
 export const History: React.FC = () => {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'credit' | 'debit'>('all');
+  const [filter, setFilter] = useState<FilterOption>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('date-desc');
 
-  const filteredData = useMemo(() => {
-    return ledgerData.filter((item) => {
-      const matchesSearch = item.desc.toLowerCase().includes(search.toLowerCase()) || 
-                            item.reference.toLowerCase().includes(search.toLowerCase());
+  // Filter & Sort Engine
+  const processedData = useMemo(() => {
+    const result = ledgerData.filter((item) => {
+      const query = search.toLowerCase();
+      const matchesSearch =
+        item.desc.toLowerCase().includes(query) ||
+        item.id.toLowerCase().includes(query) ||
+        item.reference.toLowerCase().includes(query);
       const matchesFilter = filter === 'all' || item.type === filter;
       return matchesSearch && matchesFilter;
     });
-  }, [search, filter]);
+
+    result.sort((a, b) => {
+      if (sortBy === 'date-desc') {
+        const datetimeA = new Date(`${a.date}T${a.time}`).getTime();
+        const datetimeB = new Date(`${b.date}T${b.time}`).getTime();
+        return datetimeB - datetimeA;
+      }
+      if (sortBy === 'date-asc') {
+        const datetimeA = new Date(`${a.date}T${a.time}`).getTime();
+        const datetimeB = new Date(`${b.date}T${b.time}`).getTime();
+        return datetimeA - datetimeB;
+      }
+      if (sortBy === 'amount-desc') {
+        return Math.abs(b.amount) - Math.abs(a.amount);
+      }
+      if (sortBy === 'amount-asc') {
+        return Math.abs(a.amount) - Math.abs(b.amount);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [search, filter, sortBy]);
 
   return (
     <div className="space-y-8 select-none">
@@ -39,41 +80,42 @@ export const History: React.FC = () => {
             Comprehensive session logs and card transaction history.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-dark-text/45 light:text-light-text/45 bg-dark-card/30 light:bg-light-card/45 border border-dark-border/5 rounded-xl px-3.5 py-2">
+        <div className="flex items-center gap-2 text-xs font-mono text-dark-text/45 light:text-light-text/45 bg-dark-card/30 light:bg-light-card/45 border border-dark-border/5 rounded-xl px-3.5 py-2 w-fit">
           <FiActivity className="w-4 h-4 text-accent" />
-          <span>LEDGER_SYNC: OK (100% compliant)</span>
+          <span>LEDGER_SYNC: SECURED (Node 04-SF)</span>
         </div>
       </div>
 
-      {/* Search & Filter tools */}
+      {/* Control desk: Search, Filter & Sort */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         
-        {/* Search Input */}
-        <div className="md:col-span-7 relative rounded-xl border border-dark-border/10 light:border-light-border/60 bg-dark-surface/50 light:bg-light-surface flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-300">
+        {/* Search Bar */}
+        <div className="md:col-span-4 relative rounded-xl border border-dark-border/10 light:border-light-border/60 bg-dark-surface/50 light:bg-light-surface flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-300">
           <FiSearch className="absolute left-4 w-5 h-5 text-dark-text/30 light:text-light-text/30" />
           <input
             type="text"
-            placeholder="Search by description, reference..."
+            placeholder="Search transactions, codes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full py-3.5 pl-12 pr-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text text-[14px] placeholder-dark-text/30 light:placeholder-light-text/35"
+            className="w-full py-3.5 pl-12 pr-4 bg-transparent border-0 outline-none text-dark-text light:text-light-text text-[13px] placeholder-dark-text/30 light:placeholder-light-text/35 font-mono"
           />
         </div>
 
-        {/* Filter Tabs */}
+        {/* Filter Selection Tabs */}
         <div className="md:col-span-5 flex rounded-xl border border-dark-border/10 light:border-light-border/60 bg-dark-surface/50 light:bg-light-surface p-1 items-center">
           {[
             { id: 'all', label: 'All Logs' },
-            { id: 'credit', label: 'Credits' },
-            { id: 'debit', label: 'Debits' },
+            { id: 'credit', label: 'Deposits' },
+            { id: 'debit', label: 'Withdrawals' },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setFilter(tab.id as 'all' | 'credit' | 'debit')}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold tracking-wide uppercase transition-all duration-200 cursor-pointer ${
+              type="button"
+              onClick={() => setFilter(tab.id as FilterOption)}
+              className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all duration-200 cursor-pointer ${
                 filter === tab.id
                   ? 'bg-primary text-white shadow-sm'
-                  : 'text-dark-text/60 light:text-light-text/60 hover:text-dark-text light:hover:text-light-text'
+                  : 'text-dark-text/60 light:text-light-text/65 hover:text-dark-text light:hover:text-light-text'
               }`}
             >
               {tab.label}
@@ -81,83 +123,184 @@ export const History: React.FC = () => {
           ))}
         </div>
 
+        {/* Sorting Dropdown */}
+        <div className="md:col-span-3 relative rounded-xl border border-dark-border/10 light:border-light-border/60 bg-dark-surface/50 light:bg-light-surface flex items-center overflow-hidden focus-within:border-primary/50 transition-all duration-300 px-3">
+          <FiSliders className="w-4 h-4 text-dark-text/35 mr-2" />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="w-full py-3.5 bg-transparent border-0 outline-none text-dark-text light:text-light-text text-[11px] font-bold uppercase tracking-wider cursor-pointer"
+          >
+            <option value="date-desc" className="bg-dark-card light:bg-light-surface text-dark-text light:text-light-text">Newest First</option>
+            <option value="date-asc" className="bg-dark-card light:bg-light-surface text-dark-text light:text-light-text">Oldest First</option>
+            <option value="amount-desc" className="bg-dark-card light:bg-light-surface text-dark-text light:text-light-text">Highest Amount</option>
+            <option value="amount-asc" className="bg-dark-card light:bg-light-surface text-dark-text light:text-light-text">Lowest Amount</option>
+          </select>
+        </div>
+
       </div>
 
-      {/* Main Ledger Table */}
+      {/* Main ledger container */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         className="glass-card premium-card-shadow rounded-2xl border border-dark-border/15 light:border-light-border/40 overflow-hidden"
       >
-        <div className="overflow-x-auto">
+        {/* DESKTOP TABLE VIEW (md and up) */}
+        <div className="overflow-x-auto hidden md:block">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-dark-border/15 light:border-light-border/40 bg-dark-card/35 light:bg-light-card/35 text-[10px] font-mono text-dark-text/45 light:text-light-text/45 uppercase tracking-widest">
                 <th className="py-4 px-6">Timestamp</th>
                 <th className="py-4 px-6">Description</th>
                 <th className="py-4 px-6">Reference ID</th>
-                <th className="py-4 px-6">Status</th>
+                <th className="py-4 px-6">Clearance</th>
                 <th className="py-4 px-6 text-right">Amount</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-border/10 light:divide-light-border/40">
-              {filteredData.length > 0 ? (
-                filteredData.map((item) => (
-                  <tr key={item.id} className="hover:bg-dark-card/10 light:hover:bg-light-card/25 transition-colors duration-150">
-                    {/* Timestamp */}
-                    <td className="py-4.5 px-6 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="text-[13px] font-bold text-dark-text light:text-light-text">{item.date}</span>
-                        <span className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 mt-0.5">{item.time}</span>
-                      </div>
-                    </td>
-                    
-                    {/* Description */}
-                    <td className="py-4.5 px-6">
-                      <span className="text-[13px] font-bold text-dark-text light:text-light-text">{item.desc}</span>
-                    </td>
-                    
-                    {/* Reference */}
-                    <td className="py-4.5 px-6 whitespace-nowrap">
-                      <span className="text-[11px] font-mono text-dark-text/50 light:text-light-text/55">{item.reference}</span>
-                    </td>
+              <AnimatePresence>
+                {processedData.length > 0 ? (
+                  processedData.map((item) => (
+                    <tr 
+                      key={item.id} 
+                      className="hover:bg-dark-card/10 light:hover:bg-light-card/25 transition-colors duration-150"
+                    >
+                      {/* Timestamp */}
+                      <td className="py-4.5 px-6 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-[13px] font-bold text-dark-text light:text-light-text">{item.date}</span>
+                          <span className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45 mt-0.5">{item.time}</span>
+                        </div>
+                      </td>
+                      
+                      {/* Description */}
+                      <td className="py-4.5 px-6">
+                        <div className="flex items-center gap-2.5">
+                          {item.amount > 0 ? (
+                            <FiArrowDownLeft className="w-4 h-4 text-primary bg-primary/10 rounded p-0.5 flex-shrink-0" />
+                          ) : (
+                            <FiArrowUpRight className="w-4 h-4 text-rose-500 bg-rose-500/10 rounded p-0.5 flex-shrink-0" />
+                          )}
+                          <span className="text-[13px] font-bold text-dark-text light:text-light-text">{item.desc}</span>
+                        </div>
+                      </td>
+                      
+                      {/* Reference */}
+                      <td className="py-4.5 px-6 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-mono text-dark-text/60 light:text-light-text/60">{item.id}</span>
+                          <span className="text-[9px] font-mono text-dark-text/30 light:text-light-text/40">{item.reference}</span>
+                        </div>
+                      </td>
 
-                    {/* Status Badge */}
-                    <td className="py-4.5 px-6 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
-                        <FiCheckCircle className="w-3.5 h-3.5" /> Completed
-                      </span>
-                    </td>
+                      {/* Status */}
+                      <td className="py-4.5 px-6 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[9px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
+                          <FiCheckCircle className="w-3.5 h-3.5" /> Completed
+                        </span>
+                      </td>
 
-                    {/* Amount */}
-                    <td className="py-4.5 px-6 text-right whitespace-nowrap">
-                      <span className={`text-[14px] font-display font-black ${item.amount > 0 ? 'text-primary' : 'text-rose-500'}`}>
-                        {item.amount > 0 ? `+$${item.amount.toFixed(2)}` : `-$${Math.abs(item.amount).toFixed(2)}`}
-                      </span>
+                      {/* Amount */}
+                      <td className="py-4.5 px-6 text-right whitespace-nowrap">
+                        <span className={`text-[14px] font-display font-black ${item.amount > 0 ? 'text-primary' : 'text-rose-500'}`}>
+                          {item.amount > 0 
+                            ? `+₹${item.amount.toLocaleString('en-IN')}` 
+                            : `-₹${Math.abs(item.amount).toLocaleString('en-IN')}`
+                          }
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-dark-text/40 light:text-light-text/40 font-mono text-xs uppercase tracking-wider">
+                      No matching ledger items found
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-dark-text/40 light:text-light-text/40 font-mono text-xs uppercase tracking-wider">
-                    No matching ledger items found
-                  </td>
-                </tr>
-              )}
+                )}
+              </AnimatePresence>
             </tbody>
           </table>
+        </div>
+
+        {/* MOBILE CARDS VIEW (shrunk on mobile sizes) */}
+        <div className="p-4 grid grid-cols-1 gap-3.5 md:hidden">
+          {processedData.length > 0 ? (
+            processedData.map((item) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-dark-card/30 dark:bg-black/10 light:bg-light-card/30 border border-dark-border/10 light:border-light-border/20 rounded-xl p-4 flex flex-col gap-3"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    {item.amount > 0 ? (
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                        <FiArrowDownLeft className="w-4.5 h-4.5" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500 flex-shrink-0">
+                        <FiArrowUpRight className="w-4.5 h-4.5" />
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="text-[13px] font-bold text-dark-text light:text-light-text line-clamp-1">
+                        {item.desc}
+                      </h4>
+                      <span className="text-[10px] font-mono text-dark-text/45 light:text-light-text/45">
+                        {item.date} • {item.time}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <span className={`text-[14px] font-display font-black whitespace-nowrap ${
+                    item.amount > 0 ? 'text-primary' : 'text-rose-500'
+                  }`}>
+                    {item.amount > 0 
+                      ? `+₹${item.amount.toLocaleString('en-IN')}` 
+                      : `-₹${Math.abs(item.amount).toLocaleString('en-IN')}`
+                    }
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center text-[10px] font-mono border-t border-dark-border/5 light:border-light-border/20 pt-2.5">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-dark-text/30 light:text-light-text/40 uppercase">TXN ID</span>
+                    <span className="text-dark-text/60 light:text-light-text/60 text-[9.5px]">{item.id}</span>
+                  </div>
+                  <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-md border border-primary/20 text-[9px] font-bold uppercase tracking-wider">
+                    COMPLETED
+                  </span>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="py-12 text-center text-dark-text/40 light:text-light-text/40 font-mono text-xs uppercase tracking-wider">
+              No matching ledger items found
+            </div>
+          )}
         </div>
 
         {/* Table Footer / Pagination */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-dark-border/15 light:border-light-border/40 bg-dark-card/10 light:bg-light-card/15">
           <span className="text-xs text-dark-text/40 light:text-light-text/40 font-mono">
-            Showing {filteredData.length} of {ledgerData.length} records
+            Showing {processedData.length} of {ledgerData.length} records
           </span>
           <div className="flex items-center gap-2">
-            <button disabled className="px-3.5 py-1.5 rounded-lg border border-dark-border/10 light:border-light-border/40 text-[11px] font-bold tracking-wider uppercase text-dark-text/40 light:text-light-text/40 disabled:opacity-50">
+            <button 
+              type="button" 
+              disabled 
+              className="px-3.5 py-1.5 rounded-lg border border-dark-border/10 light:border-light-border/40 text-[11px] font-bold tracking-wider uppercase text-dark-text/40 light:text-light-text/40 disabled:opacity-50 cursor-not-allowed"
+            >
               Prev
             </button>
-            <button disabled className="px-3.5 py-1.5 rounded-lg border border-dark-border/10 light:border-light-border/40 text-[11px] font-bold tracking-wider uppercase text-dark-text/40 light:text-light-text/40 disabled:opacity-50">
+            <button 
+              type="button" 
+              disabled 
+              className="px-3.5 py-1.5 rounded-lg border border-dark-border/10 light:border-light-border/40 text-[11px] font-bold tracking-wider uppercase text-dark-text/40 light:text-light-text/40 disabled:opacity-50 cursor-not-allowed"
+            >
               Next
             </button>
           </div>
