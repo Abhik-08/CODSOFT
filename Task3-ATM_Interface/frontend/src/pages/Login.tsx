@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiShield } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { motion } from 'motion/react';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
@@ -178,9 +177,35 @@ export const Login: React.FC = () => {
           >
             {/* ATM Console Display Screen */}
             <div className="w-full glass-panel border border-dark-border/25 light:border-light-border/60 rounded-2xl p-6 mb-6 text-center select-none flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 animate-pulse-glow">
-                <FiShield className="w-6 h-6" />
+              <div className="relative w-16 h-16 mb-5 flex items-center justify-center">
+                {/* Rotating Outer Ring */}
+                <div className="absolute inset-0 rounded-full border border-dashed border-primary/30 animate-[spin_8s_linear_infinite]" />
+                
+                {/* Secondary Ring with opposite rotation */}
+                <div className="absolute inset-1 rounded-full border border-double border-secondary/20 animate-[spin_12s_linear_infinite_reverse]" />
+                
+                {/* Scan Line Bar */}
+                <div className="absolute top-0 left-2 right-2 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_8px_#10b981] animate-scan z-20 pointer-events-none" />
+
+                {/* Cyber Biometric Core */}
+                <div className="w-12 h-12 rounded-full bg-dark-bg/60 light:bg-light-bg/40 border border-primary/20 flex items-center justify-center text-primary relative overflow-hidden group shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]">
+                  {/* Fingerprint Vector Icon with glowing transition */}
+                  <svg 
+                    className="w-7 h-7 opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 drop-shadow-[0_0_4px_rgba(16,185,129,0.5)]" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    viewBox="0 0 24 24" 
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0-3.517-1.009-6.799-2.753-9.571m-3.44 2.04l.054-.09A13.916 13.916 0 009 11a13.917 13.917 0 002.212 7.448m3.44-2.04L15 16.5m-7.44-7.44a13.916 13.916 0 00-2.212-7.448m0 0A13.91 13.91 0 003 11a13.918 13.918 0 002.212 7.448M12 11c0 3.517 1.009 6.799 2.753 9.571m3.44-2.04l-.054.09A13.912 13.912 0 0015 11a13.915 13.915 0 00-2.212-7.448m-3.44 2.04L9 4.5M10.5 22.5A9.012 9.012 0 012.25 12c0-1.285.268-2.508.75-3.622m8.25 14.122a9.012 9.012 0 008.25-10.5c0-1.285-.268-2.508-.75-3.622M12 2.25c-4.97 0-9 4.03-9 9 0 1.206.237 2.355.667 3.407" />
+                  </svg>
+                  
+                  {/* Subtle pulsing radar circle */}
+                  <div className="absolute inset-0 bg-primary/5 rounded-full animate-ping pointer-events-none opacity-40" />
+                </div>
               </div>
+
               
               <div className="text-[14px] font-mono tracking-wider font-bold text-dark-text light:text-light-text mb-2 uppercase">
                 ATM SESSION TERMINAL
