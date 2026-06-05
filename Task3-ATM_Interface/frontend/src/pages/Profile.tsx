@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   FiUser, 
   FiShield, 
@@ -84,6 +85,7 @@ const mockActivity: ActivityItem[] = [
 
 export const Profile: React.FC = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isFrozen, setIsFrozen] = useState(() => {
     return localStorage.getItem('apex_card_frozen') === 'true';
   });
@@ -138,9 +140,16 @@ export const Profile: React.FC = () => {
     }, 1500);
   };
 
-  const handleLogout = () => {
-    toast.success('Logged out successfully. Secure session ended.');
-    navigate('/login');
+  const handleLogout = async () => {
+    const toastId = toast.loading('Terminating secure session...');
+    try {
+      await logout();
+      toast.success('Logged out successfully. Secure session ended.', { id: toastId });
+      navigate('/login');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Logout failed.';
+      toast.error(errorMsg, { id: toastId });
+    }
   };
 
   return (
@@ -162,8 +171,8 @@ export const Profile: React.FC = () => {
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-tr from-primary to-secondary rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300" />
               <img 
-                src="/avatar.png" 
-                alt="Abhik Mukherjee Profile" 
+                src={user?.photoURL || "/avatar.png"} 
+                alt="Operator Profile" 
                 className="w-24 h-24 rounded-2xl border-2 border-white/10 relative z-10 object-cover shadow-2xl transition-transform duration-300 group-hover:scale-105"
               />
             </div>
@@ -172,21 +181,23 @@ export const Profile: React.FC = () => {
             <div className="space-y-1.5">
               <div className="flex flex-col sm:flex-row items-center gap-2">
                 <h1 className="font-display font-black text-2xl md:text-3xl text-dark-text light:text-light-text tracking-tight">
-                  Abhik Mukherjee
+                  {user?.displayName || "APEX Operator"}
                 </h1>
                 <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
-                  TIER_1_VIP
+                  {user?.isAnonymous ? 'DEVELOPER_BYPASS' : 'TIER_1_VIP'}
                 </span>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-y-1 gap-x-4 text-xs text-dark-text/60 light:text-light-text/60 font-mono">
                 <div className="flex items-center justify-center sm:justify-start gap-1.5">
                   <FiMail className="w-3.5 h-3.5 text-secondary" />
-                  <span>abhik.mukherjee@apexbank.io</span>
+                  <span>{user?.email || "pin.operator@apex.bank"}</span>
                 </div>
                 <div className="flex items-center justify-center sm:justify-start gap-1.5">
                   <FiCalendar className="w-3.5 h-3.5 text-accent" />
-                  <span>Joined Sept 24, 2024</span>
+                  <span>
+                    Joined {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sept 24, 2024'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -425,7 +436,7 @@ export const Profile: React.FC = () => {
               className="flex justify-center"
             >
               <VirtualCard
-                name="ABHIK MUKHERJEE"
+                name={(user?.displayName || "ABHIK MUKHERJEE").toUpperCase()}
                 cardNumber="••••  ••••  ••••  8910"
                 balance={78450.92}
                 isFrozen={isFrozen}

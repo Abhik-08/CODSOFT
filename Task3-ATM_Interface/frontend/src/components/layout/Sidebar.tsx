@@ -2,6 +2,8 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FiHome, FiDownload, FiUpload, FiActivity, FiUser, FiLogOut } from 'react-icons/fi';
 import { motion } from 'motion/react';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: FiHome },
@@ -13,9 +15,18 @@ const navItems = [
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    navigate('/login');
+  const handleLogout = async () => {
+    const toastId = toast.loading('Terminating secure session...');
+    try {
+      await logout();
+      toast.success('Logged out successfully. Secure session ended.', { id: toastId });
+      navigate('/login');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Logout failed.';
+      toast.error(errorMsg, { id: toastId });
+    }
   };
 
   return (

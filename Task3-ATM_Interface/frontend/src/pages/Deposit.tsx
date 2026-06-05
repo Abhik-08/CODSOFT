@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { FiDownload, FiCheckCircle, FiFileText, FiArrowLeft } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
+import { addTransactionAtomically } from '../services/firestoreService';
 
 interface ReceiptDetails {
   id: string;
@@ -17,6 +19,7 @@ export const Deposit: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptDetails | null>(null);
+  const { user } = useAuth();
 
   // Quick preset options
   const presets = [500, 1000, 2000, 5000];
@@ -36,21 +39,24 @@ export const Deposit: React.FC = () => {
 
   const isSubmitDisabled = isProcessing || !amount || validationError !== '';
 
-  const generateTxnId = () => {
-    return `TXN_DEP_${Math.floor(10000000 + Math.random() * 90000000)}`;
-  };
-
-  const handleDepositSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleDepositSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isSubmitDisabled) return;
+    if (isSubmitDisabled || !user) return;
 
     setIsProcessing(true);
     const toastId = toast.loading(`Opening vault slot for ${method === 'cash' ? 'cash bundle' : 'check document'}...`);
 
-    setTimeout(() => {
+    try {
+      const liveTxnId = await addTransactionAtomically(
+        user.uid,
+        'credit',
+        numAmount,
+        `Deposit - ${method === 'cash' ? 'Cash' : 'Check Imaging'}`
+      );
+      
       toast.success('Funds successfully parsed and credited!', { id: toastId });
       setReceipt({
-        id: generateTxnId(),
+        id: liveTxnId.toUpperCase(),
         amount: numAmount,
         method: method === 'cash' ? 'Cash Envelope Slot' : 'Digital Check Imaging Scanner',
         timestamp: new Date().toLocaleString('en-IN', {
@@ -58,9 +64,14 @@ export const Deposit: React.FC = () => {
           timeStyle: 'short',
         }),
       });
-      setIsProcessing(false);
       setShowSuccess(true);
-    }, 1800);
+    } catch (error) {
+      console.error(error);
+      const errorMsg = error instanceof Error ? error.message : 'Deposit failed. System slot error.';
+      toast.error(errorMsg, { id: toastId });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleReset = () => {

@@ -3,12 +3,15 @@ import { ThemeToggle } from '../ui/ThemeToggle';
 import { FiMenu } from 'react-icons/fi';
 import { useLocation } from 'react-router-dom';
 
+import { useAuth } from '../../context/AuthContext';
+
 interface NavbarProps {
   onMenuClick: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   const location = useLocation();
+  const { balance } = useAuth();
 
   // Determine page title based on path with industrial mechatronic titles
   const getPageTitle = (path: string) => {
@@ -81,7 +84,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
         {/* User Card Balance telemetry */}
         <div className="hidden sm:flex flex-col text-right">
           <span className="text-[10.5px] font-mono text-dark-text/40 light:text-light-text/40 tracking-widest uppercase">Available Balance</span>
-          <span className="font-mono font-black text-dark-text light:text-light-text text-[17px] tracking-wide">₹78,450.92</span>
+          <span className="font-mono font-black text-dark-text light:text-light-text text-[17px] tracking-wide">
+            ₹{balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
         </div>
         <ThemeToggle />
       </div>

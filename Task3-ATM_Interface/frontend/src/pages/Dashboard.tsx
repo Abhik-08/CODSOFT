@@ -1,23 +1,113 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { VirtualCard } from '../components/dashboard/VirtualCard';
 import { StatCard } from '../components/dashboard/StatCard';
 import { AnalyticsSection } from '../components/dashboard/AnalyticsSection';
 import { FiTrendingUp, FiActivity, FiArrowRight, FiDownload, FiUpload, FiList } from 'react-icons/fi';
 import { motion } from 'motion/react';
-
-const recentTransactions = [
-  { id: '1', date: '2026-06-04', desc: 'Cash Withdrawal - Terminal #49', reference: 'REF_9918231', amount: -200, type: 'debit' },
-  { id: '2', date: '2026-06-03', desc: 'Interbank Cash Deposit', reference: 'REF_0192837', amount: 1500, type: 'credit' },
-  { id: '3', date: '2026-06-01', desc: 'Pre-Authorized Transfer', reference: 'REF_7718290', amount: 450, type: 'credit' },
-  { id: '4', date: '2026-05-28', desc: 'Atm Cash Withdrawal', reference: 'REF_4812390', amount: -100, type: 'debit' },
-  { id: '5', date: '2026-05-25', desc: 'Card Processing Fee', reference: 'REF_9018274', amount: -5.99, type: 'debit' },
-];
+import { useAuth } from '../context/AuthContext';
+import { getTransactions, type TransactionInfo } from '../services/firestoreService';
 
 
 
 export const Dashboard: React.FC = () => {
   const isFrozen = localStorage.getItem('apex_card_frozen') === 'true';
+  const { user, balance } = useAuth();
+  const [transactions, setTransactions] = useState<TransactionInfo[]>([]);
+  const [loadingTxns, setLoadingTxns] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    let isMounted = true;
+    const loadTxnData = async () => {
+      try {
+        const data = await getTransactions(user.uid);
+        if (isMounted) {
+          setTransactions(data);
+        }
+      } catch (err) {
+        console.error('Error loading dashboard transactions:', err);
+      } finally {
+        if (isMounted) {
+          setLoadingTxns(false);
+        }
+      }
+    };
+    loadTxnData();
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  // Get short display name or fallback
+  const operatorName = user?.displayName 
+    ? `Operator ${user.displayName.split(' ')[0]}` 
+    : 'Operator Mukherjee';
+
+  const totalDeposited = transactions
+    .filter(t => t.type === 'credit')
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const totalWithdrawn = transactions
+    .filter(t => t.type === 'debit')
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const totalOperations = transactions.length;
+
+  const displayTransactions = transactions.slice(0, 5);
+
+  const formatTimestamp = (ts: unknown) => {
+    if (!ts) return 'Pending...';
+    const timestampObj = ts as { toDate?: () => Date };
+    if (typeof timestampObj.toDate === 'function') {
+      return timestampObj.toDate().toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+    }
+    return new Date(ts as string | number | Date).toLocaleDateString('en-IN');
+  };
+
+  const renderTransactionsTableBody = () => {
+    if (loadingTxns) {
+      return (
+        <tr>
+          <td colSpan={4} className="py-8 text-center text-[12px] opacity-65 text-emerald-500/60">
+            Retrieving live terminal logs...
+          </td>
+        </tr>
+      );
+    }
+    if (displayTransactions.length === 0) {
+      return (
+        <tr>
+          <td colSpan={4} className="py-8 text-center text-[12px] opacity-65 text-emerald-500/60">
+            No terminal dossier logs on file.
+          </td>
+        </tr>
+      );
+    }
+    return displayTransactions.map((tx) => (
+      <tr key={tx.id} className="hover:bg-emerald-500/5 transition-colors duration-150">
+        <td className="py-3.5 px-6 whitespace-nowrap text-[12px] opacity-80">
+          {formatTimestamp(tx.createdAt)}
+        </td>
+        <td className="py-3.5 px-6 text-[12px] font-bold">
+          {tx.description}
+        </td>
+        <td className="py-3.5 px-6 text-[10px] opacity-65">
+          {tx.id.slice(0, 10).toUpperCase()}
+        </td>
+        <td className="py-3.5 px-6 text-right whitespace-nowrap">
+          <span className={`text-[12.5px] font-bold ${tx.type === 'credit' ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {tx.type === 'credit' ? `+₹${tx.amount.toLocaleString('en-IN')}` : `-₹${tx.amount.toLocaleString('en-IN')}`}
+          </span>
+        </td>
+      </tr>
+    ));
+  };
+
   return (
     <div className="space-y-8 select-none">
       
@@ -29,7 +119,7 @@ export const Dashboard: React.FC = () => {
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
         >
           <h1 className="font-mono font-black text-[28px] md:text-[32px] text-dark-text light:text-light-text tracking-tight mb-1.5 uppercase">
-            Welcome, Operator Mukherjee
+            Welcome, {operatorName}
           </h1>
           <p className="text-dark-text/60 light:text-light-text/60 text-[13px] font-mono">
             Kronos Core automated ATM shell node active. Node state: <span className="text-emerald-500 font-bold">SECURE_SYNC</span>.
@@ -60,7 +150,7 @@ export const Dashboard: React.FC = () => {
             Active Debit Token Card
           </span>
           <VirtualCard
-            name="ABHIK MUKHERJEE"
+            name={(user?.displayName || "ABHIK MUKHERJEE").toUpperCase()}
             cardNumber="••••  ••••  ••••  8910"
             balance={78450.92}
             isFrozen={isFrozen}
@@ -211,41 +301,41 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <StatCard
             title="Total Net Balance"
-            value={78450.92}
+            value={balance}
             icon={FiTrendingUp}
             gradientId="primary-grad"
             isCurrency={true}
-            trendText="+4.8%"
-            trendType="up"
+            trendText="Live balance"
+            trendType="neutral"
             delay={0.05}
           />
           <StatCard
             title="Total Liquidity Deposited"
-            value={115200}
+            value={totalDeposited}
             icon={FiDownload}
             gradientId="secondary-grad"
             isCurrency={true}
-            trendText="+12.4%"
+            trendText="Sum credits"
             trendType="up"
             delay={0.1}
           />
           <StatCard
             title="Total Liquidity Withdrawn"
-            value={36749.08}
+            value={totalWithdrawn}
             icon={FiUpload}
             gradientId="rose-grad"
             isCurrency={true}
-            trendText="-1.2%"
+            trendText="Sum debits"
             trendType="down"
             delay={0.15}
           />
           <StatCard
             title="Total System Operations"
-            value={154}
+            value={totalOperations}
             icon={FiActivity}
             gradientId="accent-grad"
             isCurrency={false}
-            trendText="+8 logs"
+            trendText={`${totalOperations} logs`}
             trendType="neutral"
             delay={0.2}
           />
@@ -289,24 +379,7 @@ export const Dashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-emerald-500/10 text-emerald-400 bg-black/45">
-                {recentTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-emerald-500/5 transition-colors duration-150">
-                    <td className="py-3.5 px-6 whitespace-nowrap text-[12px] opacity-80">
-                      {tx.date}
-                    </td>
-                    <td className="py-3.5 px-6 text-[12px] font-bold">
-                      {tx.desc}
-                    </td>
-                    <td className="py-3.5 px-6 text-[10px] opacity-65">
-                      {tx.reference}
-                    </td>
-                    <td className="py-3.5 px-6 text-right whitespace-nowrap">
-                      <span className={`text-[12.5px] font-bold ${tx.amount > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {tx.amount > 0 ? `+₹${tx.amount.toLocaleString('en-IN')}` : `-₹${Math.abs(tx.amount).toLocaleString('en-IN')}`}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {renderTransactionsTableBody()}
               </tbody>
             </table>
           </div>

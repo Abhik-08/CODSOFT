@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { FiUpload, FiSliders, FiInfo, FiArrowLeft, FiCheck } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
+import { addTransactionAtomically } from '../services/firestoreService';
 
 interface WithdrawReceipt {
   id: string;
@@ -25,9 +27,10 @@ export const Withdraw: React.FC = () => {
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('auth');
   const [showSuccess, setShowSuccess] = useState(false);
   const [receipt, setReceipt] = useState<WithdrawReceipt | null>(null);
+  const { user, balance } = useAuth();
 
   const dailyLimit = 20000;
-  const currentBalance = 78450.92;
+  const currentBalance = balance;
 
   // Preset cash options
   const presets = [100, 500, 1000, 2000, 5000, 10000];
@@ -47,11 +50,7 @@ export const Withdraw: React.FC = () => {
     }
   }
 
-  const isSubmitDisabled = isProcessing || !amount || validationError !== '';
-
-  const generateTxnId = () => {
-    return `TXN_WTH_${Math.floor(10000000 + Math.random() * 90000000)}`;
-  };
+  const isSubmitDisabled = isProcessing || !amount || validationError !== '' || !user;
 
   const getNoteDistribution = (totalAmount: number, preference: MixPreference) => {
     if (preference === 'large') {
@@ -78,35 +77,49 @@ export const Withdraw: React.FC = () => {
 
   const handleWithdrawSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isSubmitDisabled) return;
+    if (isSubmitDisabled || !user) return;
 
     setIsProcessing(true);
     setProcessingStage('auth');
 
-    // Staged async flow to count/dispense cash and avoid nested setTimeout callbacks
-    await sleep(800);
-    setProcessingStage('counting');
-    
-    await sleep(1000);
-    setProcessingStage('dispensing');
-    
-    await sleep(1200);
-    const { count500, count100 } = getNoteDistribution(numAmount, mix);
-    setReceipt({
-      id: generateTxnId(),
-      amount: numAmount,
-      method: getMethodName(mix),
-      timestamp: new Date().toLocaleString('en-IN', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }),
-      notes500: count500,
-      notes100: count100,
-    });
-    setProcessingStage('success');
-    setIsProcessing(false);
-    setShowSuccess(true);
-    toast.success('Withdrawal cleared! Please collect your cash notes.');
+    try {
+      await sleep(800);
+      setProcessingStage('counting');
+      
+      // Execute the database transaction atomically while the dispenser is counting
+      const liveTxnId = await addTransactionAtomically(
+        user.uid,
+        'debit',
+        numAmount,
+        `Withdrawal - ${getMethodName(mix)}`
+      );
+
+      await sleep(1000);
+      setProcessingStage('dispensing');
+      
+      await sleep(1200);
+      const { count500, count100 } = getNoteDistribution(numAmount, mix);
+      setReceipt({
+        id: liveTxnId.toUpperCase(),
+        amount: numAmount,
+        method: getMethodName(mix),
+        timestamp: new Date().toLocaleString('en-IN', {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }),
+        notes500: count500,
+        notes100: count100,
+      });
+      setProcessingStage('success');
+      setIsProcessing(false);
+      setShowSuccess(true);
+      toast.success('Withdrawal cleared! Please collect your cash notes.');
+    } catch (error) {
+      console.error(error);
+      const errorMsg = error instanceof Error ? error.message : 'Withdrawal failed. System error.';
+      toast.error(errorMsg);
+      setIsProcessing(false);
+    }
   };
 
   const handleReset = () => {

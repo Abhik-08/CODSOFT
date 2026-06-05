@@ -83,10 +83,20 @@ const BankingIllustration: React.FC = () => {
   );
 };
 
+import { useAuth } from '../context/AuthContext';
+
 export const Login: React.FC = () => {
   const [pin, setPin] = useState<string>('');
   const [isInserting, setIsInserting] = useState(false);
   const navigate = useNavigate();
+  const { user, signInWithGoogle, signInWithPinBypass } = useAuth();
+
+  // Redirect if user is already authenticated
+  React.useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleKeyPress = (num: string) => {
     if (pin.length < 4) {
@@ -102,7 +112,7 @@ export const Login: React.FC = () => {
     setPin(prev => prev.slice(0, -1));
   };
 
-  const handleSubmit = (e?: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e?: React.SyntheticEvent<HTMLFormElement>) => {
     if (e) e.preventDefault();
     if (pin.length !== 4) {
       toast.error('Passcode must be exactly 4 digits');
@@ -110,22 +120,40 @@ export const Login: React.FC = () => {
     }
 
     setIsInserting(true);
-    toast.loading('Authenticating card chip...', { id: 'auth' });
+    const toastId = toast.loading('Authenticating card chip...', { id: 'auth' });
 
-    setTimeout(() => {
-      toast.success('Access Granted. Welcome back!', { id: 'auth' });
+    try {
+      await signInWithPinBypass();
+      toast.success('Access Granted. Welcome back!', { id: toastId });
       navigate('/dashboard');
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      const errorMsg = error instanceof Error ? error.message : 'Authentication failed. Access Denied.';
+      toast.error(errorMsg, { id: toastId });
+    } finally {
+      setIsInserting(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setIsInserting(true);
-    toast.loading('Syncing Google Single Sign-On...', { id: 'auth' });
+    const toastId = toast.loading('Syncing Google Single Sign-On...', { id: 'auth' });
 
-    setTimeout(() => {
-      toast.success('Google Authentication Successful!', { id: 'auth' });
+    try {
+      await signInWithGoogle();
+      toast.success('Google Authentication Successful!', { id: toastId });
       navigate('/dashboard');
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      const firebaseError = error as { code?: string; message?: string };
+      if (firebaseError?.code === 'auth/popup-closed-by-user') {
+        toast.error('Google Sign-In canceled.', { id: toastId });
+      } else {
+        toast.error(firebaseError?.message || 'Google Authentication failed.', { id: toastId });
+      }
+    } finally {
+      setIsInserting(false);
+    }
   };
 
   return (

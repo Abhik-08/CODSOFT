@@ -1,0 +1,27 @@
+# Java & Maven Build files
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Logs
+*.log
+logs/
+
+# Sensitive Firebase account credentials keys
+firebase-service-account.json
+*.json
+
+# IDE / Editor settings
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.DS_Store
+.vscode/
+
+# Local Environment Variables files
+.env
+.env.local
+.env.development
+.env.production
+.env.staging

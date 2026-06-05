@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
+import { ProtectedRoute } from '../components/routes/ProtectedRoute';
 import { Login } from '../pages/Login';
 import { Dashboard } from '../pages/Dashboard';
 import { Deposit } from '../pages/Deposit';
@@ -14,8 +15,15 @@ export const AppRoutes: React.FC = () => {
       {/* Public Auth Endpoint */}
       <Route path="/login" element={<Login />} />
 
-      {/* Secure Terminal Area wrapped in MainLayout */}
-      <Route path="/" element={<MainLayout />}>
+      {/* Secure Terminal Area wrapped in MainLayout and ProtectedRoute */}
+      <Route 
+        path="/" 
+        element={
+          <ProtectedRoute>
+            <MainLayout />
+          </ProtectedRoute>
+        }
+      >
         {/* Redirect empty root path to dashboard */}
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
