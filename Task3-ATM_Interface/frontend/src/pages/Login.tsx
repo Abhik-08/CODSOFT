@@ -225,7 +225,7 @@ export const Login: React.FC = () => {
                 {[0, 1, 2, 3].map((index) => (
                   <motion.div
                     key={index}
-                    animate={pin.length > index ? { scale: 1.15, backgroundColor: 'var(--color-primary)' } : { scale: 1 }}
+                    animate={pin.length > index ? { scale: 1.15 } : { scale: 1 }}
                     className={`w-3.5 h-3.5 rounded-full border border-dark-text/20 light:border-light-text/25 transition-colors duration-200 ${pin.length > index ? 'bg-primary border-primary' : 'bg-transparent'}`}
                   />
                 ))}

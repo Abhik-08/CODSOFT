@@ -65,6 +65,21 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
+      {/* Decorative ATM Illustration */}
+      <motion.div
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        className="px-2 py-2 group cursor-default"
+        title="KRONOS_CORE Terminal"
+      >
+        <img
+          src="/atm_hero.png"
+          alt="ATM Terminal Illustration"
+          className="w-full rounded-2xl opacity-55 group-hover:opacity-25 transition-opacity duration-500 object-contain max-h-[140px] select-none"
+          draggable={false}
+        />
+      </motion.div>
+
       {/* Footer / Logout */}
       <div className="pt-4 border-t border-dark-border/10 light:border-light-border/40">
         <button

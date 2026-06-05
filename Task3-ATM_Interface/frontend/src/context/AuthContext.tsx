@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { type User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, db, isMockMode } from '../firebase';
+import { auth, isMockMode } from '../firebase';
 import * as authService from '../services/authService';
+import api from '../services/apiService';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -12,35 +12,42 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<FirebaseUser>;
   signInWithPinBypass: () => Promise<FirebaseUser>;
   logout: () => Promise<void>;
+  refreshBalance: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(() => {
-    if (isMockMode) {
+    try {
       const storedMockUser = localStorage.getItem('apex_mock_logged_in_user');
       return storedMockUser ? JSON.parse(storedMockUser) : null;
+    } catch (e) {
+      console.error('Failed to parse stored mock user:', e);
+      return null;
     }
-    return null;
   });
 
   const [balance, setBalance] = useState<number>(() => {
-    if (isMockMode) {
-      const storedMockUser = localStorage.getItem('apex_mock_logged_in_user');
-      const mockUser = storedMockUser ? JSON.parse(storedMockUser) : null;
-      if (mockUser) {
-        const accounts = JSON.parse(localStorage.getItem('apex_mock_accounts') || '{}');
-        if (!accounts[mockUser.uid]) {
-          accounts[mockUser.uid] = {
-            userId: mockUser.uid,
-            balance: 5000, // Premium default mock starting balance
-            updatedAt: new Date().toISOString()
-          };
-          localStorage.setItem('apex_mock_accounts', JSON.stringify(accounts));
+    try {
+      if (isMockMode) {
+        const storedMockUser = localStorage.getItem('apex_mock_logged_in_user');
+        const mockUser = storedMockUser ? JSON.parse(storedMockUser) : null;
+        if (mockUser) {
+          const accounts = JSON.parse(localStorage.getItem('apex_mock_accounts') || '{}');
+          if (!accounts[mockUser.uid]) {
+            accounts[mockUser.uid] = {
+              userId: mockUser.uid,
+              balance: 5000, // Premium default mock starting balance
+              updatedAt: new Date().toISOString()
+            };
+            localStorage.setItem('apex_mock_accounts', JSON.stringify(accounts));
+          }
+          return accounts[mockUser.uid].balance;
         }
-        return accounts[mockUser.uid].balance;
       }
+    } catch (e) {
+      console.error('Failed to parse stored mock user or accounts:', e);
     }
     return 0;
   });
@@ -49,6 +56,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // In mock mode, we resolve mock session sync immediately without waiting for Firebase API connection
     return !isMockMode;
   });
+
+  const refreshBalance = useCallback(async () => {
+    if (isMockMode) {
+      const storedMockUser = localStorage.getItem('apex_mock_logged_in_user');
+      const mockUser = storedMockUser ? JSON.parse(storedMockUser) : null;
+      if (mockUser) {
+        const accounts = JSON.parse(localStorage.getItem('apex_mock_accounts') || '{}');
+        setBalance(accounts[mockUser.uid]?.balance ?? 5000);
+      }
+      return;
+    }
+
+    const storedMockUser = localStorage.getItem('apex_mock_logged_in_user');
+    if (auth.currentUser || storedMockUser) {
+      try {
+        const response = await api.get('/account/balance');
+        if (response.data?.success) {
+          setBalance(response.data.data.balance);
+        }
+      } catch (error) {
+        console.error('Error refreshing balance:', error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (isMockMode) {
@@ -68,44 +99,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
-    let unsubscribeSnapshot: (() => void) | null = null;
-
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      
-      // Clean up previous snapshot listener if any
-      if (unsubscribeSnapshot) {
-        unsubscribeSnapshot();
-        unsubscribeSnapshot = null;
-      }
-
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        // Setup real-time balance listener
-        const accountRef = doc(db, 'accounts', currentUser.uid);
-        unsubscribeSnapshot = onSnapshot(accountRef, (docSnap) => {
-          if (docSnap.exists()) {
-            setBalance(docSnap.data().balance ?? 0);
-          } else {
-            setBalance(0);
+        setUser(currentUser);
+        try {
+          const response = await api.get('/account/balance');
+          if (response.data?.success) {
+            setBalance(response.data.data.balance);
           }
+        } catch (error) {
+          console.error('Error fetching initial balance:', error);
+        } finally {
           setLoading(false);
-        }, (err) => {
-          console.error('Error listening to account snapshot:', err);
-          setLoading(false);
-        });
+        }
       } else {
-        setBalance(0);
-        setLoading(false);
+        const storedMockUser = localStorage.getItem('apex_mock_logged_in_user');
+        if (storedMockUser) {
+          try {
+            const userObj = JSON.parse(storedMockUser);
+            setUser(userObj);
+            const response = await api.get('/account/balance');
+            if (response.data?.success) {
+              setBalance(response.data.data.balance);
+            }
+          } catch (error) {
+            console.error('Error fetching initial balance for fallback mock user:', error);
+          } finally {
+            setLoading(false);
+          }
+        } else {
+          setUser(null);
+          setBalance(0);
+          setLoading(false);
+        }
       }
     });
 
     return () => {
       unsubscribeAuth();
-      if (unsubscribeSnapshot) {
-        unsubscribeSnapshot();
-      }
     };
-  }, []);
+  }, [refreshBalance]);
 
   const signInWithGoogle = useCallback(async () => {
     setLoading(true);
@@ -181,8 +214,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signInWithGoogle,
     signInWithPinBypass,
-    logout
-  }), [user, balance, loading, signInWithGoogle, signInWithPinBypass, logout]);
+    logout,
+    refreshBalance
+  }), [user, balance, loading, signInWithGoogle, signInWithPinBypass, logout, refreshBalance]);
 
   return (
     <AuthContext.Provider value={value}>

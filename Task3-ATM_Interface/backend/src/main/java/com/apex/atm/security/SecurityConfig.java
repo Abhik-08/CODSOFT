@@ -1,5 +1,7 @@
 package com.apex.atm.security;
 
+import com.apex.atm.service.FirebaseAdminService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,6 +35,13 @@ public class SecurityConfig {
     @Value("${security.cors.allow-credentials}")
     private boolean allowCredentials;
 
+    private final FirebaseAdminService firebaseAdminService;
+
+    @Autowired
+    public SecurityConfig(FirebaseAdminService firebaseAdminService) {
+        this.firebaseAdminService = firebaseAdminService;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -40,10 +49,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/public/**").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(new FirebaseTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new FirebaseTokenFilter(firebaseAdminService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -1,17 +1,5 @@
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  serverTimestamp, 
-  runTransaction, 
-  collection, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit 
-} from 'firebase/firestore';
-import { db, isMockMode } from '../firebase';
+import { isMockMode } from '../firebase';
+import api from './apiService';
 
 export interface AccountInfo {
   userId: string;
@@ -47,16 +35,8 @@ export const ensureAccountExists = async (userId: string): Promise<void> => {
   }
 
   try {
-    const accountRef = doc(db, 'accounts', userId);
-    const docSnap = await getDoc(accountRef);
-    if (!docSnap.exists()) {
-      await setDoc(accountRef, {
-        userId,
-        balance: 0, // Initial balance = 0
-        updatedAt: serverTimestamp(),
-      });
-      console.log(`Created checking account document with $0 initial balance for user ${userId}.`);
-    }
+    // The backend automatically ensures account exists, so we call get balance to initialize it if needed.
+    await api.get('/account/balance');
   } catch (error) {
     console.error('Error in ensureAccountExists:', error);
     throw error;
@@ -73,12 +53,13 @@ export const getAccount = async (userId: string): Promise<AccountInfo | null> =>
   }
 
   try {
-    const accountRef = doc(db, 'accounts', userId);
-    const docSnap = await getDoc(accountRef);
-    if (docSnap.exists()) {
-      return docSnap.data() as AccountInfo;
-    }
-    return null;
+    const response = await api.get('/account/balance');
+    const data = response.data.data;
+    return {
+      userId: data.userId,
+      balance: data.balance,
+      updatedAt: data.lastUpdatedAt,
+    };
   } catch (error) {
     console.error('Error in getAccount:', error);
     throw error;
@@ -86,8 +67,7 @@ export const getAccount = async (userId: string): Promise<AccountInfo | null> =>
 };
 
 /**
- * Runs a Firestore transaction to update the user's balance and record a transaction.
- * Ensures data consistency for concurrent actions.
+ * Runs a backend API call to update the user's balance and record a transaction.
  */
 export const addTransactionAtomically = async (
   userId: string,
@@ -137,59 +117,33 @@ export const addTransactionAtomically = async (
     return txnId;
   }
 
-  const accountRef = doc(db, 'accounts', userId);
-  const transactionColRef = collection(db, 'transactions');
-  let txnId = '';
-  
   try {
-    await runTransaction(db, async (txn) => {
-      const accountSnap = await txn.get(accountRef);
-      if (!accountSnap.exists()) {
-        throw new Error('Account does not exist.');
-      }
-      
-      const currentBalance = accountSnap.data().balance ?? 0;
-      let newBalance = currentBalance;
-      
-      if (type === 'credit') {
-        newBalance += amount;
-      } else if (type === 'debit') {
-        if (currentBalance < amount) {
-          throw new Error('Insufficient funds.');
-        }
-        newBalance -= amount;
-      }
-      
-      // Update account balance
-      txn.update(accountRef, {
-        balance: newBalance,
-        updatedAt: serverTimestamp(),
-      });
-      
-      // Create transaction document reference
-      const newTxnRef = doc(transactionColRef);
-      txnId = newTxnRef.id;
-      txn.set(newTxnRef, {
-        userId,
-        type,
-        amount,
-        description,
-        createdAt: serverTimestamp(),
-      });
+    const endpoint = type === 'credit' ? '/account/deposit' : '/account/withdraw';
+    const response = await api.post(endpoint, {
+      amount,
+      description
     });
-    return txnId;
-  } catch (error) {
-    console.error('Transaction failed:', error);
-    throw error;
+    if (response.data?.success) {
+      return response.data.data.id;
+    }
+    throw new Error(response.data?.message || 'Transaction execution failed');
+  } catch (error: any) {
+    console.error('API Transaction failed:', error);
+    const serverMessage = error.response?.data?.message;
+    throw new Error(serverMessage || error.message || 'Transaction failed');
   }
 };
 
 /**
- * Fetches user transaction documents dynamically.
+ * Fetches user transaction documents dynamically from backend REST API.
  */
 export const getTransactions = async (
   userId: string,
-  limitCount?: number
+  limitCount?: number,
+  type?: string,
+  sortBy?: string,
+  direction?: string,
+  page?: number
 ): Promise<TransactionInfo[]> => {
   if (isMockMode) {
     const transactions = JSON.parse(localStorage.getItem('apex_mock_transactions') || '[]');
@@ -205,33 +159,27 @@ export const getTransactions = async (
   }
 
   try {
-    const transactionColRef = collection(db, 'transactions');
-    let q = query(
-      transactionColRef,
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
-    
-    if (limitCount) {
-      q = query(q, limit(limitCount));
-    }
-    
-    const querySnapshot = await getDocs(q);
-    const transactions: TransactionInfo[] = [];
-    querySnapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      transactions.push({
-        id: docSnap.id,
-        userId: data.userId || '',
-        type: data.type || 'credit',
-        amount: data.amount || 0,
-        description: data.description || '',
-        createdAt: data.createdAt,
-      });
+    const response = await api.get('/account/transactions', {
+      params: {
+        size: limitCount,
+        type,
+        sortBy,
+        direction,
+        page
+      }
     });
-    return transactions;
-  } catch (error) {
+    const list = response.data.data || [];
+    return list.map((item: any) => ({
+      id: item.id,
+      userId: userId,
+      type: item.type,
+      amount: item.amount,
+      description: item.description,
+      createdAt: item.createdAt,
+    }));
+  } catch (error: any) {
     console.error('Error fetching transactions:', error);
-    throw error;
+    const serverMessage = error.response?.data?.message;
+    throw new Error(serverMessage || error.message || 'Failed to fetch transaction ledger');
   }
 };

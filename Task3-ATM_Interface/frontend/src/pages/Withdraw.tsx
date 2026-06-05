@@ -27,7 +27,7 @@ export const Withdraw: React.FC = () => {
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('auth');
   const [showSuccess, setShowSuccess] = useState(false);
   const [receipt, setReceipt] = useState<WithdrawReceipt | null>(null);
-  const { user, balance } = useAuth();
+  const { user, balance, refreshBalance } = useAuth();
 
   const dailyLimit = 20000;
   const currentBalance = balance;
@@ -93,6 +93,8 @@ export const Withdraw: React.FC = () => {
         numAmount,
         `Withdrawal - ${getMethodName(mix)}`
       );
+
+      await refreshBalance();
 
       await sleep(1000);
       setProcessingStage('dispensing');
