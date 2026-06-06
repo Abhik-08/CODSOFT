@@ -305,7 +305,7 @@ export const Login: React.FC = () => {
 
               <div className="space-y-1.5">
                 <label htmlFor="auth-email" className="text-[11.5px] font-sans font-semibold text-white/70 light:text-zinc-600 pl-1 block">
-                  Username
+                  Email ID
                 </label>
                 <div className="relative flex items-center">
                   <input
@@ -316,7 +316,7 @@ export const Login: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isInserting}
-                    placeholder="Username"
+                    placeholder="e.g. operator@nexus.bank"
                     className="w-full py-3.5 pl-6 pr-12 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
                   />
                   <FiUser className="absolute right-4.5 text-white/40 light:text-zinc-400 w-4.5 h-4.5" />
@@ -336,7 +336,7 @@ export const Login: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isInserting}
-                    placeholder="Password"
+                    placeholder="e.g. Password123"
                     className="w-full py-3.5 pl-6 pr-20 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
                   />
                   <div className="absolute right-5 flex items-center gap-2.5 z-20 pointer-events-auto">
