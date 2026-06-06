@@ -52,7 +52,7 @@ export const Sidebar: React.FC = () => {
                   {isActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute left-0 top-0 bottom-0 w-1.5 bg-[var(--accent)] shadow-[0_0_8px_2px_rgba(94,106,210,0.5)]"
+                      className="absolute left-0 top-0 bottom-0 w-1.5 bg-[var(--accent)] shadow-[0_0_8px_2px_rgba(234,88,12,0.4)] dark:shadow-[0_0_8px_2px_rgba(94,106,210,0.4)]"
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
                   )}
