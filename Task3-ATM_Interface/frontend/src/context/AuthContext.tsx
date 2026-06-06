@@ -12,6 +12,8 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<FirebaseUser>;
   signInWithPinBypass: () => Promise<FirebaseUser>;
+  signInWithEmail: (email: string, password: string) => Promise<FirebaseUser>;
+  signUpWithEmail: (email: string, password: string, displayName: string) => Promise<FirebaseUser>;
   logout: () => Promise<void>;
   refreshBalance: () => Promise<void>;
 }
@@ -96,6 +98,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [refreshBalance]);
 
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const loggedUser = await authService.loginWithEmail(email, password);
+      setUser(loggedUser);
+      // Fetch fresh balance immediately after login
+      try {
+        const response = await api.get('/account/balance');
+        if (response.data?.success) {
+          setBalance(response.data.data.balance);
+          setDailyLimit(response.data.data.dailyLimit);
+          localStorage.setItem('profile_daily_limit', String(response.data.data.dailyLimit));
+        }
+      } catch (e) {
+        console.error('Error fetching balance after email sign-in:', e);
+      }
+      return loggedUser;
+    } catch (error) {
+      console.error('AuthContext Email Sign-in error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string, displayName: string) => {
+    setLoading(true);
+    try {
+      const loggedUser = await authService.registerWithEmail(email, password, displayName);
+      setUser(loggedUser);
+      // Fetch fresh balance immediately after registration
+      try {
+        const response = await api.get('/account/balance');
+        if (response.data?.success) {
+          setBalance(response.data.data.balance);
+          setDailyLimit(response.data.data.dailyLimit);
+          localStorage.setItem('profile_daily_limit', String(response.data.data.dailyLimit));
+        }
+      } catch (e) {
+        console.error('Error fetching balance after email sign-up:', e);
+      }
+      return loggedUser;
+    } catch (error) {
+      console.error('AuthContext Email Sign-up error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     try {
@@ -167,9 +219,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signInWithGoogle,
     signInWithPinBypass,
+    signInWithEmail,
+    signUpWithEmail,
     logout,
     refreshBalance
-  }), [user, balance, dailyLimit, loading, signInWithGoogle, signInWithPinBypass, logout, refreshBalance]);
+  }), [user, balance, dailyLimit, loading, signInWithGoogle, signInWithPinBypass, signInWithEmail, signUpWithEmail, logout, refreshBalance]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -86,8 +86,13 @@ import { useAuth } from '../context/AuthContext';
 
 export const Login: React.FC = () => {
   const [isInserting, setIsInserting] = useState(false);
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+
   const navigate = useNavigate();
-  const { user, signInWithGoogle } = useAuth();
+  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
 
   // Redirect if user is already authenticated
   React.useEffect(() => {
@@ -113,6 +118,45 @@ export const Login: React.FC = () => {
       } else {
         toast.error(firebaseError?.message || 'Google Authentication failed.', { id: toastId });
       }
+    } finally {
+      setIsInserting(false);
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error('Please fill in all operator credentials.');
+      return;
+    }
+    if (mode === 'signup' && !name) {
+      toast.error('Please enter your operator name.');
+      return;
+    }
+
+    setIsInserting(true);
+    const toastId = toast.loading(
+      mode === 'signup' 
+        ? 'Registering operator node...' 
+        : 'Connecting to secure session...', 
+      { id: 'auth' }
+    );
+
+    try {
+      if (mode === 'signup') {
+        const loggedUser = await signUpWithEmail(email, password, name);
+        localStorage.setItem('apex_last_uid', loggedUser.uid);
+        toast.success('Operator Node Registered Successfully!', { id: toastId });
+      } else {
+        const loggedUser = await signInWithEmail(email, password);
+        localStorage.setItem('apex_last_uid', loggedUser.uid);
+        toast.success('Operator Session Authenticated!', { id: toastId });
+      }
+      navigate('/dashboard');
+    } catch (error) {
+      console.error(error);
+      const err = error as Error;
+      toast.error(err.message || 'Operator authentication failed.', { id: toastId });
     } finally {
       setIsInserting(false);
     }
@@ -158,7 +202,7 @@ export const Login: React.FC = () => {
           </h1>
 
           <p className="text-dark-text/65 light:text-light-text/65 text-[15px] leading-relaxed mb-8 max-w-md mx-auto md:mx-0">
-            Insert your digital debit token and authenticate using Google Single Sign-On. Engineered with military-grade encryption and real-time ledger sync.
+            Insert your digital debit token and authenticate using Google Single Sign-On or secure operator credentials. Engineered with military-grade encryption and real-time ledger sync.
           </p>
 
           {/* Core Banking Illustration */}
@@ -176,22 +220,15 @@ export const Login: React.FC = () => {
             className="w-full max-w-[400px] glass-card premium-card-shadow rounded-3xl p-6 md:p-8 flex flex-col items-center border border-dark-border/20 light:border-light-border/45"
           >
             {/* ATM Console Display Screen */}
-            <div className="w-full glass-panel border border-dark-border/25 light:border-light-border/60 rounded-2xl p-6 mb-6 text-center select-none flex flex-col items-center">
-              <div className="relative w-16 h-16 mb-5 flex items-center justify-center">
+            <div className="w-full glass-panel border border-dark-border/25 light:border-light-border/60 rounded-2xl p-5 mb-5 text-center select-none flex flex-col items-center">
+              <div className="relative w-12 h-12 mb-3.5 flex items-center justify-center">
                 {/* Rotating Outer Ring */}
                 <div className="absolute inset-0 rounded-full border border-dashed border-primary/30 animate-[spin_8s_linear_infinite]" />
                 
-                {/* Secondary Ring with opposite rotation */}
-                <div className="absolute inset-1 rounded-full border border-double border-secondary/20 animate-[spin_12s_linear_infinite_reverse]" />
-                
-                {/* Scan Line Bar */}
-                <div className="absolute top-0 left-2 right-2 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_8px_#10b981] animate-scan z-20 pointer-events-none" />
-
                 {/* Cyber Biometric Core */}
-                <div className="w-12 h-12 rounded-full bg-dark-bg/60 light:bg-light-bg/40 border border-primary/20 flex items-center justify-center text-primary relative overflow-hidden group shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]">
-                  {/* Fingerprint Vector Icon with glowing transition */}
+                <div className="w-9 h-9 rounded-full bg-dark-bg/60 light:bg-light-bg/40 border border-primary/20 flex items-center justify-center text-primary relative overflow-hidden group shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]">
                   <svg 
-                    className="w-7 h-7 opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 drop-shadow-[0_0_4px_rgba(16,185,129,0.5)]" 
+                    className="w-5 h-5 opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 drop-shadow-[0_0_4px_rgba(16,185,129,0.5)]" 
                     fill="none" 
                     stroke="currentColor" 
                     strokeWidth="1.5" 
@@ -200,34 +237,110 @@ export const Login: React.FC = () => {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0-3.517-1.009-6.799-2.753-9.571m-3.44 2.04l.054-.09A13.916 13.916 0 009 11a13.917 13.917 0 002.212 7.448m3.44-2.04L15 16.5m-7.44-7.44a13.916 13.916 0 00-2.212-7.448m0 0A13.91 13.91 0 003 11a13.918 13.918 0 002.212 7.448M12 11c0 3.517 1.009 6.799 2.753 9.571m3.44-2.04l-.054.09A13.912 13.912 0 0015 11a13.915 13.915 0 00-2.212-7.448m-3.44 2.04L9 4.5M10.5 22.5A9.012 9.012 0 012.25 12c0-1.285.268-2.508.75-3.622m8.25 14.122a9.012 9.012 0 008.25-10.5c0-1.285-.268-2.508-.75-3.622M12 2.25c-4.97 0-9 4.03-9 9 0 1.206.237 2.355.667 3.407" />
                   </svg>
-                  
-                  {/* Subtle pulsing radar circle */}
                   <div className="absolute inset-0 bg-primary/5 rounded-full animate-ping pointer-events-none opacity-40" />
                 </div>
               </div>
 
-              
-              <div className="text-[14px] font-mono tracking-wider font-bold text-dark-text light:text-light-text mb-2 uppercase">
-                ATM SESSION TERMINAL
+              <div className="text-[12.5px] font-mono tracking-wider font-bold text-dark-text light:text-light-text mb-1 uppercase">
+                {mode === 'signin' ? 'Operator Sign In' : 'Operator Register'}
               </div>
               
-              <p className="text-xs text-dark-text/50 light:text-light-text/50 leading-relaxed">
-                Connect your card ledger. Please authenticate using your secure Google account.
+              <p className="text-[10.5px] text-dark-text/50 light:text-light-text/50 leading-relaxed px-2">
+                {mode === 'signin' 
+                  ? 'Connect your checking ledger session. Provide your email credentials.' 
+                  : 'Enroll checking node details into the security directory.'}
               </p>
+            </div>
+
+            {/* Email/Password Access Form */}
+            <form onSubmit={handleEmailSubmit} className="w-full space-y-3.5">
+              {mode === 'signup' && (
+                <div className="space-y-1">
+                  <label htmlFor="auth-name" className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase font-bold pl-0.5">Operator Full Name</label>
+                  <input
+                    id="auth-name"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isInserting}
+                    placeholder="e.g. ABHIK MUKHERJEE"
+                    className="w-full py-2.5 px-3.5 rounded-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-zinc-900/60 dark:bg-black/45 light:bg-zinc-50 outline-none text-xs text-dark-text light:text-light-text font-mono focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-200"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label htmlFor="auth-email" className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase font-bold pl-0.5">Secure Email</label>
+                <input
+                  id="auth-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isInserting}
+                  placeholder="operator@nexus.bank"
+                  className="w-full py-2.5 px-3.5 rounded-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-zinc-900/60 dark:bg-black/45 light:bg-zinc-50 outline-none text-xs text-dark-text light:text-light-text font-mono focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-200"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="auth-password" className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase font-bold pl-0.5">Session Passphrase</label>
+                <input
+                  id="auth-password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isInserting}
+                  placeholder="••••••••"
+                  className="w-full py-2.5 px-3.5 rounded-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-zinc-900/60 dark:bg-black/45 light:bg-zinc-50 outline-none text-xs text-dark-text light:text-light-text font-mono focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-200"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isInserting}
+                className="w-full py-3 rounded-xl font-display font-bold text-[11.5px] uppercase tracking-widest bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-md mt-1"
+              >
+                {mode === 'signin' ? 'Connect Operator Node' : 'Register Checking Profile'}
+              </button>
+            </form>
+
+            {/* SSO Divider */}
+            <div className="w-full flex items-center gap-3 my-4">
+              <div className="h-[1px] flex-1 bg-dark-border/10 light:bg-light-border/40" />
+              <span className="text-[9px] font-mono text-dark-text/30 light:text-light-text/30 uppercase tracking-widest select-none">OR AUTHENTICATE VIA</span>
+              <div className="h-[1px] flex-1 bg-dark-border/10 light:bg-light-border/40" />
             </div>
 
             {/* Google Sign In Button */}
             <button
               onClick={handleGoogleLogin}
               disabled={isInserting}
-              className="w-full py-4 rounded-xl border border-dark-border/20 light:border-light-border/60 bg-dark-surface/40 light:bg-light-surface text-dark-text light:text-light-text hover:bg-dark-card light:hover:bg-light-card hover:border-primary/20 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-3.5 font-bold text-sm tracking-wide shadow-sm"
+              className="w-full py-3 rounded-xl border border-dark-border/20 light:border-light-border/60 bg-dark-surface/40 light:bg-light-surface text-dark-text light:text-light-text hover:bg-dark-card light:hover:bg-light-card hover:border-primary/20 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2.5 font-bold text-xs tracking-wide shadow-sm"
             >
-              <FcGoogle className="w-6 h-6" />
+              <FcGoogle className="w-5 h-5" />
               <span>Continue with Google</span>
             </button>
-            
-            <div className="text-[10px] font-mono text-dark-text/30 light:text-light-text/30 mt-6 tracking-widest uppercase">
-              Secure SSL 256-bit Encrypted
+
+            {/* Mode toggle link */}
+            <div className="mt-5 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode(prev => prev === 'signin' ? 'signup' : 'signin');
+                  setEmail('');
+                  setPassword('');
+                  setName('');
+                }}
+                disabled={isInserting}
+                className="text-[10px] font-mono tracking-wider text-secondary hover:text-primary hover:underline transition-colors uppercase font-bold"
+              >
+                {mode === 'signin' 
+                  ? 'First time here? Register checking node' 
+                  : 'Already registered? Login to Node Session'}
+              </button>
             </div>
           </motion.div>
         </div>

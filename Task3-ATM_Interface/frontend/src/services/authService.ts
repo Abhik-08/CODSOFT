@@ -2,6 +2,9 @@ import {
   signInWithPopup, 
   signOut, 
   signInAnonymously,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
   type User as FirebaseUser 
 } from 'firebase/auth';
 import { auth, googleProvider, isMockMode } from '../firebase';
@@ -137,6 +140,69 @@ export const signInWithPinBypass = async (): Promise<FirebaseUser> => {
     await syncUserDocument(mockUser);
     return mockUser;
   }
+};
+
+/**
+ * Registers a user with email and password, syncs profile name, and ensures account setup.
+ */
+export const registerWithEmail = async (email: string, password: string, displayName: string): Promise<FirebaseUser> => {
+  if (isMockMode) {
+    const credentials = JSON.parse(localStorage.getItem('apex_mock_email_credentials') || '{}');
+    if (credentials[email]) {
+      throw new Error('An operator account with this email already exists.');
+    }
+    const mockUid = `mock-email-uid-${Date.now()}`;
+    credentials[email] = { password, uid: mockUid, displayName };
+    localStorage.setItem('apex_mock_email_credentials', JSON.stringify(credentials));
+
+    const mockUser = {
+      uid: mockUid,
+      email: email,
+      displayName: displayName,
+      photoURL: '',
+      emailVerified: true,
+      isAnonymous: false,
+    } as unknown as FirebaseUser;
+
+    localStorage.setItem('apex_mock_logged_in_user', JSON.stringify(mockUser));
+    await syncUserDocument(mockUser);
+    return mockUser;
+  }
+
+  const result = await createUserWithEmailAndPassword(auth, email, password);
+  await updateProfile(result.user, { displayName });
+  await syncUserDocument(result.user);
+  return result.user;
+};
+
+/**
+ * Signs in a user with email and password credentials.
+ */
+export const loginWithEmail = async (email: string, password: string): Promise<FirebaseUser> => {
+  if (isMockMode) {
+    const credentials = JSON.parse(localStorage.getItem('apex_mock_email_credentials') || '{}');
+    const matched = credentials[email];
+    if (!matched || matched.password !== password) {
+      throw new Error('Invalid email address or access passphrase credentials.');
+    }
+
+    const mockUser = {
+      uid: matched.uid,
+      email: email,
+      displayName: matched.displayName,
+      photoURL: '',
+      emailVerified: true,
+      isAnonymous: false,
+    } as unknown as FirebaseUser;
+
+    localStorage.setItem('apex_mock_logged_in_user', JSON.stringify(mockUser));
+    await syncUserDocument(mockUser);
+    return mockUser;
+  }
+
+  const result = await signInWithEmailAndPassword(auth, email, password);
+  await syncUserDocument(result.user);
+  return result.user;
 };
 
 /**
