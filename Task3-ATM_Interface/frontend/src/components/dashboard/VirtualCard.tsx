@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion, useMotionValue, useTransform, useSpring, useMotionTemplate } from 'motion/react';
-import { AnimatedCounter } from '../ui/AnimatedCounter';
 import { FiWifi, FiEye, FiEyeOff, FiCopy, FiLock } from 'react-icons/fi';
 import { useTheme } from '../../context/ThemeContext';
 import toast from 'react-hot-toast';
@@ -8,7 +7,6 @@ import toast from 'react-hot-toast';
 interface VirtualCardProps {
   name: string;
   cardNumber: string;
-  balance: number;
   cardType?: string;
   isFrozen?: boolean;
   expiry?: string;
@@ -115,7 +113,6 @@ const getCardThemeClasses = (isFrozen: boolean, isDark: boolean, hovered: boolea
 export const VirtualCard: React.FC<VirtualCardProps> = ({
   name,
   cardNumber,
-  balance,
   cardType = 'PLATINUM DEBIT',
   isFrozen = false,
   expiry = '06/31',
@@ -329,7 +326,7 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
                 {displayedNumber}
               </span>
 
-              {/* Cardholder name, Expiry, and Balance */}
+              {/* Cardholder name and Expiry */}
               <div className="flex justify-between items-end mt-2.5">
                 <div className="flex flex-col text-left">
                   <span className="text-[7.5px] font-mono opacity-50 uppercase tracking-widest">
@@ -340,21 +337,12 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
                   </span>
                 </div>
 
-                <div className="flex flex-col text-center">
+                <div className="flex flex-col text-right">
                   <span className="text-[7.5px] font-mono opacity-50 uppercase tracking-widest">
                     Expiry
                   </span>
                   <span className="font-mono font-bold text-[11px]">
                     {expiry}
-                  </span>
-                </div>
-
-                <div className="flex flex-col text-right items-end bg-dark-surface/20 dark:bg-black/30 border border-dark-border/10 rounded-xl px-2.5 py-0.5 shadow-recessed">
-                  <span className="text-[7px] font-mono opacity-50 uppercase tracking-widest">
-                    Balance
-                  </span>
-                  <span className="font-mono font-black text-[12px] text-primary tracking-wide">
-                    <AnimatedCounter value={balance} isCurrency={true} />
                   </span>
                 </div>
               </div>

@@ -218,7 +218,6 @@ export const Dashboard: React.FC = () => {
           <VirtualCard
             name={profileName.toUpperCase()}
             cardNumber={profileCardNo}
-            balance={balance}
             expiry={profileExpiry}
             isFrozen={isFrozen}
           />

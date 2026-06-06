@@ -101,7 +101,7 @@ const getDisplayTier = (tierValue: string) => {
 
 export const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, balance, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [isFrozen, setIsFrozen] = useState(() => {
     return localStorage.getItem('apex_card_frozen') === 'true';
   });
@@ -697,7 +697,6 @@ export const Profile: React.FC = () => {
               <VirtualCard
                 name={profileName.toUpperCase()}
                 cardNumber={profileCardNumber}
-                balance={balance}
                 expiry={profileExpiry}
                 isFrozen={isFrozen}
               />
