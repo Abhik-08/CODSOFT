@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { VirtualCard } from '../components/dashboard/VirtualCard';
 import { StatCard } from '../components/dashboard/StatCard';
 import { AnalyticsSection } from '../components/dashboard/AnalyticsSection';
+import FinancialInsightsCard from '../components/FinancialInsightsCard';
 import { FiTrendingUp, FiActivity, FiArrowRight, FiDownload, FiUpload, FiList, FiLock } from 'react-icons/fi';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
@@ -495,6 +496,9 @@ export const Dashboard: React.FC = () => {
 
       {/* 3.5 Analytics Section */}
       <AnalyticsSection transactions={transactions} />
+
+      {/* AI Financial Insights Section */}
+      <FinancialInsightsCard />
 
       {/* 4. Recent Activity Log - styled as a CRT Green-Screen Terminal */}
       <div className="space-y-3">
