@@ -4,7 +4,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { motion } from 'motion/react';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import toast from 'react-hot-toast';
-import { FiUser, FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiUser, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 
 // Custom Animated Banking Illustration
 const BankingIllustration: React.FC = () => {
@@ -153,10 +153,19 @@ export const Login: React.FC = () => {
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      toast.error('Please enter a valid email address (e.g. name@domain.com).');
-      return;
+    let formattedEmail = email.trim();
+    if (formattedEmail.includes('@')) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formattedEmail)) {
+        toast.error('Please enter a valid email address.');
+        return;
+      }
+    } else {
+      const slug = formattedEmail
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '.')
+        .replace(/\.+/g, '.');
+      formattedEmail = `${slug}@nexus.bank`;
     }
 
     setIsInserting(true);
@@ -169,11 +178,11 @@ export const Login: React.FC = () => {
 
     try {
       if (mode === 'signup') {
-        const loggedUser = await signUpWithEmail(email, password, name);
+        const loggedUser = await signUpWithEmail(formattedEmail, password, name);
         localStorage.setItem('apex_last_uid', loggedUser.uid);
         toast.success('Operator Node Registered Successfully!', { id: toastId });
       } else {
-        const loggedUser = await signInWithEmail(email, password);
+        const loggedUser = await signInWithEmail(formattedEmail, password);
         localStorage.setItem('apex_last_uid', loggedUser.uid);
         toast.success('Operator Session Authenticated!', { id: toastId });
       }
@@ -258,59 +267,77 @@ export const Login: React.FC = () => {
             {/* Email/Password Access Form */}
             <form onSubmit={handleEmailSubmit} className="w-full space-y-4 relative z-10">
               {mode === 'signup' && (
+                <div className="space-y-1.5">
+                  <label htmlFor="auth-name" className="text-[11.5px] font-sans font-semibold text-white/70 light:text-zinc-600 pl-1 block">
+                    Full Name
+                  </label>
+                  <div className="relative flex items-center">
+                    <input
+                      id="auth-name"
+                      type="text"
+                      autoComplete="name"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      disabled={isInserting}
+                      placeholder="Full Name"
+                      className="w-full py-3.5 pl-6 pr-12 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
+                    />
+                    <FiUser className="absolute right-4.5 text-white/40 light:text-zinc-400 w-4.5 h-4.5" />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label htmlFor="auth-email" className="text-[11.5px] font-sans font-semibold text-white/70 light:text-zinc-600 pl-1 block">
+                  Username
+                </label>
                 <div className="relative flex items-center">
                   <input
-                    id="auth-name"
+                    id="auth-email"
                     type="text"
-                    autoComplete="name"
+                    autoComplete="username"
                     required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     disabled={isInserting}
-                    placeholder="Full Name"
+                    placeholder="Username"
                     className="w-full py-3.5 pl-6 pr-12 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
                   />
                   <FiUser className="absolute right-4.5 text-white/40 light:text-zinc-400 w-4.5 h-4.5" />
                 </div>
-              )}
-
-              <div className="relative flex items-center">
-                <input
-                  id="auth-email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isInserting}
-                  placeholder="Email"
-                  className="w-full py-3.5 pl-6 pr-12 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
-                />
-                <FiMail className="absolute right-4.5 text-white/40 light:text-zinc-400 w-4.5 h-4.5" />
               </div>
 
-              <div className="relative flex items-center">
-                <input
-                  id="auth-password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete={mode === 'signin' ? "current-password" : "new-password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isInserting}
-                  placeholder="Password"
-                  className="w-full py-3.5 pl-6 pr-18 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
-                />
-                <div className="absolute right-4.5 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(prev => !prev)}
-                    className="text-white/40 light:text-zinc-400 hover:text-white dark:hover:text-white light:hover:text-zinc-900 transition-colors cursor-pointer flex items-center justify-center p-0.5"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
-                  </button>
-                  <FiLock className="text-white/40 light:text-zinc-400 w-4 h-4" />
+              <div className="space-y-1.5">
+                <label htmlFor="auth-password" className="text-[11.5px] font-sans font-semibold text-white/70 light:text-zinc-600 pl-1 block">
+                  Password
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="auth-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete={mode === 'signin' ? "current-password" : "new-password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isInserting}
+                    placeholder="Password"
+                    className="w-full py-3.5 pl-6 pr-20 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
+                  />
+                  <div className="absolute right-5 flex items-center gap-2.5 z-20 pointer-events-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        console.log("Password visibility toggle clicked. State was:", showPassword);
+                        setShowPassword(prev => !prev);
+                      }}
+                      className="text-white/40 light:text-zinc-400 hover:text-white dark:hover:text-white light:hover:text-zinc-900 transition-colors cursor-pointer flex items-center justify-center p-1 relative z-30 pointer-events-auto"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <FiEyeOff className="w-4.5 h-4.5" /> : <FiEye className="w-4.5 h-4.5" />}
+                    </button>
+                    <FiLock className="text-white/40 light:text-zinc-400 w-4.5 h-4.5 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
@@ -337,7 +364,7 @@ export const Login: React.FC = () => {
                 disabled={isInserting}
                 className="w-full py-3.5 rounded-full font-sans font-bold text-[14px] bg-white dark:bg-white light:bg-zinc-900 text-zinc-950 dark:text-zinc-950 light:text-white hover:opacity-90 active:scale-[0.97] transition-all duration-200 cursor-pointer shadow-md mt-2 flex items-center justify-center"
               >
-                {mode === 'signin' ? 'Login' : 'Register'}
+                {mode === 'signin' ? 'Sign In' : 'Register'}
               </button>
             </form>
 
