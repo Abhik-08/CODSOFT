@@ -4,10 +4,13 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 import { MobileDrawer } from './MobileDrawer';
+import { useAuth } from '../../context/AuthContext';
+import AIChatWidget from '../AIChatWidget';
 
 export const MainLayout: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
 
   const handleOpenDrawer = () => setIsDrawerOpen(true);
   const handleCloseDrawer = () => setIsDrawerOpen(false);
@@ -42,6 +45,8 @@ export const MainLayout: React.FC = () => {
           </AnimatePresence>
         </main>
       </div>
+
+      {user && <AIChatWidget />}
     </div>
   );
 };
