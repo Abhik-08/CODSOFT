@@ -20,16 +20,13 @@ public class GeminiService {
     private static final List<String> MODELS = List.of(
         "gemini-2.0-flash",                 // Unlimited rate limit (stable 2.0 flash) - primary choice
         "gemini-2.0-flash-lite",            // Unlimited rate limit (lightweight 2.0)
-        "gemini-3.1-flash-lite",            // High rate limit (500 RPD)
-        "gemini-3.1-pro-preview",           // Good rate limit (250 RPD)
-        "gemini-3.5-flash",                 // Newest generation (20 RPD)
-        "gemini-3-flash-preview",           // Preview generation (20 RPD)
-        "gemini-2.5-flash",                 // Reliable 2.5 flash (20 RPD)
         "gemini-1.5-flash",                 // Legacy reliable fallback
         "gemini-1.5-flash-8b",              // Smaller fallback
         "gemini-1.5-pro",                   // Pro fallback
         "gemini-1.0-pro"                    // Last resort
     );
+
+    private final Map<String, Long> rateLimitCooldowns = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Value("${gemini.api.key:}")
     private String apiKey;
@@ -55,21 +52,30 @@ public class GeminiService {
     }
 
     private String tryModelWithKeys(String model, String prompt, List<String> keys) {
-        for (int i = 0; i < keys.size(); i++) {
-            String currentKey = keys.get(i);
-            try {
-                return callGeminiApi(model, prompt, currentKey);
-            } catch (HttpClientErrorException.TooManyRequests e) {
-                logger.warn("Gemini model {} with Key index {} hit rate limit (429). Trying next key...", model, i);
-            } catch (HttpClientErrorException e) {
-                int statusCode = e.getStatusCode().value();
-                if (statusCode == 404 || statusCode == 400) {
-                    logger.warn("Gemini model {} not supported or not found (status {}). Skipping to next model.", model, statusCode);
-                    break;
+        List<String> shuffledKeys = new java.util.ArrayList<>(keys);
+        java.util.Collections.shuffle(shuffledKeys);
+        long now = System.currentTimeMillis();
+
+        for (String currentKey : shuffledKeys) {
+            String cooldownKey = currentKey + ":" + model;
+            boolean isCooldown = rateLimitCooldowns.containsKey(cooldownKey) && now < rateLimitCooldowns.get(cooldownKey);
+
+            if (!isCooldown) {
+                try {
+                    return callGeminiApi(model, prompt, currentKey);
+                } catch (HttpClientErrorException.TooManyRequests e) {
+                    logger.warn("Gemini model {} hit rate limit (429) with key. Placing combination on 60s cooldown.", model);
+                    rateLimitCooldowns.put(cooldownKey, System.currentTimeMillis() + 60000); // 1 minute cooldown
+                } catch (HttpClientErrorException e) {
+                    int statusCode = e.getStatusCode().value();
+                    if (statusCode == 404 || statusCode == 400) {
+                        logger.warn("Gemini model {} not supported or not found (status {}). Skipping model.", model, statusCode);
+                        return null;
+                    }
+                    logger.error("HTTP error calling Gemini model {} (status {}): {}", model, statusCode, e.getResponseBodyAsString());
+                } catch (Exception e) {
+                    logger.error("Error calling Gemini model {}: {}", model, e.getMessage());
                 }
-                logger.error("HTTP error calling Gemini model {} with key index {}: {} - {}", model, i, statusCode, e.getResponseBodyAsString());
-            } catch (Exception e) {
-                logger.error("Error calling Gemini model {} with key index {}: {}", model, i, e.getMessage());
             }
         }
         return null;
