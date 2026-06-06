@@ -353,3 +353,51 @@ h4 {
   animation: scan 2s linear infinite;
 }
 
+/* Premium Card Overhaul Styling Utilities */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite linear;
+}
+
+@keyframes hologram-spin {
+  0% {
+    background-position: 0% 0%;
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    background-position: 100% 100%;
+    filter: hue-rotate(180deg);
+  }
+  100% {
+    background-position: 0% 0%;
+    filter: hue-rotate(360deg);
+  }
+}
+
+.animate-hologram {
+  background-size: 200% 200%;
+  animation: hologram-spin 8s infinite linear;
+}
+
+@keyframes card-glare-sweep {
+  0% {
+    transform: translate(-100%, -100%) rotate(45deg);
+  }
+  100% {
+    transform: translate(100%, 100%) rotate(45deg);
+  }
+}
+
+.animate-glare-sweep {
+  animation: card-glare-sweep 5s infinite ease-in-out;
+}
+
+

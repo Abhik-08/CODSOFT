@@ -69,34 +69,34 @@ const CARD_THEMES: {
   active: {
     dark: {
       hovered: {
-        cardBorderClass: 'border-[#5e6ad2]/40',
-        cardBgClass: 'bg-gradient-to-b from-white/[0.08] to-white/[0.01] text-[#EDEDEF]',
-        chipBgClass: 'bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-200',
-        borderOverlayClass: 'bg-gradient-to-r from-[#5e6ad2] via-purple-400 to-pink-400 opacity-20',
-        shadowValue: '0 12px 40px rgba(0, 0, 0, 0.6), 0 0 60px rgba(94, 106, 210, 0.15)',
+        cardBorderClass: 'border-cyan-400/40',
+        cardBgClass: 'bg-gradient-to-br from-[#0c1024] via-[#141b36] to-[#060812] text-white',
+        chipBgClass: 'bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600',
+        borderOverlayClass: 'bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-40',
+        shadowValue: '0 20px 45px rgba(0, 0, 0, 0.75), 0 0 40px rgba(6, 182, 212, 0.25)',
       },
       normal: {
-        cardBorderClass: 'border-white/[0.08]',
-        cardBgClass: 'bg-gradient-to-b from-white/[0.08] to-white/[0.01] text-[#EDEDEF]',
-        chipBgClass: 'bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-200',
-        borderOverlayClass: 'bg-gradient-to-r from-[#5e6ad2] to-[#5e6ad2] opacity-5',
-        shadowValue: '0 4px 24px rgba(0, 0, 0, 0.45)',
+        cardBorderClass: 'border-white/[0.06]',
+        cardBgClass: 'bg-gradient-to-br from-[#060813] via-[#0b0f20] to-[#030409] text-[#EDEDEF]',
+        chipBgClass: 'bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600',
+        borderOverlayClass: 'bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 opacity-15',
+        shadowValue: '0 8px 32px rgba(0, 0, 0, 0.55)',
       }
     },
     light: {
       hovered: {
-        cardBorderClass: 'border-[#5e6ad2]/35',
-        cardBgClass: 'bg-gradient-to-b from-white/95 to-zinc-50/90 text-[#09090b]',
+        cardBorderClass: 'border-indigo-400/30',
+        cardBgClass: 'bg-gradient-to-br from-white via-indigo-50/50 to-zinc-100 text-black',
         chipBgClass: 'bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-300',
-        borderOverlayClass: 'bg-gradient-to-r from-[#5e6ad2] via-purple-400 to-pink-400 opacity-20',
-        shadowValue: '0 12px 25px rgba(0, 0, 0, 0.08)',
+        borderOverlayClass: 'bg-gradient-to-r from-indigo-500 via-purple-400 to-pink-400 opacity-30',
+        shadowValue: '0 15px 30px rgba(94, 106, 210, 0.15)',
       },
       normal: {
-        cardBorderClass: 'border-black/[0.08]',
-        cardBgClass: 'bg-gradient-to-b from-white/95 to-zinc-50/90 text-[#09090b]',
+        cardBorderClass: 'border-zinc-200',
+        cardBgClass: 'bg-gradient-to-br from-white via-zinc-50 to-zinc-100 text-[#0f172a]',
         chipBgClass: 'bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-300',
-        borderOverlayClass: 'bg-gradient-to-r from-[#5e6ad2] to-[#5e6ad2] opacity-5',
-        shadowValue: '0 4px 12px rgba(0, 0, 0, 0.03)',
+        borderOverlayClass: 'bg-gradient-to-r from-indigo-500 to-purple-500 opacity-10',
+        shadowValue: '0 6px 16px rgba(0, 0, 0, 0.04)',
       }
     }
   }
@@ -131,7 +131,7 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
   const { fullCardNumber, displayedNumber } = getCardDetails(cardNumber, isMasked);
 
   // Retrieve neumorphic layout classes
-  const { cardBorderClass, cardBgClass, chipBgClass, borderOverlayClass, shadowValue } = getCardThemeClasses(isFrozen, isDark, hovered);
+  const { cardBorderClass, cardBgClass, borderOverlayClass, shadowValue } = getCardThemeClasses(isFrozen, isDark, hovered);
 
   // Motion values for 3D tilt tracking
   const x = useMotionValue(0);
@@ -249,6 +249,9 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
             }}
             className={`absolute inset-0 rounded-2xl overflow-hidden p-6 flex flex-col justify-between border transition-all duration-500 ${cardBorderClass} ${cardBgClass}`}
           >
+            {/* Cyber mechatronic grid line/circuit overlay */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(6,182,212,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(6,182,212,0.04)_1px,transparent_1px)] bg-[size:12px_12px] pointer-events-none mix-blend-overlay opacity-60 z-1" />
+
             {/* Corner Screws */}
             <div className="absolute top-2.5 left-2.5 corner-screw opacity-40 z-20" />
             <div className="absolute top-2.5 right-2.5 corner-screw opacity-40 z-20" />
@@ -257,18 +260,23 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
 
             {/* Ambient Glow Orbs behind card (only visible if active) */}
             {!isFrozen && (
-              <div className="absolute bottom-[-20%] right-[-10%] w-36 h-36 rounded-full bg-[var(--accent)]/5 blur-3xl pointer-events-none transition-all duration-300 animate-pulse-glow" />
+              <div className="absolute bottom-[-20%] right-[-10%] w-36 h-36 rounded-full bg-[var(--accent)]/10 blur-3xl pointer-events-none transition-all duration-300 animate-pulse-glow" />
             )}
 
             {/* Glowing Border Overlay */}
             <div className={`absolute inset-0 rounded-2xl p-[1px] pointer-events-none transition-opacity duration-300 ${borderOverlayClass}`} />
 
-            {/* Dynamic Specular Glare */}
+            {/* Dynamic Specular Glare Mouse Tracking */}
             {!isFrozen && (
               <motion.div 
-                className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-80"
+                className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-80 z-10"
                 style={{ background: specularBg }}
               />
+            )}
+
+            {/* Specular glare light reflection sweep */}
+            {!isFrozen && (
+              <div className="absolute -inset-y-12 w-16 bg-white/10 blur-md pointer-events-none z-15 animate-glare-sweep mix-blend-overlay" style={{ transformOrigin: 'center' }} />
             )}
 
             {/* Frost/Ice Glaze Texture Overlay when Frozen */}
@@ -279,10 +287,10 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
             {/* Front Header */}
             <div className="flex justify-between items-start relative z-10 px-2" style={{ transform: 'translateZ(30px)' }}>
               <div className="flex flex-col text-left">
-                <span className="text-[9px] font-mono opacity-50 uppercase tracking-widest font-black">
-                  NEXUS VIP PROTOCOL
+                <span className="text-[8.5px] font-mono opacity-50 uppercase tracking-widest font-black">
+                  NEXUS SECURE SYSTEM
                 </span>
-                <span className="font-mono font-bold text-[13px] tracking-wider uppercase mt-0.5">
+                <span className="font-mono font-bold text-[12px] tracking-widest uppercase mt-0.5 text-shadow-sm">
                   {cardType}
                 </span>
               </div>
@@ -293,25 +301,31 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
 
             {/* EMV Microchip & custom brand logo */}
             <div className="flex items-center justify-between relative z-10 my-2.5 px-2" style={{ transform: 'translateZ(40px)' }}>
-              {/* Gold/Silver Microchip */}
-              <div className={`w-10 h-8 rounded-lg p-[1px] relative overflow-hidden shadow-inner ${chipBgClass}`}>
-                <div className="w-full h-full border border-black/10 rounded-lg flex flex-wrap p-0.5 opacity-60">
-                  <div className="w-1/2 h-1/2 border-r border-b border-black/20" />
-                  <div className="w-1/2 h-1/2 border-b border-black/20" />
-                  <div className="w-1/2 h-1/2 border-r border-black/20" />
-                  <div className="w-1/2 h-1/2" />
+              {/* Gold EMV Microchip with realistic gold lines and sweep shimmer */}
+              <div className="w-11 h-9 rounded-lg p-[1px] relative overflow-hidden shadow-lg shadow-black/40 border border-amber-600/30 bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 flex-shrink-0">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer pointer-events-none" />
+                <div className="w-full h-full border border-black/15 rounded-lg flex flex-wrap p-0.5 opacity-80">
+                  <div className="w-1/3 h-1/2 border-r border-b border-black/25" />
+                  <div className="w-1/3 h-1/2 border-r border-b border-black/25" />
+                  <div className="w-1/3 h-1/2 border-b border-black/25" />
+                  <div className="w-1/3 h-1/2 border-r border-black/25" />
+                  <div className="w-1/3 h-1/2 border-r border-black/25" />
+                  <div className="w-1/3 h-1/2" />
                 </div>
               </div>
 
-              {/* Circular minimalist telemetry accent */}
-              <div className="flex items-center justify-center w-7 h-7 rounded-full border border-[var(--border-dark)] bg-black/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
-                <span className={`w-3 h-3 rounded-full ${isFrozen ? 'bg-zinc-500' : 'bg-[var(--accent)] shadow-[0_0_6px_2px_rgba(94,106,210,0.5)] animate-pulse'}`} />
+              {/* Holographic Refractive Security Badge */}
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-cyan-400 via-pink-400 via-yellow-300 via-purple-500 to-emerald-400 opacity-90 shadow-md relative overflow-hidden flex items-center justify-center p-[1px] animate-hologram">
+                <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-black/30 mix-blend-overlay" />
+                <div className="w-full h-full rounded-full bg-slate-900/85 backdrop-blur-xs flex items-center justify-center text-[7.5px] font-mono font-black text-cyan-300 tracking-tighter">
+                  NXS
+                </div>
               </div>
             </div>
 
             {/* Card Number */}
             <div className="flex flex-col justify-end gap-1 relative z-10 px-2" style={{ transform: 'translateZ(50px)' }}>
-              <span className="font-mono font-black tracking-[3px] text-[14px] sm:text-[16px] text-left">
+              <span className="font-mono font-black tracking-[4px] text-[15px] sm:text-[17px] text-left text-shadow-sm uppercase">
                 {displayedNumber}
               </span>
 
@@ -335,7 +349,7 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
                   </span>
                 </div>
 
-                <div className="flex flex-col text-right items-end bg-dark-surface/10 dark:bg-black/20 border border-dark-border/10 rounded-xl px-2.5 py-0.5 shadow-recessed">
+                <div className="flex flex-col text-right items-end bg-dark-surface/20 dark:bg-black/30 border border-dark-border/10 rounded-xl px-2.5 py-0.5 shadow-recessed">
                   <span className="text-[7px] font-mono opacity-50 uppercase tracking-widest">
                     Balance
                   </span>
@@ -368,6 +382,9 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
             }}
             className={`absolute inset-0 rounded-2xl overflow-hidden py-6 flex flex-col justify-between border transition-all duration-500 ${cardBorderClass} ${cardBgClass}`}
           >
+            {/* Cyber grid lines for back face */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(6,182,212,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(6,182,212,0.03)_1px,transparent_1px)] bg-[size:12px_12px] pointer-events-none mix-blend-overlay opacity-60 z-1" />
+
             {/* Magnetic Stripe */}
             <div className="w-full h-9 bg-black/90 dark:bg-black/95 relative z-10" />
 
@@ -380,9 +397,14 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
             {/* Specular Glare (Back) */}
             {!isFrozen && (
               <motion.div 
-                className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-80"
+                className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-80 z-10"
                 style={{ background: specularBg }}
               />
+            )}
+
+            {/* Glare sweep for back face */}
+            {!isFrozen && (
+              <div className="absolute -inset-y-12 w-16 bg-white/10 blur-md pointer-events-none z-15 animate-glare-sweep mix-blend-overlay" />
             )}
 
             {/* Frost/Ice Glaze Texture Overlay when Frozen */}
@@ -423,13 +445,13 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
                 </span>
               </div>
 
-              {/* Holographic Seal Circle */}
-              <div className={`w-8 h-8 rounded-full p-[1px] opacity-75 shadow-lg ${
+              {/* Holographic Seal Circle (Back) */}
+              <div className={`w-9 h-9 rounded-full p-[1px] opacity-85 shadow-lg ${
                 isFrozen
                   ? 'bg-slate-400/50'
-                  : 'bg-gradient-to-tr from-accent via-secondary to-primary animate-pulse-glow'
+                  : 'bg-gradient-to-tr from-cyan-400 via-pink-400 via-yellow-300 via-purple-500 to-emerald-400 animate-hologram'
               }`}>
-                <div className="w-full h-full bg-slate-900/60 dark:bg-black/40 rounded-full border border-white/10 flex items-center justify-center text-[7px] font-mono font-black text-white/50 uppercase tracking-widest">
+                <div className="w-full h-full bg-slate-900/80 backdrop-blur-sm rounded-full border border-white/10 flex items-center justify-center text-[7.5px] font-mono font-black text-cyan-300 tracking-tighter uppercase">
                   NXS
                 </div>
               </div>

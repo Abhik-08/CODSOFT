@@ -168,7 +168,7 @@ public class FirestoreAccountRepository implements AccountRepository {
                 logger.info("Initializing checking account for user {}", userId);
                 accountRef.set(Map.of(
                         FIELD_USER_ID, userId,
-                        FIELD_BALANCE, 50000.0,
+                        FIELD_BALANCE, 0.0,
                         FIELD_DAILY_LIMIT, 20000.0,
                         FIELD_UPDATED_AT, FieldValue.serverTimestamp()
                 )).get();

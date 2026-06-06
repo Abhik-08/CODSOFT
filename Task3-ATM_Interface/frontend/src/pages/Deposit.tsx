@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiDownload, FiCheckCircle, FiFileText, FiArrowLeft, FiCamera } from 'react-icons/fi';
+import { FiDownload, FiCheckCircle, FiFileText, FiArrowLeft, FiCamera, FiLock, FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -268,6 +268,11 @@ export const Deposit: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptDetails | null>(null);
   
+  // PIN Verification states
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [verificationPin, setVerificationPin] = useState('');
+  const [isVerifyingPin, setIsVerifyingPin] = useState(false);
+
   // Check Scanner Specific States
   const [checkNumber, setCheckNumber] = useState<string>('');
   const [checkScanStage, setCheckScanStage] = useState<'idle' | 'scanning' | 'success'>('idle');
@@ -306,10 +311,36 @@ export const Deposit: React.FC = () => {
     setCheckScanStage('idle');
   };
 
-  const handleDepositSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleDepositSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSubmitDisabled || !user) return;
+    setShowPinModal(true);
+  };
 
+  const handleVerifyAndExecute = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || verificationPin.length !== 4) return;
+
+    setIsVerifyingPin(true);
+    const userPinKey = user ? `profile_pin_${user.uid}` : 'profile_pin';
+    const storedPin = localStorage.getItem(userPinKey) || localStorage.getItem('profile_pin') || '8910';
+
+    if (verificationPin !== storedPin) {
+      toast.error('Verification failed. Incorrect security PIN.');
+      setIsVerifyingPin(false);
+      setVerificationPin('');
+      return;
+    }
+
+    setIsVerifyingPin(false);
+    setShowPinModal(false);
+    setVerificationPin('');
+
+    await executeDeposit();
+  };
+
+  const executeDeposit = async () => {
+    if (!user) return;
     const isCash = method === 'cash';
     const depositLabel = isCash ? 'Deposit - Cash' : `Deposit - Check #${checkNumber}`;
     const depositMethodName = isCash ? 'Cash Envelope Slot' : `Digital Check #${checkNumber} Scanner`;
@@ -476,6 +507,72 @@ export const Deposit: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ATM Card Security PIN Authorization Modal */}
+      {showPinModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-[430px] glass-card premium-card-shadow border border-dark-border/25 light:border-light-border/60 rounded-3xl p-5 md:p-6 relative overflow-hidden text-center"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setShowPinModal(false);
+                setVerificationPin('');
+              }}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-dark-text/40 hover:text-dark-text hover:bg-white/5 transition-all duration-200 cursor-pointer"
+            >
+              <FiX className="w-4 h-4" />
+            </button>
+
+            {/* Ambient glows */}
+            <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+            
+            {/* Shield and Lock Header */}
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-[1px] flex items-center justify-center shadow-lg shadow-primary/20 mb-4">
+              <div className="w-full h-full rounded-2xl bg-dark-surface light:bg-light-surface flex items-center justify-center">
+                <FiLock className="w-6 h-6 text-primary" />
+              </div>
+            </div>
+
+            <h3 className="font-mono font-black text-[18px] tracking-wider text-dark-text light:text-light-text uppercase mb-1.5">
+              Security Authorization
+            </h3>
+            <p className="text-[12px] text-dark-text/60 light:text-light-text/60 leading-relaxed mb-4.5 font-sans px-2">
+              Enter your 4-digit secure ATM PIN to authorize this deposit of <strong>₹{numAmount.toLocaleString('en-IN')}</strong>.
+            </p>
+
+            <form onSubmit={handleVerifyAndExecute} className="space-y-4">
+              <div className="space-y-1.5 text-left">
+                <label htmlFor="verify-pin" className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase font-bold pl-1 block text-center">Enter PIN</label>
+                <input
+                  id="verify-pin"
+                  type="password"
+                  maxLength={4}
+                  value={verificationPin}
+                  onChange={(e) => setVerificationPin(e.target.value.replace(/\D/g, ''))}
+                  disabled={isVerifyingPin}
+                  placeholder="••••"
+                  autoFocus
+                  autoComplete="one-time-code"
+                  className="w-48 mx-auto block py-2.5 px-3.5 rounded-xl border border-white/10 dark:border-white/10 light:border-zinc-300 bg-zinc-900/90 dark:bg-black/60 light:bg-zinc-50 outline-none text-[18px] text-dark-text light:text-light-text font-mono tracking-[8px] text-center placeholder-dark-text/20 light:placeholder-light-text/30 focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-200 shadow-inner animate-pulse"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isVerifyingPin || verificationPin.length !== 4}
+                className="w-full py-3 rounded-xl font-display font-bold text-[12px] uppercase tracking-widest bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-md mt-1"
+              >
+                {isVerifyingPin ? 'Verifying...' : 'Authorize Deposit'}
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
 
     </div>
   );

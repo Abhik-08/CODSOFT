@@ -39,7 +39,7 @@ export const syncUserDocument = async (user: FirebaseUser): Promise<void> => {
       if (!accounts[user.uid]) {
         accounts[user.uid] = {
           userId: user.uid,
-          balance: 5000, // Premium mock starting balance
+          balance: 0, // Premium mock starting balance
           updatedAt: new Date().toISOString()
         };
         localStorage.setItem('apex_mock_accounts', JSON.stringify(accounts));
