@@ -317,7 +317,7 @@ export const Deposit: React.FC = () => {
     setShowPinModal(true);
   };
 
-  const handleVerifyAndExecute = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleVerifyAndExecute = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user || verificationPin.length !== 4) return;
 
