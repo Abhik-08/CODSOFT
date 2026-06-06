@@ -18,6 +18,7 @@ public class GeminiService {
     private static final String ERROR = "ERROR";
 
     private static final List<String> MODELS = List.of(
+        "gemini-2.5-flash",                 // Best balance of quality, speed, and cost
         "gemini-2.0-flash",                 // Unlimited rate limit (stable 2.0 flash) - primary choice
         "gemini-2.0-flash-lite",            // Unlimited rate limit (lightweight 2.0)
         "gemini-1.5-flash",                 // Legacy reliable fallback
