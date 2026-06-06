@@ -189,8 +189,23 @@ export const Login: React.FC = () => {
       navigate('/dashboard');
     } catch (error) {
       console.error(error);
-      const err = error as Error;
-      toast.error(err.message || 'Operator authentication failed.', { id: toastId });
+      const err = error as any;
+      const code = err?.code || '';
+      const message = err?.message || '';
+
+      let friendlyMessage = 'Operator authentication failed.';
+      if (
+        code === 'auth/invalid-credential' ||
+        message.includes('invalid-credential') ||
+        code === 'auth/user-not-found' ||
+        message.includes('user-not-found')
+      ) {
+        friendlyMessage = 'Invalid credentials. If you are a new user, please register first.';
+      } else {
+        friendlyMessage = message || friendlyMessage;
+      }
+
+      toast.error(friendlyMessage, { id: toastId });
     } finally {
       setIsInserting(false);
     }
