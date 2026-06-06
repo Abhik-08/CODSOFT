@@ -377,7 +377,7 @@ export const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={isInserting}
-                className="w-full py-3.5 rounded-full font-sans font-bold text-[14px] bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 active:scale-[0.97] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/50 mt-2 flex items-center justify-center"
+                className="w-full py-3.5 rounded-full font-sans font-bold text-[14px] bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-950 dark:text-primary dark:border dark:border-primary dark:hover:bg-primary dark:hover:text-zinc-950 active:scale-[0.97] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/50 mt-2 flex items-center justify-center"
               >
                 {mode === 'signin' ? 'Sign In' : 'Register'}
               </button>

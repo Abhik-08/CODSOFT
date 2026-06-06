@@ -18,9 +18,9 @@ interface StatCardProps {
 
 const GRADIENTS = {
   'primary-grad': {
-    from: '#10b981', // emerald
-    to: '#3b82f6',   // cyber blue
-    glow: 'rgba(16, 185, 129, 0.22)',
+    from: '#00a2ff', // cyber blue
+    to: '#00f0ff',   // cyber cyan
+    glow: 'rgba(0, 162, 255, 0.22)',
   },
   'secondary-grad': {
     from: '#3b82f6', // cyber blue
@@ -34,7 +34,7 @@ const GRADIENTS = {
   },
   'accent-grad': {
     from: '#8b5cf6', // purple
-    to: '#10b981',   // emerald
+    to: '#00d2ff',   // cyber blue
     glow: 'rgba(139, 92, 246, 0.22)',
   },
 };
@@ -78,17 +78,20 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 30, rotateX: 12, transformPerspective: 1000 }}
+      whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
       transition={{
         type: 'spring',
-        stiffness: 260,
-        damping: 22,
+        stiffness: 200,
+        damping: 18,
         delay,
       }}
       whileHover={{
-        y: -3,
-        scale: 1.01,
+        y: -4,
+        scale: 1.015,
+        rotateX: -1.5,
+        transition: { duration: 0.2, ease: "easeOut" }
       }}
       className="glass-card rounded-2xl p-5 border border-[var(--border-dark)] relative overflow-hidden flex flex-col justify-between group transition-all duration-300"
     >

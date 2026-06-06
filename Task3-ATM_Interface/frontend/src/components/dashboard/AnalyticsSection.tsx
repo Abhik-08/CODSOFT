@@ -112,14 +112,15 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ transactions
         
         {/* ==================== CHART 1: DEPOSITS VS WITHDRAWALS ==================== */}
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 22, delay: 0.1 }}
+          initial={{ opacity: 0, y: 35, rotateX: 10, transformPerspective: 1000 }}
+          whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ type: 'spring', stiffness: 180, damping: 16, delay: 0.05 }}
           whileHover={{
-            y: -4,
-            scale: 1.01,
-            boxShadow: 'var(--shadow-floating)',
-            borderColor: 'var(--border-dark)',
+            y: -5,
+            scale: 1.015,
+            rotateX: -1.2,
+            transition: { duration: 0.2, ease: "easeOut" }
           }}
           className="glass-card premium-card-shadow rounded-2xl p-5 border border-[var(--border-dark)] flex flex-col justify-between group transition-all duration-300 relative overflow-hidden"
         >
@@ -230,14 +231,15 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ transactions
 
         {/* ==================== CHART 2: BALANCE TREND ==================== */}
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 22, delay: 0.2 }}
+          initial={{ opacity: 0, y: 35, rotateX: 10, transformPerspective: 1000 }}
+          whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ type: 'spring', stiffness: 180, damping: 16, delay: 0.12 }}
           whileHover={{
-            y: -4,
-            scale: 1.01,
-            boxShadow: 'var(--shadow-floating)',
-            borderColor: 'var(--border-dark)',
+            y: -5,
+            scale: 1.015,
+            rotateX: -1.2,
+            transition: { duration: 0.2, ease: "easeOut" }
           }}
           className="glass-card premium-card-shadow rounded-2xl p-5 border border-[var(--border-dark)] flex flex-col justify-between group transition-all duration-300 relative overflow-hidden"
         >

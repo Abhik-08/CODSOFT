@@ -139,7 +139,7 @@ export const Dashboard: React.FC = () => {
     if (loadingTxns) {
       return (
         <tr>
-          <td colSpan={4} className="py-8 text-center text-[12px] opacity-65 text-emerald-500/60">
+          <td colSpan={4} className="py-8 text-center text-[12px] opacity-65 text-cyan-500/60">
             Retrieving live terminal logs...
           </td>
         </tr>
@@ -148,14 +148,14 @@ export const Dashboard: React.FC = () => {
     if (displayTransactions.length === 0) {
       return (
         <tr>
-          <td colSpan={4} className="py-8 text-center text-[12px] opacity-65 text-emerald-500/60">
+          <td colSpan={4} className="py-8 text-center text-[12px] opacity-65 text-cyan-500/60">
             No terminal dossier logs on file.
           </td>
         </tr>
       );
     }
     return displayTransactions.map((tx) => (
-      <tr key={tx.id} className="hover:bg-emerald-500/5 transition-colors duration-150">
+      <tr key={tx.id} className="hover:bg-cyan-500/5 transition-colors duration-150">
         <td className="py-3.5 px-6 whitespace-nowrap text-[12px] opacity-80">
           {formatTimestamp(tx.createdAt)}
         </td>
@@ -525,14 +525,14 @@ export const Dashboard: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse font-mono">
               <thead>
-                <tr className="border-b border-dark-border/30 bg-black/60 text-[9px] text-emerald-500/60 uppercase tracking-widest">
+                <tr className="border-b border-dark-border/30 bg-black/60 text-[9px] text-cyan-500/60 uppercase tracking-widest">
                   <th className="py-3.5 px-6">Timestamp</th>
                   <th className="py-3.5 px-6">Activity details</th>
                   <th className="py-3.5 px-6">Reference token</th>
                   <th className="py-3.5 px-6 text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-emerald-500/10 text-emerald-400 bg-black/45">
+              <tbody className="divide-y divide-cyan-500/10 text-cyan-400 bg-black/45">
                 {renderTransactionsTableBody()}
               </tbody>
             </table>

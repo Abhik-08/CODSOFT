@@ -9,10 +9,10 @@
   --font-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
   --font-display: 'Inter', system-ui, sans-serif;
 
-  --color-primary: #10b981; /* Emerald */
-  --color-secondary: #3b82f6; /* Cyber Blue */
-  --color-accent: #5e6ad2; /* Linear Indigo Accent */
-  --color-accent-bright: #6872d9;
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
 
   --color-dark-text: var(--text-primary);
   --color-light-text: var(--text-primary);
@@ -43,6 +43,11 @@
   --accent-glow: rgba(234, 88, 12, 0.12);
   --surface-hover: rgba(234, 88, 12, 0.06);
 
+  /* Add dynamic primary/secondary colors for light mode */
+  --primary: #10b981;
+  --secondary: #3b82f6;
+  --accent-bright: #f97316;
+
   /* Legacy variables mappings for compatibility */
   --chassis: var(--background-base);
   --panel: var(--background-elevated);
@@ -52,23 +57,28 @@
 }
 
 html.dark {
-  --background-deep: #020203;
-  --background-base: #050506;
-  --background-elevated: #0a0a0c;
-  --text-primary: #EDEDEF;
-  --text-muted: #8A8F98;
-  --border-dark: rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(255, 255, 255, 0.10);
-  --accent: #5e6ad2;
-  --accent-glow: rgba(94, 106, 210, 0.3);
-  --surface-hover: rgba(255, 255, 255, 0.03);
+  --background-deep: #02040a;
+  --background-base: #060b18;
+  --background-elevated: #0f162d;
+  --text-primary: #f4f4f6;
+  --text-muted: #9a9ea6;
+  --border-dark: rgba(0, 162, 255, 0.08);
+  --border-hover: rgba(0, 162, 255, 0.18);
+  --accent: #00d2ff;
+  --accent-glow: rgba(0, 162, 255, 0.25);
+  --surface-hover: rgba(0, 162, 255, 0.04);
+
+  /* Add dynamic primary/secondary colors for dark mode */
+  --primary: #00a2ff;
+  --secondary: #00f0ff;
+  --accent-bright: #00f0ff;
 
   /* Legacy variables mappings for compatibility */
   --chassis: var(--background-base);
   --panel: var(--background-elevated);
-  --recessed: #020203;
-  --shadow-dark: rgba(0, 0, 0, 0.65);
-  --shadow-light: rgba(255, 255, 255, 0.01);
+  --recessed: #040714;
+  --shadow-dark: rgba(0, 0, 0, 0.75);
+  --shadow-light: rgba(255, 255, 255, 0.005);
 }
 
 @layer base {
@@ -89,7 +99,9 @@ html.dark {
   }
 
   html.dark body {
-    background-image: radial-gradient(circle at 0% 0%, #03000a 0%, #050506 60%, #00070a 100%);
+    background-image: 
+      radial-gradient(circle at 0% 0%, rgba(0, 162, 255, 0.07) 0%, #060b18 60%, #02040a 100%),
+      radial-gradient(circle at 100% 100%, rgba(0, 240, 255, 0.02) 0%, transparent 50%);
     background-attachment: fixed;
   }
 }

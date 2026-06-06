@@ -80,7 +80,7 @@ const DepositReceipt: React.FC<DepositReceiptProps> = ({ receipt, handleReset })
 
         <Link
           to="/"
-          className="py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700 shadow-md text-center flex items-center justify-center gap-1.5 cursor-pointer hover:translate-y-[-1px] active:translate-y-[1px]"
+          className="py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-cyan-600 hover:bg-cyan-700 text-white border border-cyan-700 shadow-md text-center flex items-center justify-center gap-1.5 cursor-pointer hover:translate-y-[-1px] active:translate-y-[1px]"
         >
           <FiArrowLeft className="w-3.5 h-3.5" />
           <span>Console Home</span>
@@ -194,26 +194,26 @@ const CheckScannerSection: React.FC<CheckScannerProps> = ({
       </span>
 
       {checkScanStage === 'idle' && (
-        <button type="button" onClick={onStartScan} className="w-full py-6 rounded-2xl border border-dashed border-dark-border/20 hover:border-emerald-500/40 bg-dark-surface/40 hover:bg-dark-surface/60 transition-all duration-300 flex flex-col items-center justify-center gap-3 cursor-pointer text-center group">
-          <FiCamera className="w-8 h-8 text-dark-text/30 group-hover:text-emerald-500 transition-colors duration-300" />
+        <button type="button" onClick={onStartScan} className="w-full py-6 rounded-2xl border border-dashed border-dark-border/20 hover:border-cyan-500/40 bg-dark-surface/40 hover:bg-dark-surface/60 transition-all duration-300 flex flex-col items-center justify-center gap-3 cursor-pointer text-center group">
+          <FiCamera className="w-8 h-8 text-dark-text/30 group-hover:text-cyan-500 transition-colors duration-300" />
           <span className="font-mono text-xs font-bold text-dark-text/60 group-hover:text-dark-text transition-colors duration-300 uppercase">Feed Check Draft into Slot</span>
           <span className="font-mono text-[9px] text-dark-text/35">Accepts CTS-2010 standard clearing checks</span>
         </button>
       )}
 
       {checkScanStage === 'scanning' && (
-        <div className="w-full h-36 rounded-2xl border border-emerald-500/25 bg-black/45 relative flex flex-col items-center justify-center overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-emerald-500 shadow-[0_0_10px_3px_#10b981] animate-scan z-20" />
+        <div className="w-full h-36 rounded-2xl border border-cyan-500/25 bg-black/45 relative flex flex-col items-center justify-center overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-cyan-500 shadow-[0_0_10px_3px_#06b6d4] animate-scan z-20" />
           <div className="flex flex-col items-center gap-3 text-center z-10">
-            <div className="w-7 h-7 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
-            <span className="font-mono text-xs font-bold text-emerald-500 tracking-widest uppercase animate-pulse">Scanning Image...</span>
+            <div className="w-7 h-7 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin" />
+            <span className="font-mono text-xs font-bold text-cyan-500 tracking-widest uppercase animate-pulse">Scanning Image...</span>
           </div>
         </div>
       )}
 
       {checkScanStage === 'success' && (
         <div className="w-full space-y-4">
-          <div className="w-full h-36 rounded-2xl border border-emerald-500/35 bg-gradient-to-tr from-[#fbfaf7] to-[#e8e6df] text-slate-800 p-4 font-mono relative overflow-hidden shadow-md">
+          <div className="w-full h-36 rounded-2xl border border-cyan-500/35 bg-gradient-to-tr from-[#fbfaf7] to-[#e8e6df] text-slate-800 p-4 font-mono relative overflow-hidden shadow-md">
             <div className="absolute top-2 left-2 text-[8px] text-slate-400 uppercase tracking-widest font-black">APEX CHECK SECURE</div>
             <div className="absolute top-2 right-4 text-[9px] text-slate-700 font-bold">CTS-2010</div>
             <div className="mt-5 space-y-1 text-slate-700">
@@ -235,8 +235,8 @@ const CheckScannerSection: React.FC<CheckScannerProps> = ({
             <label htmlFor="parsed-amount" className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase block font-bold pl-0.5">
               Verify Parsed Check Value (INR)
             </label>
-            <div className="relative rounded-xl bg-[var(--recessed)] shadow-recessed flex items-center overflow-hidden border border-emerald-500/20">
-              <div className="pl-4 font-mono font-bold text-[20px] text-emerald-500 select-none">₹</div>
+            <div className="relative rounded-xl bg-[var(--recessed)] shadow-recessed flex items-center overflow-hidden border border-cyan-500/20">
+              <div className="pl-4 font-mono font-bold text-[20px] text-cyan-500 select-none">₹</div>
               <input
                 id="parsed-amount"
                 type="number"
@@ -245,7 +245,7 @@ const CheckScannerSection: React.FC<CheckScannerProps> = ({
                 disabled={isProcessing}
                 className="w-full py-4.5 px-3 bg-transparent border-0 outline-none text-dark-text light:text-light-text font-mono font-bold text-2xl tracking-wide"
               />
-              <button type="button" onClick={onStartScan} className="pr-4 text-[9px] font-mono font-bold text-emerald-500 hover:underline cursor-pointer">
+              <button type="button" onClick={onStartScan} className="pr-4 text-[9px] font-mono font-bold text-cyan-500 hover:underline cursor-pointer">
                 RE-SCAN
               </button>
             </div>
@@ -317,7 +317,7 @@ export const Deposit: React.FC = () => {
     setShowPinModal(true);
   };
 
-  const handleVerifyAndExecute = async (e: React.FormEvent) => {
+  const handleVerifyAndExecute = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user || verificationPin.length !== 4) return;
 

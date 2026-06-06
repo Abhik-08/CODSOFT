@@ -67,17 +67,17 @@ const CARD_THEMES: {
   active: {
     dark: {
       hovered: {
-        cardBorderClass: 'border-cyan-400/40',
-        cardBgClass: 'bg-gradient-to-br from-[#0c1024] via-[#141b36] to-[#060812] text-white',
+        cardBorderClass: 'border-[var(--accent)]/40',
+        cardBgClass: 'bg-gradient-to-br from-[#06080a] via-[#10141a] to-[#010203] text-white',
         chipBgClass: 'bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600',
-        borderOverlayClass: 'bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-40',
-        shadowValue: '0 20px 45px rgba(0, 0, 0, 0.75), 0 0 40px rgba(6, 182, 212, 0.25)',
+        borderOverlayClass: 'bg-gradient-to-r from-[var(--accent)] via-indigo-400 to-cyan-300 opacity-40',
+        shadowValue: '0 20px 45px rgba(0, 0, 0, 0.75), 0 0 40px rgba(0, 162, 255, 0.25)',
       },
       normal: {
         cardBorderClass: 'border-white/[0.06]',
-        cardBgClass: 'bg-gradient-to-br from-[#060813] via-[#0b0f20] to-[#030409] text-[#EDEDEF]',
+        cardBgClass: 'bg-gradient-to-br from-[#040506] via-[#0b0c0e] to-[#010203] text-[#EDEDEF]',
         chipBgClass: 'bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600',
-        borderOverlayClass: 'bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 opacity-15',
+        borderOverlayClass: 'bg-gradient-to-r from-[var(--accent)] via-amber-500 to-[var(--accent)] opacity-15',
         shadowValue: '0 8px 32px rgba(0, 0, 0, 0.55)',
       }
     },
@@ -121,6 +121,12 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
   const [hovered, setHovered] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMasked, setIsMasked] = useState(true);
+  const [isShaking, setIsShaking] = useState(false);
+
+  const triggerShake = () => {
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 550);
+  };
 
   const isDark = theme === 'dark';
 
@@ -194,6 +200,7 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
     const rawNumber = fullCardNumber.replace(/\s+/g, '');
     navigator.clipboard.writeText(rawNumber);
     toast.success('Card number copied to clipboard!');
+    triggerShake();
   };
 
   const handleToggleMask = (e: React.MouseEvent) => {
@@ -204,6 +211,7 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
     }
     setIsMasked(prev => !prev);
     toast.success(isMasked ? 'Card details decrypted!' : 'Card details masked.');
+    triggerShake();
   };
 
 
@@ -223,6 +231,7 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
             return;
           }
           setIsFlipped(prev => !prev);
+          triggerShake();
         }}
       >
         <motion.div
@@ -231,11 +240,22 @@ export const VirtualCard: React.FC<VirtualCardProps> = ({
             rotateY: totalRotateY,
             transformStyle: 'preserve-3d',
           }}
-          animate={{
+          animate={isShaking ? {
+            rotateX: [0, 10, -10, 8, -8, 5, -3, 0],
+            rotateY: [0, -10, 10, -8, 8, -5, 3, 0],
+            z: [0, 8, -8, 6, -6, 4, -2, 0],
+            scale: hovered && !isFrozen ? 1.025 : 1,
+            boxShadow: shadowValue,
+          } : {
             scale: hovered && !isFrozen ? 1.025 : 1,
             boxShadow: shadowValue,
           }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          transition={isShaking ? {
+            duration: 0.55,
+            ease: "easeInOut",
+          } : {
+            type: 'spring', stiffness: 300, damping: 20
+          }}
           className="w-full h-full relative"
         >
           {/* ==================== FRONT FACE ==================== */}
