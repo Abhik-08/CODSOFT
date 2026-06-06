@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "./assets/number_game_logo.png";
 
@@ -75,6 +76,12 @@ const PANELS = {
   },
 };
 
+// ─── MARQUEE DATA ───────────────────────────────────────────────
+const MARQUEE_ITEMS = new Array(8).fill(null).map((_, i) => ({
+  id: `marquee-star-item-${i}`,
+  text: "★ GUESS THE NUMBER ★ 5 ATTEMPTS ★ BEAT YOUR SCORE ★ ARE YOU READY",
+}));
+
 // ─── SIDE PANEL ─────────────────────────────────────────────────
 function Panel({ id, onClose }) {
   const data = PANELS[id];
@@ -144,12 +151,19 @@ function Panel({ id, onClose }) {
               key={item.heading}
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.09, type: "spring" }}
+              whileHover={{ y: -4, x: -2, boxShadow: shadow(8) }}
+              transition={{
+                delay: i * 0.09,
+                type: "spring",
+                y: { type: "spring", stiffness: 300, damping: 15 },
+                x: { type: "spring", stiffness: 300, damping: 15 }
+              }}
               style={{
                 backgroundColor: T.white,
                 border: `4px solid ${T.black}`,
                 boxShadow: shadow(6),
                 padding: "20px 22px",
+                cursor: "default",
               }}
             >
               <p style={{
@@ -175,12 +189,22 @@ function Panel({ id, onClose }) {
   );
 }
 
+Panel.propTypes = {
+  id: PropTypes.string.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
 // ─── STAT CARD ──────────────────────────────────────────────────
 function StatCard({ label, value, accent, rotate = 0 }) {
   return (
     <motion.div
-      whileHover={{ y: -6, boxShadow: shadow(14) }}
-      transition={{ duration: 0.15, ease: "easeOut" }}
+      whileHover={{
+        y: -10,
+        rotate: rotate > 0 ? rotate + 1.5 : rotate - 1.5,
+        boxShadow: shadow(14),
+        backgroundColor: accent === T.white ? T.yellow : T.white,
+      }}
+      transition={{ type: "spring", stiffness: 350, damping: 15 }}
       style={{
         backgroundColor: accent || T.white,
         border: `4px solid ${T.black}`,
@@ -217,6 +241,13 @@ function StatCard({ label, value, accent, rotate = 0 }) {
   );
 }
 
+StatCard.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  accent: PropTypes.string,
+  rotate: PropTypes.number,
+};
+
 // ─── MAIN APP ───────────────────────────────────────────────────
 export default function App() {
   const [guess, setGuess] = useState("");
@@ -227,6 +258,7 @@ export default function App() {
   const [gameFinished, setGameFinished] = useState(false);
   const [won, setWon] = useState(null);
   const [activePanel, setActivePanel] = useState(null);
+  const [shakeActive, setShakeActive] = useState(false);
 
   // ── Local Logic Implementation ──
   const startNewGame = () => {
@@ -248,11 +280,13 @@ export default function App() {
   const checkGuess = () => {
     if (!guess || gameFinished) return;
 
-    const numGuess = parseInt(guess, 10);
+    const numGuess = Number.parseInt(guess, 10);
 
     // Basic validation
-    if (isNaN(numGuess) || numGuess < 1 || numGuess > 100) {
+    if (Number.isNaN(numGuess) || numGuess < 1 || numGuess > 100) {
       setMessage("Error: Enter a valid number between 1 and 100.");
+      setShakeActive(true);
+      setTimeout(() => setShakeActive(false), 500);
       return;
     }
 
@@ -306,8 +340,80 @@ export default function App() {
           to   { transform: translateX(-50%); }
         }
 
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition: none !important; }
+        }
+
+        /* Custom Hover & Transition Classes */
+        .marquee-container {
+          transition: background-color 0.3s, border-color 0.3s;
+        }
+        .marquee-container:hover {
+          background-color: ${T.yellow} !important;
+        }
+        .marquee-container:hover span {
+          color: ${T.black} !important;
+        }
+
+        .execute-btn {
+          transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s !important;
+        }
+        .execute-btn:hover:not(:disabled) {
+          background-color: ${T.black} !important;
+          color: ${T.yellow} !important;
+          box-shadow: ${shadow(10)} !important;
+          transform: translateY(-2px);
+        }
+        .execute-btn:active:not(:disabled) {
+          transform: translateY(2px) translateX(2px);
+          box-shadow: 2px 2px 0px 0px ${T.black} !important;
+        }
+        .execute-btn:hover .arrow {
+          transform: translateX(5px);
+        }
+        .arrow {
+          display: inline-block;
+          transition: transform 0.2s ease-out;
+        }
+
+        .reboot-btn {
+          transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s !important;
+        }
+        .reboot-btn:hover {
+          background-color: ${T.black} !important;
+          color: ${T.yellow} !important;
+          box-shadow: ${shadow(10)} !important;
+          transform: translateY(-2px);
+        }
+        .reboot-btn:active {
+          transform: translateY(2px) translateX(2px);
+          box-shadow: 2px 2px 0px 0px ${T.black} !important;
+        }
+        .reboot-btn:hover .icon-spin {
+          transform: rotate(-360deg);
+        }
+        .icon-spin {
+          display: inline-block;
+          transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Input Interactive Effects */
+        .guess-input {
+          transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s !important;
+        }
+        .guess-input:hover:not(:disabled) {
+          transform: scale(1.01);
+          box-shadow: ${shadow(8)} !important;
+        }
+        .guess-input:focus:not(:disabled) {
+          background-color: ${T.yellow} !important;
+          box-shadow: ${shadow(10)} !important;
+          transform: scale(1.02);
         }
       `}</style>
 
@@ -323,22 +429,27 @@ export default function App() {
           {activePanel && <Panel id={activePanel} onClose={() => setActivePanel(null)} />}
         </AnimatePresence>
 
-        <div style={{
-          backgroundColor: T.black, borderBottom: `4px solid ${T.black}`,
-          overflow: "hidden", padding: "10px 0",
-        }}>
+        <div 
+          className="marquee-container"
+          style={{
+            backgroundColor: T.black, borderBottom: `4px solid ${T.black}`,
+            overflow: "hidden", padding: "10px 0",
+            cursor: "default",
+          }}
+        >
           <div style={{
             display: "inline-flex", gap: "60px",
             animation: "marquee 18s linear infinite",
             whiteSpace: "nowrap",
           }}>
-            {Array(8).fill("★ GUESS THE NUMBER ★ 5 ATTEMPTS ★ BEAT YOUR SCORE ★ ARE YOU READY").map((t, i) => (
-              <span key={i} style={{
+            {MARQUEE_ITEMS.map((item) => (
+              <span key={item.id} style={{
                 fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "13px", fontWeight: 900,
                 letterSpacing: "0.25em", color: T.yellow,
                 textTransform: "uppercase",
-              }}>{t}</span>
+                transition: "color 0.3s",
+              }}>{item.text}</span>
             ))}
           </div>
         </div>
@@ -356,20 +467,30 @@ export default function App() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <div style={{
-              border: `4px solid ${T.black}`,
-              boxShadow: shadow(5),
-              overflow: "hidden",
-              width: 50, height: 50,
-            }}>
-              <motion.img
+            <motion.div
+              whileHover={{
+                rotate: 360,
+                scale: 1.15,
+                boxShadow: shadow(8),
+              }}
+              transition={{
+                rotate: { duration: 0.8, ease: "easeInOut" },
+                scale: { type: "spring", stiffness: 300, damping: 15 }
+              }}
+              style={{
+                border: `4px solid ${T.black}`,
+                boxShadow: shadow(5),
+                overflow: "hidden",
+                width: 50, height: 50,
+                cursor: "pointer",
+              }}
+            >
+              <img
                 src={logo}
                 alt="NumGame Logo"
-                animate={{ rotate: [0, 4, -4, 0] }}
-                transition={{ duration: 5, repeat: Infinity }}
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
-            </div>
+            </motion.div>
             <div>
               <p style={{
                 margin: 0, fontSize: "18px", fontWeight: 900,
@@ -383,32 +504,37 @@ export default function App() {
           </div>
 
           <nav style={{ display: "flex", gap: "12px" }}>
-            {["rules", "scoring"].map((item) => (
-              <motion.button
-                key={item}
-                onClick={() => setActivePanel(item)}
-                whileHover={{
-                  backgroundColor: T.black, color: T.cream,
-                  boxShadow: shadow(4),
-                }}
-                whileTap={{ scale: 0.93 }}
-                transition={{ duration: 0.1 }}
-                style={{
-                  background: "transparent",
-                  border: `3px solid ${T.black}`,
-                  padding: "8px 18px",
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: "12px", fontWeight: 900,
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  cursor: "pointer",
-                  color: T.black,
-                  transition: "background 0.1s, color 0.1s",
-                }}
-              >
-                {item}
-              </motion.button>
-            ))}
+            {["rules", "scoring"].map((item) => {
+              const hoverColor = item === "rules" ? T.yellow : T.violet;
+              return (
+                <motion.button
+                  key={item}
+                  onClick={() => setActivePanel(item)}
+                  whileHover={{
+                    scale: 1.05,
+                    rotate: item === "rules" ? -2 : 2,
+                    backgroundColor: T.black,
+                    color: hoverColor,
+                    boxShadow: shadow(6),
+                  }}
+                  whileTap={{ scale: 0.93 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  style={{
+                    background: "transparent",
+                    border: `3px solid ${T.black}`,
+                    padding: "8px 18px",
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "12px", fontWeight: 900,
+                    letterSpacing: "0.2em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    color: T.black,
+                  }}
+                >
+                  {item}
+                </motion.button>
+              );
+            })}
           </nav>
         </motion.header>
 
@@ -418,16 +544,25 @@ export default function App() {
           overflow: "hidden",
           ...gridPattern,
         }}>
-          <div style={{
+          <motion.div style={{
             position: "absolute", top: "-40px", right: "-20px",
             fontSize: "clamp(280px, 35vw, 480px)",
             fontWeight: 900, color: "transparent",
             WebkitTextStroke: `3px rgba(0,0,0,0.07)`,
             pointerEvents: "none", userSelect: "none",
             lineHeight: 1,
+          }}
+          animate={{
+            y: [0, -18, 0],
+            rotate: [0, 2, -2, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
           }}>
             ?
-          </div>
+          </motion.div>
 
           <motion.div variants={stagger} initial="hidden" animate="show">
             <motion.div variants={popUp} style={{ marginBottom: "24px" }}>
@@ -449,12 +584,19 @@ export default function App() {
 
             <motion.h1
               variants={popUp}
+              whileHover={{
+                scale: 1.04,
+                rotate: -1,
+                color: T.red,
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 10 }}
               style={{
                 fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "clamp(72px, 13vw, 140px)",
                 fontWeight: 900, margin: "0 0 8px",
                 lineHeight: 0.88, color: T.black,
                 letterSpacing: "-0.03em",
+                cursor: "default",
               }}
             >
               NUMBER
@@ -462,6 +604,13 @@ export default function App() {
 
             <motion.h1
               variants={popUp}
+              whileHover={{
+                scale: 1.04,
+                rotate: 1.5,
+                color: T.black,
+                WebkitTextStroke: `5px ${T.red}`,
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 10 }}
               style={{
                 fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "clamp(72px, 13vw, 140px)",
@@ -472,6 +621,7 @@ export default function App() {
                 letterSpacing: "-0.03em",
                 display: "inline-block",
                 transform: "rotate(1.5deg)",
+                cursor: "default",
               }}
             >
               GAME
@@ -489,167 +639,245 @@ export default function App() {
                 fontSize: "11px", fontWeight: 900,
                 letterSpacing: "0.3em", color: T.black,
               }}>LIVES</span>
-              {attemptDots.map((pip) => (
-                <motion.div
-                  key={pip}
-                  animate={attemptsLeft >= pip
-                    ? { backgroundColor: T.red, scale: 1 }
-                    : { backgroundColor: "#ddd", scale: 0.75 }
-                  }
-                  transition={{ duration: 0.2 }}
-                  style={{
-                    width: 22, height: 22,
-                    border: `3px solid ${T.black}`,
-                    boxShadow: shadow(3),
-                  }}
-                />
-              ))}
+              {attemptDots.map((pip) => {
+                const isActive = attemptsLeft >= pip;
+                const isCritical = attemptsLeft <= 2;
+                return (
+                  <motion.div
+                    key={pip}
+                    whileHover={isActive ? { scale: 1.3, rotate: 10, backgroundColor: T.yellow } : {}}
+                    animate={isActive
+                      ? {
+                          backgroundColor: T.red,
+                          scale: isCritical ? [1, 1.2, 1] : 1,
+                        }
+                      : { backgroundColor: "#ddd", scale: 0.75 }
+                    }
+                    transition={isCritical && isActive
+                      ? {
+                          scale: {
+                            repeat: Infinity,
+                            duration: 0.8,
+                            ease: "easeInOut",
+                            delay: pip * 0.1,
+                          },
+                          backgroundColor: { duration: 0.2 }
+                        }
+                      : { duration: 0.2 }
+                    }
+                    style={{
+                      width: 22, height: 22,
+                      border: `3px solid ${T.black}`,
+                      boxShadow: shadow(3),
+                      cursor: isActive ? "pointer" : "default",
+                    }}
+                  />
+                );
+              })}
             </motion.div>
           </motion.div>
         </section>
 
         <main style={{ flex: 1, padding: "0 48px 80px", position: "relative", zIndex: 1 }}>
 
+          {/* Neo-brutalist alert card for entering numbers between 1-100 only */}
           <motion.div
-            variants={stagger}
+            variants={popUp}
             initial="hidden"
             animate="show"
+            whileHover={{
+              scale: 1.02,
+              rotate: -0.5,
+              boxShadow: shadow(10),
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 15 }}
             style={{
+              backgroundColor: T.yellow,
+              border: `4px solid ${T.black}`,
+              boxShadow: shadow(8),
+              padding: "20px 24px",
+              marginBottom: "36px",
               display: "flex",
-              flexWrap: "wrap",
-              gap: "16px",
-              alignItems: "stretch",
-              marginBottom: "56px",
+              alignItems: "center",
+              gap: "18px",
+              cursor: "default",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <motion.div variants={slideIn} style={{ flex: "1 1 260px" }}>
-              <p style={{
-                margin: "0 0 6px",
+            {/* Caution Strip */}
+            <div style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "6px",
+              background: `repeating-linear-gradient(
+                -45deg,
+                ${T.black},
+                ${T.black} 10px,
+                ${T.yellow} 10px,
+                ${T.yellow} 20px
+              )`,
+            }} />
+            <div style={{
+              fontSize: "36px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              animation: "pulse 1.5s infinite ease-in-out",
+            }}>
+              ⚠️
+            </div>
+            <div>
+              <h2 style={{
+                margin: 0,
+                fontSize: "clamp(20px, 3.5vw, 28px)",
+                fontWeight: 900,
+                color: T.black,
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: "11px", fontWeight: 900,
-                letterSpacing: "0.3em", color: T.black,
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                lineHeight: 1.2,
               }}>
-                YOUR GUESS (1–100)
-              </p>
-              <input
-                type="number"
-                placeholder="???"
-                value={guess}
-                disabled={gameFinished}
-                onChange={(e) => setGuess(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") checkGuess(); }}
-                style={{
-                  width: "100%",
-                  height: "72px",
-                  backgroundColor: T.white,
-                  border: `4px solid ${T.black}`,
-                  boxShadow: shadow(6),
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: "36px", fontWeight: 900,
-                  textAlign: "center", color: T.black,
-                  outline: "none",
-                  cursor: gameFinished ? "not-allowed" : "text",
-                  opacity: gameFinished ? 0.45 : 1,
-                  transition: "box-shadow 0.1s",
-                }}
-                onFocus={(e) => {
-                  if (!gameFinished) {
-                    e.target.style.backgroundColor = T.yellow;
-                    e.target.style.boxShadow = shadow(8);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.backgroundColor = T.white;
-                  e.target.style.boxShadow = shadow(6);
-                }}
-              />
-            </motion.div>
-
-            <motion.div variants={slideIn} style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                ENTER A NUMBER BETWEEN 1-100 ONLY!
+              </h2>
               <p style={{
-                margin: "0 0 6px",
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: "11px", fontWeight: 900,
-                letterSpacing: "0.3em", color: "transparent",
+                margin: "4px 0 0",
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#222",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
               }}>
-                &nbsp;
+                System rule: inputs outside 1-100 will trigger alert errors and won't consume lives.
               </p>
-              <motion.button
-                whileHover={!gameFinished ? {
-                  backgroundColor: T.black, color: T.yellow,
-                  boxShadow: shadow(10),
-                } : {}}
-                whileTap={!gameFinished ? {
-                  x: 4, y: 4, boxShadow: "0px 0px 0px 0px #000",
-                } : {}}
-                onClick={checkGuess}
-                disabled={gameFinished}
-                style={{
-                  height: "72px",
-                  padding: "0 36px",
-                  backgroundColor: T.red,
-                  border: `4px solid ${T.black}`,
-                  boxShadow: shadow(6),
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: "18px", fontWeight: 900,
-                  letterSpacing: "0.15em",
-                  color: T.black,
-                  cursor: gameFinished ? "not-allowed" : "pointer",
-                  textTransform: "uppercase",
-                  opacity: gameFinished ? 0.3 : 1,
-                  transition: "background 0.1s, color 0.1s, box-shadow 0.1s",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                EXECUTE →
-              </motion.button>
-            </motion.div>
+            </div>
+          </motion.div>
 
-            <AnimatePresence>
-              {gameFinished && (
-                <motion.div
-                  variants={slideIn}
-                  initial="hidden"
-                  animate="show"
-                  exit={{ opacity: 0, scale: 0.7 }}
-                  style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}
-                >
-                  <p style={{
-                    margin: "0 0 6px",
+          <motion.div
+            animate={shakeActive ? { x: [-10, 10, -8, 8, -5, 5, 0] } : { x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              animate="show"
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "16px",
+                alignItems: "stretch",
+                marginBottom: "56px",
+              }}
+            >
+              <motion.div variants={slideIn} style={{ flex: "1 1 260px" }}>
+                <p style={{
+                  margin: "0 0 6px",
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: "11px", fontWeight: 900,
+                  letterSpacing: "0.3em", color: T.black,
+                }}>
+                  YOUR GUESS (1–100)
+                </p>
+                <input
+                  type="number"
+                  placeholder="???"
+                  value={guess}
+                  disabled={gameFinished}
+                  onChange={(e) => setGuess(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") checkGuess(); }}
+                  className="guess-input"
+                  style={{
+                    width: "100%",
+                    height: "72px",
+                    backgroundColor: T.white,
+                    border: `4px solid ${T.black}`,
+                    boxShadow: shadow(6),
                     fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: "11px", fontWeight: 900,
-                    letterSpacing: "0.3em", color: "transparent",
-                  }}>
-                    &nbsp;
-                  </p>
-                  <motion.button
-                    whileHover={{
-                      backgroundColor: T.black, color: T.yellow,
-                      boxShadow: shadow(10),
-                    }}
-                    whileTap={{ x: 4, y: 4, boxShadow: "0px 0px 0px 0px #000" }}
-                    onClick={startNewGame}
-                    style={{
-                      height: "72px",
-                      padding: "0 36px",
-                      backgroundColor: T.yellow,
-                      border: `4px solid ${T.black}`,
-                      boxShadow: shadow(6),
-                      fontFamily: "'Space Grotesk', sans-serif",
-                      fontSize: "18px", fontWeight: 900,
-                      letterSpacing: "0.15em",
-                      color: T.black,
-                      cursor: "pointer",
-                      textTransform: "uppercase",
-                      transition: "background 0.1s, color 0.1s, box-shadow 0.1s",
-                      whiteSpace: "nowrap",
-                    }}
+                    fontSize: "36px", fontWeight: 900,
+                    textAlign: "center", color: T.black,
+                    outline: "none",
+                    cursor: gameFinished ? "not-allowed" : "text",
+                    opacity: gameFinished ? 0.45 : 1,
+                  }}
+                />
+              </motion.div>
+
+              <motion.div variants={slideIn} style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                <p style={{
+                  margin: "0 0 6px",
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: "11px", fontWeight: 900,
+                  letterSpacing: "0.3em", color: "transparent",
+                }}>
+                  &nbsp;
+                </p>
+                <button
+                  onClick={checkGuess}
+                  disabled={gameFinished}
+                  className="execute-btn"
+                  style={{
+                    height: "72px",
+                    padding: "0 36px",
+                    backgroundColor: T.red,
+                    border: `4px solid ${T.black}`,
+                    boxShadow: shadow(6),
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "18px", fontWeight: 900,
+                    letterSpacing: "0.15em",
+                    color: T.black,
+                    cursor: gameFinished ? "not-allowed" : "pointer",
+                    textTransform: "uppercase",
+                    opacity: gameFinished ? 0.3 : 1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  EXECUTE <span className="arrow">→</span>
+                </button>
+              </motion.div>
+
+              <AnimatePresence>
+                {gameFinished && (
+                  <motion.div
+                    variants={slideIn}
+                    initial="hidden"
+                    animate="show"
+                    exit={{ opacity: 0, scale: 0.7 }}
+                    style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}
                   >
-                    ↺ REBOOT
-                  </motion.button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <p style={{
+                      margin: "0 0 6px",
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontSize: "11px", fontWeight: 900,
+                      letterSpacing: "0.3em", color: "transparent",
+                    }}>
+                      &nbsp;
+                    </p>
+                    <button
+                      onClick={startNewGame}
+                      className="reboot-btn"
+                      style={{
+                        height: "72px",
+                        padding: "0 36px",
+                        backgroundColor: T.yellow,
+                        border: `4px solid ${T.black}`,
+                        boxShadow: shadow(6),
+                        fontFamily: "'Space Grotesk', sans-serif",
+                        fontSize: "18px", fontWeight: 900,
+                        letterSpacing: "0.15em",
+                        color: T.black,
+                        cursor: "pointer",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <span className="icon-spin">↺</span> REBOOT
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </motion.div>
 
           <AnimatePresence>
