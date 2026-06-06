@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { addTransactionAtomically } from '../services/firestoreService';
+import { NexusVaultTransactionChamber } from '../components/vault/NexusVaultTransactionChamber';
 
 interface WithdrawReceipt {
   id: string;
@@ -49,6 +50,10 @@ export const Withdraw: React.FC = () => {
   const [showPinModal, setShowPinModal] = useState(false);
   const [verificationPin, setVerificationPin] = useState('');
   const [isVerifyingPin, setIsVerifyingPin] = useState(false);
+
+  // Cinematic Chamber States
+  const [showChamber, setShowChamber] = useState(false);
+  const [chamberBalance, setChamberBalance] = useState(0);
 
   const { user, balance, refreshBalance } = useAuth();
 
@@ -106,7 +111,7 @@ export const Withdraw: React.FC = () => {
     setShowPinModal(true);
   };
 
-  const handleVerifyAndExecute = async (e: React.FormEvent) => {
+  const handleVerifyAndExecute = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user || verificationPin.length !== 4) return;
 
@@ -124,6 +129,10 @@ export const Withdraw: React.FC = () => {
     setIsVerifyingPin(false);
     setShowPinModal(false);
     setVerificationPin('');
+
+    const calculatedNewBalance = currentBalance - numAmount;
+    setChamberBalance(calculatedNewBalance);
+    setShowChamber(true);
 
     await executeWithdrawal();
   };
@@ -171,6 +180,7 @@ export const Withdraw: React.FC = () => {
       const errorMsg = error instanceof Error ? error.message : 'Withdrawal failed. System error.';
       toast.error(errorMsg);
       setIsProcessing(false);
+      setShowChamber(false);
     }
   };
 
@@ -591,6 +601,14 @@ export const Withdraw: React.FC = () => {
           </motion.div>
         </div>
       )}
+
+      <NexusVaultTransactionChamber
+        isOpen={showChamber}
+        mode="withdraw"
+        amount={numAmount}
+        newBalance={chamberBalance}
+        onFinished={() => setShowChamber(false)}
+      />
 
     </div>
   );

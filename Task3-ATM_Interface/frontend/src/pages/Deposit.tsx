@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { addTransactionAtomically } from '../services/firestoreService';
+import { NexusVaultTransactionChamber } from '../components/vault/NexusVaultTransactionChamber';
 
 interface ReceiptDetails {
   id: string;
@@ -277,7 +278,11 @@ export const Deposit: React.FC = () => {
   const [checkNumber, setCheckNumber] = useState<string>('');
   const [checkScanStage, setCheckScanStage] = useState<'idle' | 'scanning' | 'success'>('idle');
 
-  const { user, refreshBalance } = useAuth();
+  // Cinematic Chamber States
+  const [showChamber, setShowChamber] = useState(false);
+  const [chamberBalance, setChamberBalance] = useState(0);
+
+  const { user, refreshBalance, balance } = useAuth();
 
   // Quick preset options
   const presets = [500, 1000, 2000, 5000];
@@ -336,6 +341,10 @@ export const Deposit: React.FC = () => {
     setShowPinModal(false);
     setVerificationPin('');
 
+    const calculatedNewBalance = balance + numAmount;
+    setChamberBalance(calculatedNewBalance);
+    setShowChamber(true);
+
     await executeDeposit();
   };
 
@@ -364,6 +373,7 @@ export const Deposit: React.FC = () => {
       console.error(error);
       const errorMsg = error instanceof Error ? error.message : 'Deposit failed. System slot error.';
       toast.error(errorMsg, { id: toastId });
+      setShowChamber(false);
     } finally {
       setIsProcessing(false);
     }
@@ -573,6 +583,14 @@ export const Deposit: React.FC = () => {
           </motion.div>
         </div>
       )}
+
+      <NexusVaultTransactionChamber
+        isOpen={showChamber}
+        mode="deposit"
+        amount={numAmount}
+        newBalance={chamberBalance}
+        onFinished={() => setShowChamber(false)}
+      />
 
     </div>
   );
