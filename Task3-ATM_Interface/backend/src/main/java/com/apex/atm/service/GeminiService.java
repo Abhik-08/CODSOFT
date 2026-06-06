@@ -62,23 +62,36 @@ public class GeminiService {
 
             if (!isCooldown) {
                 try {
-                    return callGeminiApi(model, prompt, currentKey);
-                } catch (HttpClientErrorException.TooManyRequests e) {
-                    logger.warn("Gemini model {} hit rate limit (429) with key. Placing combination on 60s cooldown.", model);
-                    rateLimitCooldowns.put(cooldownKey, System.currentTimeMillis() + 60000); // 1 minute cooldown
-                } catch (HttpClientErrorException e) {
-                    int statusCode = e.getStatusCode().value();
-                    if (statusCode == 404 || statusCode == 400) {
-                        logger.warn("Gemini model {} not supported or not found (status {}). Skipping model.", model, statusCode);
-                        return null;
-                    }
-                    logger.error("HTTP error calling Gemini model {} (status {}): {}", model, statusCode, e.getResponseBodyAsString());
-                } catch (Exception e) {
-                    logger.error("Error calling Gemini model {}: {}", model, e.getMessage());
+                    return executeApiWithFallback(model, prompt, currentKey, cooldownKey);
+                } catch (UnsupportedModelException e) {
+                    return null;
                 }
             }
         }
         return null;
+    }
+
+    private String executeApiWithFallback(String model, String prompt, String currentKey, String cooldownKey) {
+        try {
+            return callGeminiApi(model, prompt, currentKey);
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            logger.warn("Gemini model {} hit rate limit (429) with key. Placing combination on 60s cooldown.", model);
+            rateLimitCooldowns.put(cooldownKey, System.currentTimeMillis() + 60000); // 1 minute cooldown
+        } catch (HttpClientErrorException e) {
+            int statusCode = e.getStatusCode().value();
+            if (statusCode == 404 || statusCode == 400) {
+                logger.warn("Gemini model {} not supported or not found (status {}). Skipping model.", model, statusCode);
+                throw new UnsupportedModelException();
+            }
+            logger.error("HTTP error calling Gemini model {} (status {}): {}", model, statusCode, e.getResponseBodyAsString());
+        } catch (Exception e) {
+            logger.error("Error calling Gemini model {}: {}", model, e.getMessage());
+        }
+        return null;
+    }
+
+    private static class UnsupportedModelException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
     }
 
     private List<String> getApiKeys() {
