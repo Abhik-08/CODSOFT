@@ -49,9 +49,9 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
             <div className="flex items-center justify-between pb-5 border-b border-dark-border/15 light:border-light-border/40 mb-6">
               <div className="flex items-center gap-3">
                 <img 
-                  src="/nexus_symbol.jpg" 
+                  src="/nexus_symbol.png" 
                   alt="Nexus Logo" 
-                  className="h-11.5 w-11.5 rounded-xl object-contain shadow-[0_0_15px_rgba(6,182,212,0.25)] border border-dark-border/20"
+                  className="h-11.5 w-11.5 object-contain"
                 />
                 <div className="flex flex-col text-left justify-center">
                   <span className="font-mono tracking-wider font-extrabold text-[21px] flex items-center leading-none">

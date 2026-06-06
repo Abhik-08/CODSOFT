@@ -46,9 +46,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
 
         <div className="flex items-center select-none py-1 gap-3.5">
           <img 
-            src="/nexus_symbol.jpg" 
+            src="/nexus_symbol.png" 
             alt="Nexus Logo" 
-            className="h-13.5 w-13.5 rounded-xl object-contain shadow-[0_0_20px_rgba(6,182,212,0.25)] border border-dark-border/20"
+            className="h-13.5 w-13.5 object-contain"
           />
           <span className="font-mono tracking-wider font-extrabold text-[27px] flex items-center leading-none">
             <span className="text-dark-text light:text-light-text font-black">NEXUS</span>

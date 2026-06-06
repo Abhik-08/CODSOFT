@@ -4,6 +4,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { motion } from 'motion/react';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import toast from 'react-hot-toast';
+import { FiUser, FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 
 // Custom Animated Banking Illustration
 const BankingIllustration: React.FC = () => {
@@ -90,6 +91,24 @@ export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rotate, setRotate] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const box = card.getBoundingClientRect();
+    const x = e.clientX - box.left - box.width / 2;
+    const y = e.clientY - box.top - box.height / 2;
+    // Limit rotation to maximum of 8 degrees
+    setRotate({
+      x: (x / (box.width / 2)) * 8,
+      y: -(y / (box.height / 2)) * 8,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setRotate({ x: 0, y: 0 });
+  };
 
   const navigate = useNavigate();
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
@@ -134,6 +153,12 @@ export const Login: React.FC = () => {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      toast.error('Please enter a valid email address (e.g. name@domain.com).');
+      return;
+    }
+
     setIsInserting(true);
     const toastId = toast.loading(
       mode === 'signup' 
@@ -168,8 +193,8 @@ export const Login: React.FC = () => {
       <div className="cyber-scanline" />
 
       {/* Ambient Gradient Orbs */}
-      <div className="absolute top-[-25%] left-[-20%] w-[65vw] h-[65vw] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-25%] right-[-20%] w-[65vw] h-[65vw] rounded-full bg-secondary/5 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-15%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-transparent blur-[130px] pointer-events-none animate-pulse-glow" />
+      <div className="absolute bottom-[-20%] right-[-15%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tl from-purple-500/10 via-pink-500/5 to-transparent blur-[130px] pointer-events-none animate-pulse-glow" style={{ animationDelay: '2.5s' }} />
 
       {/* Theme toggle */}
       <div className="absolute top-6 right-6">
@@ -182,9 +207,9 @@ export const Login: React.FC = () => {
         <div className="md:col-span-6 flex flex-col justify-center text-center md:text-left select-none">
           <div className="flex items-center gap-5 justify-center md:justify-start mb-8">
             <img 
-              src="/nexus_symbol.jpg" 
+              src="/nexus_symbol.png" 
               alt="Nexus Logo" 
-              className="h-24 w-24 rounded-3xl object-contain shadow-[0_0_35px_rgba(6,182,212,0.3)] border border-dark-border/20"
+              className="h-24 w-24 object-contain"
             />
             <div className="flex flex-col text-left justify-center">
               <span className="font-mono tracking-wider font-black text-[44px] flex items-center leading-none mb-2.5">
@@ -214,118 +239,128 @@ export const Login: React.FC = () => {
         {/* Right Side: Interactive Login Panel */}
         <div className="md:col-span-6 flex justify-center w-full">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="w-full max-w-[400px] glass-card premium-card-shadow rounded-3xl p-6 md:p-8 flex flex-col items-center border border-dark-border/20 light:border-light-border/45"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            animate={{
+              transform: `perspective(1000px) rotateX(${rotate.y}deg) rotateY(${rotate.x}deg)`,
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            style={{ transformStyle: 'preserve-3d' }}
+            className="w-full max-w-[400px] bg-white/5 dark:bg-black/35 light:bg-white/80 backdrop-blur-md border border-white/10 dark:border-white/10 light:border-zinc-200 rounded-[28px] p-8 flex flex-col shadow-[0_12px_40px_rgba(0,0,0,0.3)] transition-all duration-300 relative overflow-hidden"
           >
-            {/* ATM Console Display Screen */}
-            <div className="w-full glass-panel border border-dark-border/25 light:border-light-border/60 rounded-2xl p-5 mb-5 text-center select-none flex flex-col items-center">
-              <div className="relative w-12 h-12 mb-3.5 flex items-center justify-center">
-                {/* Rotating Outer Ring */}
-                <div className="absolute inset-0 rounded-full border border-dashed border-primary/30 animate-[spin_8s_linear_infinite]" />
-                
-                {/* Cyber Biometric Core */}
-                <div className="w-9 h-9 rounded-full bg-dark-bg/60 light:bg-light-bg/40 border border-primary/20 flex items-center justify-center text-primary relative overflow-hidden group shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]">
-                  <svg 
-                    className="w-5 h-5 opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 drop-shadow-[0_0_4px_rgba(16,185,129,0.5)]" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5" 
-                    viewBox="0 0 24 24" 
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0-3.517-1.009-6.799-2.753-9.571m-3.44 2.04l.054-.09A13.916 13.916 0 009 11a13.917 13.917 0 002.212 7.448m3.44-2.04L15 16.5m-7.44-7.44a13.916 13.916 0 00-2.212-7.448m0 0A13.91 13.91 0 003 11a13.918 13.918 0 002.212 7.448M12 11c0 3.517 1.009 6.799 2.753 9.571m3.44-2.04l-.054.09A13.912 13.912 0 0015 11a13.915 13.915 0 00-2.212-7.448m-3.44 2.04L9 4.5M10.5 22.5A9.012 9.012 0 012.25 12c0-1.285.268-2.508.75-3.622m8.25 14.122a9.012 9.012 0 008.25-10.5c0-1.285-.268-2.508-.75-3.622M12 2.25c-4.97 0-9 4.03-9 9 0 1.206.237 2.355.667 3.407" />
-                  </svg>
-                  <div className="absolute inset-0 bg-primary/5 rounded-full animate-ping pointer-events-none opacity-40" />
-                </div>
-              </div>
+            {/* Ambient subtle glow inside the card */}
+            <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-3xl pointer-events-none" />
 
-              <div className="text-[12.5px] font-mono tracking-wider font-bold text-dark-text light:text-light-text mb-1 uppercase">
-                {mode === 'signin' ? 'Operator Sign In' : 'Operator Register'}
-              </div>
-              
-              <p className="text-[10.5px] text-dark-text/50 light:text-light-text/50 leading-relaxed px-2">
-                {mode === 'signin' 
-                  ? 'Connect your checking ledger session. Provide your email credentials.' 
-                  : 'Enroll checking node details into the security directory.'}
-              </p>
-            </div>
+            <h2 className="text-[32px] font-bold font-sans text-white light:text-zinc-900 mb-8 text-center select-none tracking-tight">
+              {mode === 'signin' ? 'Login' : 'Register'}
+            </h2>
 
             {/* Email/Password Access Form */}
-            <form onSubmit={handleEmailSubmit} className="w-full space-y-3.5">
+            <form onSubmit={handleEmailSubmit} className="w-full space-y-4 relative z-10">
               {mode === 'signup' && (
-                <div className="space-y-1">
-                  <label htmlFor="auth-name" className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase font-bold pl-0.5">Operator Full Name</label>
+                <div className="relative flex items-center">
                   <input
                     id="auth-name"
                     type="text"
+                    autoComplete="name"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={isInserting}
-                    placeholder="e.g. ABHIK MUKHERJEE"
-                    className="w-full py-2.5 px-3.5 rounded-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-zinc-900/60 dark:bg-black/45 light:bg-zinc-50 outline-none text-xs text-dark-text light:text-light-text font-mono focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-200"
+                    placeholder="Full Name"
+                    className="w-full py-3.5 pl-6 pr-12 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
                   />
+                  <FiUser className="absolute right-4.5 text-white/40 light:text-zinc-400 w-4.5 h-4.5" />
                 </div>
               )}
 
-              <div className="space-y-1">
-                <label htmlFor="auth-email" className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase font-bold pl-0.5">Secure Email</label>
+              <div className="relative flex items-center">
                 <input
                   id="auth-email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isInserting}
-                  placeholder="operator@nexus.bank"
-                  className="w-full py-2.5 px-3.5 rounded-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-zinc-900/60 dark:bg-black/45 light:bg-zinc-50 outline-none text-xs text-dark-text light:text-light-text font-mono focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-200"
+                  placeholder="Email"
+                  className="w-full py-3.5 pl-6 pr-12 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
                 />
+                <FiMail className="absolute right-4.5 text-white/40 light:text-zinc-400 w-4.5 h-4.5" />
               </div>
 
-              <div className="space-y-1">
-                <label htmlFor="auth-password" className="text-[9px] font-mono text-dark-text/45 light:text-light-text/45 tracking-widest uppercase font-bold pl-0.5">Session Passphrase</label>
+              <div className="relative flex items-center">
                 <input
                   id="auth-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={mode === 'signin' ? "current-password" : "new-password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isInserting}
-                  placeholder="••••••••"
-                  className="w-full py-2.5 px-3.5 rounded-xl border border-white/10 dark:border-white/10 light:border-zinc-200 bg-zinc-900/60 dark:bg-black/45 light:bg-zinc-50 outline-none text-xs text-dark-text light:text-light-text font-mono focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-200"
+                  placeholder="Password"
+                  className="w-full py-3.5 pl-6 pr-18 rounded-full border border-white/15 dark:border-white/10 light:border-zinc-200 bg-white/10 dark:bg-black/20 light:bg-zinc-100/50 outline-none text-sm text-white light:text-zinc-900 placeholder-white/40 light:placeholder-zinc-400 focus:border-white/30 dark:focus:border-white/20 light:focus:border-zinc-400 transition-all duration-200"
                 />
+                <div className="absolute right-4.5 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="text-white/40 light:text-zinc-400 hover:text-white dark:hover:text-white light:hover:text-zinc-900 transition-colors cursor-pointer flex items-center justify-center p-0.5"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                  </button>
+                  <FiLock className="text-white/40 light:text-zinc-400 w-4 h-4" />
+                </div>
+              </div>
+
+              {/* Action row with remember me and forgot password */}
+              <div className="flex items-center justify-between w-full text-[11.5px] font-sans text-white/60 light:text-zinc-500 px-3 select-none">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-white/20 bg-white/5 text-accent focus:ring-0 w-3.5 h-3.5"
+                  />
+                  <span>Remember me</span>
+                </label>
+                <button 
+                  type="button" 
+                  onClick={() => toast.success('Password recovery code sent to node email.')}
+                  className="hover:underline hover:text-white dark:hover:text-white light:hover:text-zinc-900 transition-colors font-semibold"
+                >
+                  Forgot password?
+                </button>
               </div>
 
               <button
                 type="submit"
                 disabled={isInserting}
-                className="w-full py-3 rounded-xl font-display font-bold text-[11.5px] uppercase tracking-widest bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-md mt-1"
+                className="w-full py-3.5 rounded-full font-sans font-bold text-[14px] bg-white dark:bg-white light:bg-zinc-900 text-zinc-950 dark:text-zinc-950 light:text-white hover:opacity-90 active:scale-[0.97] transition-all duration-200 cursor-pointer shadow-md mt-2 flex items-center justify-center"
               >
-                {mode === 'signin' ? 'Connect Operator Node' : 'Register Checking Profile'}
+                {mode === 'signin' ? 'Login' : 'Register'}
               </button>
             </form>
 
             {/* SSO Divider */}
-            <div className="w-full flex items-center gap-3 my-4">
-              <div className="h-[1px] flex-1 bg-dark-border/10 light:bg-light-border/40" />
-              <span className="text-[9px] font-mono text-dark-text/30 light:text-light-text/30 uppercase tracking-widest select-none">OR AUTHENTICATE VIA</span>
-              <div className="h-[1px] flex-1 bg-dark-border/10 light:bg-light-border/40" />
+            <div className="w-full flex items-center gap-3 my-4.5 relative z-10">
+              <div className="h-[1px] flex-1 bg-white/10 dark:bg-white/10 light:bg-zinc-200" />
+              <span className="text-[9px] font-mono text-white/30 light:text-zinc-400 uppercase tracking-widest select-none">OR</span>
+              <div className="h-[1px] flex-1 bg-white/10 dark:bg-white/10 light:bg-zinc-200" />
             </div>
 
             {/* Google Sign In Button */}
             <button
               onClick={handleGoogleLogin}
               disabled={isInserting}
-              className="w-full py-3 rounded-xl border border-dark-border/20 light:border-light-border/60 bg-dark-surface/40 light:bg-light-surface text-dark-text light:text-light-text hover:bg-dark-card light:hover:bg-light-card hover:border-primary/20 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2.5 font-bold text-xs tracking-wide shadow-sm"
+              className="w-full py-3.5 rounded-full border border-white/10 dark:border-white/10 light:border-zinc-200 bg-white/5 dark:bg-black/20 light:bg-zinc-100/50 text-white light:text-zinc-900 hover:bg-white/10 dark:hover:bg-black/30 light:hover:bg-zinc-200/50 active:scale-[0.97] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2.5 font-bold text-xs tracking-wide shadow-sm relative z-10"
             >
               <FcGoogle className="w-5 h-5" />
               <span>Continue with Google</span>
             </button>
 
             {/* Mode toggle link */}
-            <div className="mt-5 text-center">
+            <div className="mt-6 text-center relative z-10 text-xs font-sans text-white/70 light:text-zinc-500">
+              <span>{mode === 'signin' ? "Don't have an account? " : "Already have an account? "}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -335,16 +370,13 @@ export const Login: React.FC = () => {
                   setName('');
                 }}
                 disabled={isInserting}
-                className="text-[10px] font-mono tracking-wider text-secondary hover:text-primary hover:underline transition-colors uppercase font-bold"
+                className="text-white dark:text-white light:text-zinc-900 font-bold hover:underline cursor-pointer ml-0.5"
               >
-                {mode === 'signin' 
-                  ? 'First time here? Register checking node' 
-                  : 'Already registered? Login to Node Session'}
+                {mode === 'signin' ? 'Register' : 'Login'}
               </button>
             </div>
           </motion.div>
         </div>
-
       </div>
     </div>
   );
