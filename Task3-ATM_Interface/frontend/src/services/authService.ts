@@ -182,7 +182,7 @@ export const loginWithEmail = async (email: string, password: string): Promise<F
   if (isMockMode) {
     const credentials = JSON.parse(localStorage.getItem('apex_mock_email_credentials') || '{}');
     const matched = credentials[email];
-    if (!matched || matched.password !== password) {
+    if (matched?.password !== password) {
       throw new Error('Invalid email address or access passphrase credentials.');
     }
 

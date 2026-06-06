@@ -123,7 +123,7 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error('Please fill in all operator credentials.');
