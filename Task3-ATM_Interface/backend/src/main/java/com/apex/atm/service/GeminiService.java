@@ -21,9 +21,7 @@ public class GeminiService {
         "gemini-2.0-flash",                 // Unlimited rate limit (stable 2.0 flash) - primary choice
         "gemini-2.0-flash-lite",            // Unlimited rate limit (lightweight 2.0)
         "gemini-1.5-flash",                 // Legacy reliable fallback
-        "gemini-1.5-flash-8b",              // Smaller fallback
-        "gemini-1.5-pro",                   // Pro fallback
-        "gemini-1.0-pro"                    // Last resort
+        "gemini-1.5-pro"                    // Pro fallback
     );
 
     private final Map<String, Long> rateLimitCooldowns = new java.util.concurrent.ConcurrentHashMap<>();
@@ -79,7 +77,8 @@ public class GeminiService {
             rateLimitCooldowns.put(cooldownKey, System.currentTimeMillis() + 60000); // 1 minute cooldown
         } catch (HttpClientErrorException e) {
             int statusCode = e.getStatusCode().value();
-            if (statusCode == 404 || statusCode == 400) {
+            String responseBody = e.getResponseBodyAsString().toLowerCase();
+            if (statusCode == 404 || (statusCode == 400 && (responseBody.contains("not found") || responseBody.contains("not supported")))) {
                 logger.warn("Gemini model {} not supported or not found (status {}). Skipping model.", model, statusCode);
                 throw new UnsupportedModelException();
             }
