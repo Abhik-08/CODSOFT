@@ -19,6 +19,7 @@ export default function SubjectInput({ subject, index, onChange, onRemove, canRe
 
   const nameInputId  = `subject-name-${subject.id}`;
   const marksInputId = `subject-marks-${subject.id}`;
+  const incompleteInputId = `subject-incomplete-${subject.id}`;
 
   return (
     <motion.div
@@ -71,13 +72,14 @@ export default function SubjectInput({ subject, index, onChange, onRemove, canRe
               id={marksInputId}
               type="number"
               className={`premium-input ${styles.input} ${styles.marksInput}`}
-              placeholder="0 – 100"
+              placeholder={subject.incomplete ? "---" : "0 – 100"}
               value={subject.marks}
               onChange={(e) => onChange(subject.id, 'marks', e.target.value)}
+              disabled={subject.incomplete}
               min={0}
               max={100}
             />
-            {subject.marks !== '' && (
+            {subject.marks !== '' && !subject.incomplete && (
               <motion.div
                 className={styles.marksBar}
                 initial={{ scaleX: 0 }}
@@ -96,6 +98,23 @@ export default function SubjectInput({ subject, index, onChange, onRemove, canRe
               <AlertCircle size={11} /> {error.marks}
             </motion.span>
           )}
+        </div>
+
+        {/* Incomplete Switch */}
+        <div className={styles.field} style={{ minWidth: '90px' }}>
+          <label htmlFor={incompleteInputId} className={styles.label}>
+            Incomplete
+          </label>
+          <div className={styles.checkboxWrapper}>
+            <input
+              id={incompleteInputId}
+              type="checkbox"
+              className={styles.checkbox}
+              checked={subject.incomplete || false}
+              onChange={(e) => onChange(subject.id, 'incomplete', e.target.checked)}
+              title="Mark this subject exam as incomplete"
+            />
+          </div>
         </div>
       </div>
 
@@ -125,7 +144,8 @@ SubjectInput.propTypes = {
   subject: PropTypes.shape({
     id:    PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     name:  PropTypes.string.isRequired,
-    marks: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    marks: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    incomplete: PropTypes.bool,
   }).isRequired,
   index:     PropTypes.number.isRequired,
   onChange:  PropTypes.func.isRequired,

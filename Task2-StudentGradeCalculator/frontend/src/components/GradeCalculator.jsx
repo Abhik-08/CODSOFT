@@ -59,7 +59,7 @@ function GradeLegendPanel() {
             </span>
             <span className={styles.gradeRange}>{g.min}% – {g.max}%</span>
             <span className={styles.gradeLabel} style={{ color: g.color }}>{g.label}</span>
-            <span className={styles.gradeGpa}>GPA {g.gpa}</span>
+            <span className={styles.gradeGpa}>CGPA {g.gpa}</span>
           </motion.div>
         ))}
       </div>
@@ -98,10 +98,25 @@ export default function GradeCalculator() {
 
   // Change individual subject field
   const handleSubjectChange = useCallback((id, field, value) => {
-    setSubjects((prev) => prev.map((s) => s.id === id ? { ...s, [field]: value } : s));
+    setSubjects((prev) => prev.map((s) => {
+      if (s.id === id) {
+        if (field === 'incomplete') {
+          return {
+            ...s,
+            incomplete: value,
+            marks: value ? '' : s.marks,
+          };
+        }
+        return { ...s, [field]: value };
+      }
+      return s;
+    }));
     setErrors((prev) => {
       const next = { ...prev };
       delete next[`subject_${id}_${field}`];
+      if (field === 'incomplete') {
+        delete next[`subject_${id}_marks`];
+      }
       delete next.general;
       return next;
     });
@@ -121,9 +136,13 @@ export default function GradeCalculator() {
       const errs = {};
       subjects.forEach((s) => {
         if (!s.name.trim()) errs[`subject_${s.id}_name`] = 'Required';
-        const m = Number(s.marks);
-        if (s.marks === '') errs[`subject_${s.id}_marks`] = 'Required';
-        else if (Number.isNaN(m) || m < 0 || m > 100) errs[`subject_${s.id}_marks`] = '0–100 only';
+        if (s.incomplete) {
+          // No validation for marks if marked incomplete
+        } else {
+          const m = Number(s.marks);
+          if (s.marks === '') errs[`subject_${s.id}_marks`] = 'Required';
+          else if (Number.isNaN(m) || m < 0 || m > 100) errs[`subject_${s.id}_marks`] = '0–100 only';
+        }
       });
       setErrors(errs);
       return Object.keys(errs).length === 0;

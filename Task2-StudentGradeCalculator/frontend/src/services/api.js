@@ -121,7 +121,8 @@ async function apiFetchWithRetry(endpoint, options = {}, timeoutMs = DEFAULT_TIM
 export async function calculateGrade(studentName, subjects) {
   const requestSubjects = subjects.map((s) => ({
     subjectName: s.name.trim(),
-    marks: Number.parseInt(s.marks, 10),
+    marks: s.incomplete ? null : Number.parseInt(s.marks, 10),
+    incomplete: s.incomplete || false,
   }));
 
   return apiFetchWithRetry('/grade/calculate', {

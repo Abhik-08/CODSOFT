@@ -111,7 +111,7 @@ const statItem = {
 /* ─── SUBTITLE_LINES for typewriter ─── */
 const SUBTITLE_LINES = [
   'Analyze academic performance instantly.',
-  'Dynamic subject management & GPA tracking.',
+  'Dynamic subject management & CGPA tracking.',
   'Premium analytics. Zero compromise.',
 ];
 

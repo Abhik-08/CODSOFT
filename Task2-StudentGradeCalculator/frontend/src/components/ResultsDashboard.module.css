@@ -118,6 +118,13 @@
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
 }
 
+.incomplete {
+  background: #25123e;
+  border: 2px solid #5b2891;
+  color: #e9d5ff;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
+}
+
 /* Hero Right */
 .heroRight {
   display: flex;

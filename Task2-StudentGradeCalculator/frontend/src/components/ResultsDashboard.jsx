@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { User, RotateCcw, Download, TrendingUp, CheckCircle2, XCircle } from 'lucide-react';
+import { User, RotateCcw, Download, TrendingUp, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import ProgressRing from './ProgressRing';
 import StatsCards from './StatsCards';
 import AnimatedCounter from './AnimatedCounter';
@@ -21,22 +21,37 @@ const cardVariants = {
 export default function ResultsDashboard({ results, onReset, isResetting }) {
   const { studentName, grade, gradeInfo, status, percentage, totalMarks, maxTotal, performance, subjects } = results;
   const isPassed = status === 'PASS';
+  const isIncomplete = status === 'INCOMPLETE';
 
   const handlePrint = () => {
     const date = new Date().toLocaleString();
     const issueDate = new Date().toLocaleDateString();
     const scholarshipStatus = results.scholarshipEligible ? 'ELIGIBLE FOR SCHOLARSHIP' : 'NOT ELIGIBLE FOR SCHOLARSHIP';
 
-    const rows = results.subjects.map((subject, index) => `
-      <tr>
-        <td>${index + 1}</td>
-        <td class="subject-name">${subject.name}</td>
-        <td>100</td>
-        <td>${subject.marks}</td>
-        <td>${results.grade}</td>
-        <td>${Number(subject.marks) >= 40 ? 'PASS' : 'FAIL'}</td>
-      </tr>
-    `).join('');
+    const rows = results.subjects.map((subject, index) => {
+      const isSubInc = subject.incomplete;
+      const subMarksDisplay = isSubInc ? '---' : subject.marks;
+      const subGradeDisplay = isSubInc ? 'I' : (
+        subject.marks >= 90 ? 'O' :
+        subject.marks >= 80 ? 'E' :
+        subject.marks >= 70 ? 'A' :
+        subject.marks >= 60 ? 'B' :
+        subject.marks >= 50 ? 'C' :
+        subject.marks >= 40 ? 'D' : 'F'
+      );
+      const subResultDisplay = isSubInc ? 'INCOMPLETE' : (Number(subject.marks) >= 40 ? 'PASS' : 'FAIL');
+      
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td class="subject-name">${subject.name}</td>
+          <td>100</td>
+          <td>${subMarksDisplay}</td>
+          <td>${subGradeDisplay}</td>
+          <td>${subResultDisplay}</td>
+        </tr>
+      `;
+    }).join('');
 
     const html = `
       <html>
@@ -309,7 +324,7 @@ export default function ResultsDashboard({ results, onReset, isResetting }) {
                   <td class="result-details">
                     <div><strong>Total Marks :</strong> ${results.totalMarks} / ${results.maxTotal}</div>
                     <div><strong>Grade :</strong> ${results.grade}</div>
-                    <div><strong>GPA :</strong> ${results.gradeInfo.gpa.toFixed(1)}</div>
+                    <div><strong>CGPA :</strong> ${results.gradeInfo.gpa.toFixed(1)}</div>
                     <div><strong>Scholarship :</strong> ${scholarshipStatus}</div>
                   </td>
                   <td class="result-details">
@@ -321,11 +336,14 @@ export default function ResultsDashboard({ results, onReset, isResetting }) {
 
               <table class="grade-table">
                 <tr>
-                  <td>A - 75% to 100%</td>
-                  <td>B - 60% to 74%</td>
-                  <td>C - 45% to 59</td>
-                  <td>D - 33% to 44%</td>
-                  <td>E - Below 33%</td>
+                  <td>O: 90-100 (10)</td>
+                  <td>E: 80-89 (9)</td>
+                  <td>A: 70-79 (8)</td>
+                  <td>B: 60-69 (7)</td>
+                  <td>C: 50-59 (6)</td>
+                  <td>D: 40-49 (5)</td>
+                  <td>F: &lt;40 (2)</td>
+                  <td>I: Incomplete (2)</td>
                 </tr>
               </table>
 
@@ -408,19 +426,25 @@ export default function ResultsDashboard({ results, onReset, isResetting }) {
             </motion.span>
             <div>
               <div className={styles.gradeDesc} style={{ color: gradeInfo.color }}>{gradeInfo.label}</div>
-              <div className={styles.gradeGpa}>GPA: {gradeInfo.gpa.toFixed(1)}</div>
+              <div className={styles.gradeGpa}>CGPA: {gradeInfo.gpa.toFixed(1)}</div>
             </div>
           </div>
 
           <motion.div
             id="result-status-badge"
-            className={`${styles.statusBadge} ${isPassed ? styles.pass : styles.fail}`}
+            className={`${styles.statusBadge} ${isPassed ? styles.pass : (isIncomplete ? styles.incomplete : styles.fail)}`}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.5 }}
           >
-            {isPassed ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-            {isPassed ? 'PASSED' : 'FAILED'}
+            {isPassed ? (
+              <CheckCircle2 size={16} />
+            ) : isIncomplete ? (
+              <AlertCircle size={16} />
+            ) : (
+              <XCircle size={16} />
+            )}
+            {isPassed ? 'PASSED' : isIncomplete ? 'INCOMPLETE' : 'FAILED'}
           </motion.div>
         </div>
 
