@@ -6,25 +6,52 @@ import { FiCpu } from 'react-icons/fi';
 
 export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
-  const [loadingText, setLoadingText] = useState('Booting ATM Node...');
+  const [progress, setProgress] = useState(0);
+  const [loadingText, setLoadingText] = useState('Initializing secure node...');
+  const [isFinishing, setIsFinishing] = useState(false);
 
   useEffect(() => {
-    if (!loading) return;
-    const texts = [
-      'Establishing secure handshake...',
-      'Syncing with APEX ledger...',
-      'Verifying operator permissions...',
-      'Decrypting terminal modules...',
-    ];
-    let idx = 0;
+    if (!loading) {
+      setIsFinishing(true);
+      setProgress(100);
+      const doneTimer = setTimeout(() => {
+        setIsFinishing(false);
+      }, 700);
+      return () => clearTimeout(doneTimer);
+    }
+
+    // Reset progress on active load
+    setProgress(0);
     const timer = setInterval(() => {
-      setLoadingText(texts[idx % texts.length]);
-      idx++;
-    }, 900);
+      setProgress((prev) => {
+        if (prev >= 98) {
+          return 98; // Wait at 98% until firebase authentication resolves
+        }
+        const step = Math.floor(Math.random() * 8) + 4;
+        return Math.min(prev + step, 98);
+      });
+    }, 120);
+
     return () => clearInterval(timer);
   }, [loading]);
 
-  if (loading) {
+  useEffect(() => {
+    if (progress < 25) {
+      setLoadingText('Establishing secure handshake...');
+    } else if (progress < 50) {
+      setLoadingText('Syncing distributed ledger shards...');
+    } else if (progress < 75) {
+      setLoadingText('Verifying multi-sig credentials...');
+    } else if (progress < 95) {
+      setLoadingText('Decrypting session keys...');
+    } else if (progress >= 98 && !loading) {
+      setLoadingText('Authorization successful.');
+    } else {
+      setLoadingText('Finalizing handshake protocol...');
+    }
+  }, [progress, loading]);
+
+  if (loading || isFinishing) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#07090e] text-white font-mono select-none overflow-hidden">
         {/* Futuristic Grid Background */}
@@ -61,33 +88,40 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
         </div>
 
         {/* System Terminal Outputs */}
-        <div className="text-center space-y-3 max-w-sm px-6 relative z-10">
+        <div className="text-center space-y-4 max-w-sm px-6 relative z-10">
           <h2 className="text-sm font-bold tracking-[0.2em] text-blue-500/80 uppercase">
-            KRONOS CORE // SECURE GATEWAY
+            NEXUS CORE // SECURE GATEWAY
           </h2>
           
-          <div className="flex items-center justify-center gap-1.5 h-6">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-            <p className="text-[12px] text-gray-400 font-semibold tracking-wide">
-              {loadingText}
-            </p>
+          <div className="flex flex-col items-center justify-center gap-1.5">
+            <div className="flex items-center gap-1.5 h-6">
+              <span className={`w-2 h-2 rounded-full ${progress === 100 ? 'bg-blue-500' : 'bg-emerald-500 animate-ping'}`} />
+              <p className="text-[12px] text-gray-400 font-semibold tracking-wide">
+                {loadingText}
+              </p>
+            </div>
+            <span className="text-[28px] font-bold tracking-[0.05em] text-emerald-400 font-mono">
+              {progress.toString().padStart(3, '0')}%
+            </span>
           </div>
 
-          <div className="w-48 h-[3px] bg-slate-800/40 rounded-full overflow-hidden mx-auto mt-2 relative">
+          <div className="w-48 h-[4px] bg-slate-800/40 rounded-full overflow-hidden mx-auto mt-2 relative border border-slate-700/20">
             <motion.div
-              initial={{ left: '-100%' }}
-              animate={{ left: '100%' }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute top-0 bottom-0 w-1/3 bg-gradient-to-r from-transparent via-blue-500 to-transparent"
+              initial={{ width: '0%' }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.1, ease: 'easeInOut' }}
+              className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-500"
             />
           </div>
         </div>
 
         {/* Top-Right Node ID */}
         <div className="absolute top-6 right-6 text-[10px] text-gray-500 text-right uppercase">
-          Node ID: <span className="text-gray-400">ATM-DEB-v1.4.2</span>
+          Node ID: <span className="text-gray-400">NEXUS-NODE-v2.1.0</span>
           <br />
-          Status: <span className="text-emerald-500">Active Scan</span>
+          Status: <span className={progress === 100 ? 'text-blue-500' : 'text-emerald-500'}>
+            {progress === 100 ? 'Ready' : 'Syncing'}
+          </span>
         </div>
       </div>
     );
