@@ -18,40 +18,70 @@ const cardVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 240, damping: 24 } },
 };
 
+function getSubjectLetterGrade(subject) {
+  if (subject.incomplete) return 'I';
+  const m = subject.marks;
+  if (m >= 90) return 'O';
+  if (m >= 80) return 'E';
+  if (m >= 70) return 'A';
+  if (m >= 60) return 'B';
+  if (m >= 50) return 'C';
+  if (m >= 40) return 'D';
+  return 'F';
+}
+
+function getSubjectResult(subject) {
+  if (subject.incomplete) return 'INCOMPLETE';
+  return Number(subject.marks) >= 40 ? 'PASS' : 'FAIL';
+}
+
+function formatMarksheetRows(subjects) {
+  return subjects.map((subject, index) => {
+    const isSubInc = subject.incomplete;
+    const subMarksDisplay = isSubInc ? '---' : subject.marks;
+    const subGradeDisplay = getSubjectLetterGrade(subject);
+    const subResultDisplay = getSubjectResult(subject);
+    
+    return `
+      <tr>
+        <td>${index + 1}</td>
+        <td class="subject-name">${subject.name}</td>
+        <td>100</td>
+        <td>${subMarksDisplay}</td>
+        <td>${subGradeDisplay}</td>
+        <td>${subResultDisplay}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getStatusBadgeClass(status) {
+  if (status === 'PASS') return styles.pass;
+  if (status === 'INCOMPLETE') return styles.incomplete;
+  return styles.fail;
+}
+
+function getStatusLabel(status) {
+  if (status === 'PASS') return 'PASSED';
+  if (status === 'INCOMPLETE') return 'INCOMPLETE';
+  return 'FAILED';
+}
+
+function renderStatusIcon(status) {
+  if (status === 'PASS') return <CheckCircle2 size={16} />;
+  if (status === 'INCOMPLETE') return <AlertCircle size={16} />;
+  return <XCircle size={16} />;
+}
+
 export default function ResultsDashboard({ results, onReset, isResetting }) {
   const { studentName, grade, gradeInfo, status, percentage, totalMarks, maxTotal, performance, subjects } = results;
-  const isPassed = status === 'PASS';
-  const isIncomplete = status === 'INCOMPLETE';
 
   const handlePrint = () => {
     const date = new Date().toLocaleString();
     const issueDate = new Date().toLocaleDateString();
     const scholarshipStatus = results.scholarshipEligible ? 'ELIGIBLE FOR SCHOLARSHIP' : 'NOT ELIGIBLE FOR SCHOLARSHIP';
 
-    const rows = results.subjects.map((subject, index) => {
-      const isSubInc = subject.incomplete;
-      const subMarksDisplay = isSubInc ? '---' : subject.marks;
-      const subGradeDisplay = isSubInc ? 'I' : (
-        subject.marks >= 90 ? 'O' :
-        subject.marks >= 80 ? 'E' :
-        subject.marks >= 70 ? 'A' :
-        subject.marks >= 60 ? 'B' :
-        subject.marks >= 50 ? 'C' :
-        subject.marks >= 40 ? 'D' : 'F'
-      );
-      const subResultDisplay = isSubInc ? 'INCOMPLETE' : (Number(subject.marks) >= 40 ? 'PASS' : 'FAIL');
-      
-      return `
-        <tr>
-          <td>${index + 1}</td>
-          <td class="subject-name">${subject.name}</td>
-          <td>100</td>
-          <td>${subMarksDisplay}</td>
-          <td>${subGradeDisplay}</td>
-          <td>${subResultDisplay}</td>
-        </tr>
-      `;
-    }).join('');
+    const rows = formatMarksheetRows(results.subjects);
 
     const html = `
       <html>
@@ -432,19 +462,13 @@ export default function ResultsDashboard({ results, onReset, isResetting }) {
 
           <motion.div
             id="result-status-badge"
-            className={`${styles.statusBadge} ${isPassed ? styles.pass : (isIncomplete ? styles.incomplete : styles.fail)}`}
+            className={`${styles.statusBadge} ${getStatusBadgeClass(status)}`}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.5 }}
           >
-            {isPassed ? (
-              <CheckCircle2 size={16} />
-            ) : isIncomplete ? (
-              <AlertCircle size={16} />
-            ) : (
-              <XCircle size={16} />
-            )}
-            {isPassed ? 'PASSED' : isIncomplete ? 'INCOMPLETE' : 'FAILED'}
+            {renderStatusIcon(status)}
+            {getStatusLabel(status)}
           </motion.div>
         </div>
 
