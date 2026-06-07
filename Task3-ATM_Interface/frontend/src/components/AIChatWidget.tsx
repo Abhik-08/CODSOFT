@@ -18,7 +18,7 @@ const AIChatWidget: React.FC = () => {
     {
       id: 'welcome',
       role: 'ai',
-      text: 'Hello! I am your AI ATM Assistant. How can I help you manage your accounts today?',
+      text: 'Hello! I am Nexus Financial Intelligence. How can I assist you with your banking activity and financial insights today?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -56,9 +56,7 @@ const AIChatWidget: React.FC = () => {
         id: Math.random().toString(36).substring(7),
         role: 'ai',
         text: res.data.reply,
-        timestamp: res.data.timestamp
-          ? new Date(res.data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
       setMessages(prev => [...prev, aiMsg]);
@@ -473,7 +471,7 @@ const AIChatWidget: React.FC = () => {
               <div className="chat-header">
                 <div className="chat-header-title">
                   <img src="/nexus_ai_logo.png" alt="Nexus AI" className="chat-header-logo-img" />
-                  <span>Nexus AI Assistant</span>
+                  <span>Nexus Financial Intelligence</span>
                 </div>
                 <button className="chat-close-btn" onClick={() => setIsOpen(false)}>
                   <FiX />
