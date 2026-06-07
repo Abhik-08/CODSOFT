@@ -11,6 +11,14 @@ interface ChatMessage {
   timestamp: string;
 }
 
+const suggestedQuestions = [
+  'Analyze my spending behavior',
+  'What is my savings score?',
+  'Can I save ₹1 lakh this year?',
+  'What is my biggest expense?',
+  'How much did I spend this month?'
+];
+
 const AIChatWidget: React.FC = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -33,10 +41,10 @@ const AIChatWidget: React.FC = () => {
 
   if (!user) return null;
 
-  const sendMessage = async () => {
-    if (!input.trim() || isTyping) return;
+  const sendMessageWithText = async (text: string) => {
+    if (!text.trim() || isTyping) return;
 
-    const userMsgText = input.trim();
+    const userMsgText = text.trim();
     const userMsg: ChatMessage = {
       id: Math.random().toString(36).substring(7),
       role: 'user',
@@ -73,6 +81,8 @@ const AIChatWidget: React.FC = () => {
       setIsTyping(false);
     }
   };
+
+  const sendMessage = () => sendMessageWithText(input);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -454,6 +464,67 @@ const AIChatWidget: React.FC = () => {
           0%, 80%, 100% { transform: scale(0); }
           40% { transform: scale(1); }
         }
+
+        .suggested-questions-container {
+          margin-top: 4px;
+          margin-bottom: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          align-self: flex-start;
+          width: 100%;
+          max-width: 85%;
+          padding-left: 4px;
+        }
+
+        .suggested-questions-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          font-family: var(--font-mono);
+          letter-spacing: 0.05em;
+        }
+
+        .suggested-questions-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .suggested-question-chip {
+          background-color: var(--background-elevated);
+          color: var(--text-primary);
+          border: 1.5px solid var(--text-primary);
+          padding: 8px 12px;
+          border-radius: 10px;
+          font-size: 12px;
+          text-align: left;
+          cursor: pointer;
+          box-shadow: 2px 2px 0px var(--text-primary);
+          transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+          outline: none;
+        }
+
+        html.dark .suggested-question-chip {
+          border-color: rgba(255, 255, 255, 0.15);
+          box-shadow: 2px 2px 0px rgba(255, 255, 255, 0.1);
+        }
+
+        .suggested-question-chip:hover:not(:disabled) {
+          transform: translate(-1px, -1px);
+          box-shadow: 3px 3px 0px var(--text-primary);
+          background-color: var(--chassis);
+        }
+
+        html.dark .suggested-question-chip:hover:not(:disabled) {
+          box-shadow: 3px 3px 0px rgba(255, 255, 255, 0.15);
+        }
+
+        .suggested-question-chip:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
       `}</style>
 
       <div className="chat-widget-container">
@@ -493,6 +564,24 @@ const AIChatWidget: React.FC = () => {
                     <span className="chat-timestamp">{msg.timestamp}</span>
                   </motion.div>
                 ))}
+
+                {messages.length === 1 && (
+                  <div className="suggested-questions-container">
+                    <div className="suggested-questions-title">💡 Suggested Questions</div>
+                    <div className="suggested-questions-list">
+                      {suggestedQuestions.map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => sendMessageWithText(q)}
+                          className="suggested-question-chip"
+                          disabled={isTyping}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Bouncing Dots Loading Indicator */}
                 {isTyping && (
