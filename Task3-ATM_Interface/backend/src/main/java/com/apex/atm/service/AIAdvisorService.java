@@ -86,23 +86,29 @@ public class AIAdvisorService {
         if (msg == null) return false;
         String lower = msg.toLowerCase().trim();
 
-        // Exact match checks for common irrelevant requests
-        if (lower.contains("what is dbms") || lower.contains("teach me java") ||
-            lower.contains("who won the world cup") || lower.contains("write python code") ||
-            lower.contains("who won the worldcup") || lower.contains("write java code") ||
-            lower.contains("write code") || lower.contains("programming language") ||
-            lower.contains("virat kohli")) {
+        // Allow greetings and casual short messages — let Gemini handle them gracefully
+        if (lower.length() < 30) return false;
+
+        // Allow anything with clear financial intent
+        if (lower.contains("spend") || lower.contains("saving") || lower.contains("balance") ||
+                lower.contains("deposit") || lower.contains("withdraw") || lower.contains("transaction") ||
+                lower.contains("account") || lower.contains("money") || lower.contains("rupee") ||
+                lower.contains("paisa") || lower.contains("paise") || lower.contains("invest") ||
+                lower.contains("limit") || lower.contains("score") || lower.contains("lakh") ||
+                lower.contains("expense") || lower.contains("salary")) {
+            return false;
+        }
+
+        // Block only clear off-topic technical / trivia requests
+        if (lower.contains("write code") || lower.contains("programming language") ||
+                lower.contains("teach me java") || lower.contains("what is dbms") ||
+                lower.contains("write python") || lower.contains("write java") ||
+                lower.contains("who won the world cup") || lower.contains("who won the worldcup")) {
             return true;
         }
 
-        // Generic keyword checks for coding / trivia
-        if (lower.matches(".*\\b(dbms|java|python|javascript|sql|c\\+\\+|programming|coding|world cup|worldcup|football|cricket|joke|weather)\\b.*")) {
-            // Permit if it contains clear financial terms as well (in case of hybrid questions)
-            return !(lower.contains("spend") || lower.contains("saving") || lower.contains("balance") || 
-                    lower.contains("deposit") || lower.contains("withdraw") || lower.contains("transaction") || 
-                    lower.contains("account"));
-        }
-        return false;
+        // Generic keyword checks for coding / trivia (only for longer messages)
+        return lower.matches(".*\\b(dbms|python|javascript|sql|c\\+\\+|programming|coding|world cup|worldcup|football|cricket|weather)\\b.*");
     }
 
     private String buildSystemPrompt(FinancialInsightsDTO insights, List<TransactionResponseDTO> txns, String userMessage) {
@@ -143,9 +149,16 @@ public class AIAdvisorService {
         - Avoid generic AI fluff, chatty intro paragraphs, or motivational clichés. Speak with real data and numbers.
         - Always use the '₹' symbol for Indian Rupees.
 
+        HANDLING GREETINGS AND CASUAL MESSAGES:
+        - If the user sends a greeting (hi, hello, hey, hii, kaisa, kya haal, sup, good morning, etc.) or any casual/informal message,
+          respond in a warm, friendly, brief manner and naturally introduce yourself and your capabilities.
+          Example: "Hey! I'm Nexus, your personal financial intelligence system. How can I help with your finances today?"
+        - If the user's message is casual banter, informal slang, or just chatting (even in Hindi/Hinglish), respond naturally and steer toward banking.
+        - Do NOT give a cold robotic refusal for greetings or short casual messages.
+
         STRICT TOPIC RESTRICTIONS:
         - You must ONLY assist with banking activity, spending analysis, savings planning, transaction analysis, and account insights.
-        - If the user's message is unrelated (e.g. asking programming questions, DBMS, general knowledge, sports, celebrities, writing code, jokes), you MUST respond with EXACTLY this refusal message and nothing else:
+        - If the user's message is clearly off-topic (e.g. asking programming questions, DBMS, general knowledge, sports, celebrities, writing code, jokes), you MUST respond with EXACTLY this refusal message and nothing else:
           "I am Nexus Financial Intelligence. I can only assist with banking activity, spending analysis, savings planning, and financial insights."
 
         PRE-PROCESSED REAL-TIME USER DATA:

@@ -45,9 +45,11 @@ public class AtmController {
         this.accountService = accountService;
     }
 
+
     /**
      * Retrieves the checking account balance for the currently authenticated user.
      */
+
     @GetMapping("/balance")
     @Operation(summary = "Query Account Balance", description = "Retrieves the current balance details for the authenticated user session.")
     @ApiResponses(value = {
@@ -80,8 +82,12 @@ public class AtmController {
     })
     public ResponseEntity<ApiResponseDTO<TransactionResponseDTO>> deposit(@Valid @RequestBody DepositRequestDTO request) {
         String userId = getAuthenticatedUserId();
-        logger.info("REST Request: Deposit ${} for user {}", request.getAmount(), userId);
+        // Log exact value with full precision to diagnose any future amount discrepancies
+        logger.info("REST Request: Deposit amount={} (exact={}) for user {}", 
+                request.getAmount(), String.format("%.10f", request.getAmount()), userId);
         TransactionResponseDTO response = accountService.deposit(userId, request.getAmount(), request.getDescription());
+        logger.info("Deposit completed: stored amount={}, postBalance={} for user {}",
+                response.getAmount(), response.getPostTransactionBalance(), userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseDTO.success(response, "Cash deposited successfully"));
     }
