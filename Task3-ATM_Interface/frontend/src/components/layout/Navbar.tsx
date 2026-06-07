@@ -32,7 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 h-20 w-full glass-panel border-b border-dark-border/10 light:border-light-border/40 px-6 flex items-center justify-between select-none">
+    <header className="sticky top-0 z-50 h-24 w-full glass-panel border-b border-dark-border/10 light:border-light-border/40 px-6 flex items-center justify-between select-none">
       {/* Left section: Symbolic Gauge Logo & Brand */}
       <div className="flex items-center gap-4">
         {/* Mobile menu trigger */}
@@ -44,13 +44,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
           <FiMenu className="w-6 h-6" />
         </button>
 
-        <div className="flex items-center select-none py-1 gap-3.5">
+        <div className="flex items-center select-none py-1 gap-5">
           <img 
             src="/nexus_symbol.png" 
             alt="Nexus Logo" 
-            className="h-13.5 w-13.5 object-contain"
+            className="h-[75.6px] w-[75.6px] object-contain"
           />
-          <span className="font-mono tracking-wider font-extrabold text-[27px] flex items-center leading-none">
+          <span className="font-mono tracking-wider font-extrabold text-[38px] flex items-center leading-none">
             <span className="text-dark-text light:text-light-text font-black">NEXUS</span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 ml-2 font-black">VAULT</span>
           </span>

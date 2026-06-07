@@ -30,7 +30,7 @@ export const MainLayout: React.FC = () => {
         <Sidebar />
 
         {/* Dynamic Main Workspace Content */}
-        <main className="flex-1 min-h-[calc(100vh-80px)] p-6 md:p-8 overflow-y-auto no-scrollbar relative">
+        <main className="flex-1 min-h-[calc(100vh-96px)] p-6 md:p-8 overflow-y-auto no-scrollbar relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

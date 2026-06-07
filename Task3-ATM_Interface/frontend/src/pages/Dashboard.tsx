@@ -238,7 +238,7 @@ export const Dashboard: React.FC = () => {
             >
               <Link
                 to="/deposit"
-                className="flex flex-col justify-between w-full glass-card border border-[var(--border-dark)] rounded-2xl p-5 hover:translate-y-[-2px] hover:shadow-[var(--shadow-floating)] active:translate-y-[1px] active:shadow-pressed transition-all duration-200 group relative overflow-hidden"
+                className="flex flex-col justify-between w-full glass-card border border-[var(--border-dark)] rounded-2xl p-5 relative overflow-hidden"
               >
                 {/* Corner Screws */}
                 <div className="absolute top-2 left-2 corner-screw opacity-35 z-20" />
@@ -246,15 +246,15 @@ export const Dashboard: React.FC = () => {
                 <div className="absolute bottom-2 left-2 corner-screw opacity-35 z-20" />
                 <div className="absolute bottom-2 right-2 corner-screw opacity-35 z-20" />
 
-                <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-primary bg-primary/10 border border-dark-border/20 shadow-recessed transition-all duration-300 group-hover:scale-105 mt-1">
+                <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-primary bg-primary/10 border border-dark-border/20 shadow-recessed mt-1">
                   <FiDownload className="w-4 h-4" />
                 </div>
 
                 {/* Deposit Vector Graphic */}
-                <div className="w-full h-36 my-3.5 rounded-xl border border-dark-border/10 light:border-[var(--border-dark)] bg-[var(--recessed)] relative flex items-center justify-center overflow-hidden transition-all duration-300">
-                  <div className="absolute w-24 h-24 rounded-full bg-emerald-500/5 light:bg-emerald-500/10 blur-[20px] group-hover:bg-emerald-500/10 transition-all duration-300" />
+                <div className="w-full h-36 my-3.5 rounded-xl border border-dark-border/10 light:border-[var(--border-dark)] bg-[var(--recessed)] relative flex items-center justify-center overflow-hidden">
+                  <div className="absolute w-24 h-24 rounded-full bg-emerald-500/5 light:bg-emerald-500/10 blur-[20px]" />
                   <div className="relative z-10 flex flex-col items-center">
-                    <svg className="w-24 h-24 text-emerald-400 transition-all duration-500 ease-out group-hover:scale-105 group-hover:drop-shadow-[0_0_16px_rgba(16,185,129,0.4)]" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                    <svg className="w-24 h-24 text-emerald-400" viewBox="0 0 100 100" fill="none" stroke="currentColor">
                       <defs>
                         <linearGradient id="depositGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                           <stop offset="0%" stopColor="#10b981" stopOpacity="0.8"/>
@@ -270,9 +270,9 @@ export const Dashboard: React.FC = () => {
                       <path d="M50 10v80M10 50h80" stroke="currentColor" strokeWidth="0.25" className="opacity-10" />
 
                       <rect x="15" y="70" width="70" height="12" rx="4" fill="url(#slotGrad)" stroke="#10b981" strokeWidth="1.5" className="opacity-80" />
-                      <line x1="20" y1="76" x2="80" y2="76" stroke="#10b981" strokeWidth="2" strokeLinecap="round" className="animate-pulse" />
+                      <line x1="20" y1="76" x2="80" y2="76" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
 
-                      <g className="transition-transform duration-500 ease-in-out group-hover:translate-y-3">
+                      <g className="transition-transform duration-500 ease-in-out">
                         <rect x="30" y="25" width="40" height="40" rx="3" fill="url(#depositGrad)" stroke="#10b981" strokeWidth="1.5" />
                         <circle cx="50" cy="45" r="7" stroke="#10b981" strokeWidth="1" strokeDasharray="2 2" />
                         <path d="M47 45h6M50 42v6" stroke="#10b981" strokeWidth="1" strokeLinecap="round" />
@@ -281,14 +281,14 @@ export const Dashboard: React.FC = () => {
                         <line x1="35" y1="61" x2="55" y2="61" stroke="#10b981" strokeWidth="1" strokeDasharray="1 2" />
                       </g>
 
-                      <line x1="25" y1="42" x2="75" y2="42" stroke="#34d399" strokeWidth="1.5" className="opacity-60 group-hover:animate-[bounce_2s_infinite]" />
-                      <path d="M50 12v10M46 18l4 4 4-4" stroke="#34d399" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70 animate-bounce" />
+                      <line x1="25" y1="42" x2="75" y2="42" stroke="#34d399" strokeWidth="1.5" className="opacity-60" />
+                      <path d="M50 12v10M46 18l4 4 4-4" stroke="#34d399" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70" />
                     </svg>
                   </div>
                 </div>
 
                 <div className="mb-1 px-1">
-                  <h4 className="font-mono font-bold text-[14.5px] text-dark-text light:text-light-text group-hover:text-primary transition-colors duration-200 uppercase tracking-wider leading-none">
+                  <h4 className="font-mono font-bold text-[14.5px] text-dark-text light:text-light-text uppercase tracking-wider leading-none">
                     Deposit / Credit
                   </h4>
                   <p className="text-[11.5px] text-dark-text/50 light:text-light-text/50 mt-1.5 leading-normal font-sans font-medium">
@@ -307,7 +307,7 @@ export const Dashboard: React.FC = () => {
             >
               <Link
                 to="/withdraw"
-                className="flex flex-col justify-between w-full glass-card border border-[var(--border-dark)] rounded-2xl p-5 hover:translate-y-[-2px] hover:shadow-[var(--shadow-floating)] active:translate-y-[1px] active:shadow-pressed transition-all duration-200 group relative overflow-hidden"
+                className="flex flex-col justify-between w-full glass-card border border-[var(--border-dark)] rounded-2xl p-5 relative overflow-hidden"
               >
                 {/* Corner Screws */}
                 <div className="absolute top-2 left-2 corner-screw opacity-35 z-20" />
@@ -315,15 +315,15 @@ export const Dashboard: React.FC = () => {
                 <div className="absolute bottom-2 left-2 corner-screw opacity-35 z-20" />
                 <div className="absolute bottom-2 right-2 corner-screw opacity-35 z-20" />
 
-                <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-secondary bg-secondary/10 border border-dark-border/20 shadow-recessed transition-all duration-300 group-hover:scale-105 mt-1">
+                <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-secondary bg-secondary/10 border border-dark-border/20 shadow-recessed mt-1">
                   <FiUpload className="w-4 h-4" />
                 </div>
 
                 {/* Withdraw Vector Graphic */}
-                <div className="w-full h-36 my-3.5 rounded-xl border border-dark-border/10 light:border-[var(--border-dark)] bg-[var(--recessed)] relative flex items-center justify-center overflow-hidden transition-all duration-300">
-                  <div className="absolute w-24 h-24 rounded-full bg-blue-500/5 light:bg-blue-500/10 blur-[20px] group-hover:bg-blue-500/10 transition-all duration-300" />
+                <div className="w-full h-36 my-3.5 rounded-xl border border-dark-border/10 light:border-[var(--border-dark)] bg-[var(--recessed)] relative flex items-center justify-center overflow-hidden">
+                  <div className="absolute w-24 h-24 rounded-full bg-blue-500/5 light:bg-blue-500/10 blur-[20px]" />
                   <div className="relative z-10 flex flex-col items-center">
-                    <svg className="w-24 h-24 text-blue-400 transition-all duration-500 ease-out group-hover:scale-105 group-hover:drop-shadow-[0_0_16px_rgba(59,130,246,0.4)]" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                    <svg className="w-24 h-24 text-blue-400" viewBox="0 0 100 100" fill="none" stroke="currentColor">
                       <defs>
                         <linearGradient id="withdrawGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                           <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8"/>
@@ -339,9 +339,9 @@ export const Dashboard: React.FC = () => {
                       <path d="M50 10v80M10 50h80" stroke="currentColor" strokeWidth="0.25" className="opacity-10" />
 
                       <rect x="15" y="20" width="70" height="12" rx="4" fill="url(#dispenserGrad)" stroke="#3b82f6" strokeWidth="1.5" className="opacity-80" />
-                      <line x1="20" y1="26" x2="80" y2="26" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" className="animate-pulse" />
+                      <line x1="20" y1="26" x2="80" y2="26" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" />
 
-                      <g className="transition-transform duration-500 ease-in-out group-hover:translate-y-[-3px] group-hover:scale-105" style={{ transformOrigin: '50px 45px' }}>
+                      <g className="transition-transform duration-500 ease-in-out" style={{ transformOrigin: '50px 45px' }}>
                         <rect x="25" y="32" width="50" height="30" rx="3" fill="url(#withdrawGrad)" stroke="#3b82f6" strokeWidth="1.5" />
                         <circle cx="50" cy="47" r="8" stroke="#3b82f6" strokeWidth="1" fill="#1d4ed8" fillOpacity="0.1" />
                         <path d="M47 43h6M47 46.5h6M49.5 43c0 2 3.5 3 3.5 3.5 0 2-3.5 3.5-3.5 3.5M47 43v7M49.5 50l3.5 3.5" stroke="#3b82f6" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
@@ -352,13 +352,13 @@ export const Dashboard: React.FC = () => {
                         <circle cx="67" cy="55" r="1.5" fill="#3b82f6" className="opacity-60" />
                       </g>
 
-                      <path d="M50 72v12M46 78l4 4 4-4" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70 animate-bounce" />
+                      <path d="M50 72v12M46 78l4 4 4-4" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70" />
                     </svg>
                   </div>
                 </div>
 
                 <div className="mb-1 px-1">
-                  <h4 className="font-mono font-bold text-[14.5px] text-dark-text light:text-light-text group-hover:text-secondary transition-colors duration-200 uppercase tracking-wider leading-none">
+                  <h4 className="font-mono font-bold text-[14.5px] text-dark-text light:text-light-text uppercase tracking-wider leading-none">
                     Withdraw / Debit
                   </h4>
                   <p className="text-[11.5px] text-dark-text/50 light:text-light-text/50 mt-1.5 leading-normal font-sans font-medium">
@@ -377,7 +377,7 @@ export const Dashboard: React.FC = () => {
             >
               <Link
                 to="/history"
-                className="flex flex-col justify-between w-full glass-card border border-[var(--border-dark)] rounded-2xl p-5 hover:translate-y-[-2px] hover:shadow-[var(--shadow-floating)] active:translate-y-[1px] active:shadow-pressed transition-all duration-200 group relative overflow-hidden"
+                className="flex flex-col justify-between w-full glass-card border border-[var(--border-dark)] rounded-2xl p-5 relative overflow-hidden"
               >
                 {/* Corner Screws */}
                 <div className="absolute top-2 left-2 corner-screw opacity-35 z-20" />
@@ -385,15 +385,15 @@ export const Dashboard: React.FC = () => {
                 <div className="absolute bottom-2 left-2 corner-screw opacity-35 z-20" />
                 <div className="absolute bottom-2 right-2 corner-screw opacity-35 z-20" />
 
-                <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-accent bg-accent/10 border border-dark-border/20 shadow-recessed transition-all duration-300 group-hover:scale-105 mt-1">
+                <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-accent bg-accent/10 border border-dark-border/20 shadow-recessed mt-1">
                   <FiList className="w-4 h-4" />
                 </div>
 
                 {/* Ledger Vector Graphic */}
-                <div className="w-full h-36 my-3.5 rounded-xl border border-dark-border/10 light:border-[var(--border-dark)] bg-[var(--recessed)] relative flex items-center justify-center overflow-hidden transition-all duration-300">
-                  <div className="absolute w-24 h-24 rounded-full bg-purple-500/5 light:bg-purple-500/10 blur-[20px] group-hover:bg-purple-500/10 transition-all duration-300" />
+                <div className="w-full h-36 my-3.5 rounded-xl border border-dark-border/10 light:border-[var(--border-dark)] bg-[var(--recessed)] relative flex items-center justify-center overflow-hidden">
+                  <div className="absolute w-24 h-24 rounded-full bg-purple-500/5 light:bg-purple-500/10 blur-[20px]" />
                   <div className="relative z-10 flex flex-col items-center">
-                    <svg className="w-24 h-24 text-purple-400 transition-all duration-500 ease-out group-hover:scale-105 group-hover:drop-shadow-[0_0_16px_rgba(139,92,246,0.4)]" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                    <svg className="w-24 h-24 text-purple-400" viewBox="0 0 100 100" fill="none" stroke="currentColor">
                       <defs>
                         <linearGradient id="dbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.8"/>
@@ -403,10 +403,10 @@ export const Dashboard: React.FC = () => {
                       <path d="M20 20h60v60H20z" stroke="currentColor" strokeWidth="0.5" strokeDasharray="3 3" className="opacity-15" />
                       <path d="M50 10v80M10 50h80" stroke="currentColor" strokeWidth="0.25" className="opacity-10" />
 
-                      <circle cx="50" cy="50" r="38" stroke="#a78bfa" strokeWidth="0.5" strokeDasharray="4 4" className="opacity-45 group-hover:animate-[spin_20s_linear_infinite]" style={{ transformOrigin: '50px 50px' }} />
-                      <circle cx="50" cy="50" r="32" stroke="#8b5cf6" strokeWidth="0.75" strokeDasharray="10 5" className="opacity-30 group-hover:animate-[spin_10s_linear_infinite]" style={{ transformOrigin: '50px 50px' }} />
+                      <circle cx="50" cy="50" r="38" stroke="#a78bfa" strokeWidth="0.5" strokeDasharray="4 4" className="opacity-45" style={{ transformOrigin: '50px 50px' }} />
+                      <circle cx="50" cy="50" r="32" stroke="#8b5cf6" strokeWidth="0.75" strokeDasharray="10 5" className="opacity-30" style={{ transformOrigin: '50px 50px' }} />
 
-                      <g className="transition-transform duration-500 ease-in-out group-hover:translate-y-[-2px]">
+                      <g className="transition-transform duration-500 ease-in-out">
                         <ellipse cx="50" cy="32" rx="16" ry="6" fill="url(#dbGrad)" stroke="#8b5cf6" strokeWidth="1.5" />
                         <path d="M34 32v10c0 3.3 7.2 6 16 6s16-2.7 16-6V32" stroke="#8b5cf6" strokeWidth="1.5" />
                         
@@ -416,21 +416,21 @@ export const Dashboard: React.FC = () => {
                         <ellipse cx="50" cy="60" rx="16" ry="6" fill="url(#dbGrad)" fillOpacity="0.1" stroke="#8b5cf6" strokeWidth="1" />
                         <path d="M34 60v10c0 3.3 7.2 6 16 6s16-2.7 16-6V60" stroke="#8b5cf6" strokeWidth="1.5" />
 
-                        <circle cx="50" cy="32" r="1.5" fill="#c084fc" className="animate-ping" />
+                        <circle cx="50" cy="32" r="1.5" fill="#c084fc" className="opacity-70" />
                         <circle cx="50" cy="46" r="1.5" fill="#c084fc" className="opacity-70" />
                         <circle cx="50" cy="60" r="1.5" fill="#c084fc" className="opacity-70" />
                       </g>
 
-                      <rect x="22" y="58" width="3" height="12" rx="0.5" fill="#8b5cf6" className="opacity-40 group-hover:animate-pulse" />
-                      <rect x="27" y="52" width="3" height="18" rx="0.5" fill="#8b5cf6" className="opacity-50 group-hover:animate-pulse" />
-                      <rect x="70" y="55" width="3" height="15" rx="0.5" fill="#a78bfa" className="opacity-45 group-hover:animate-pulse" />
-                      <rect x="75" y="62" width="3" height="8" rx="0.5" fill="#a78bfa" className="opacity-35 group-hover:animate-pulse" />
+                      <rect x="22" y="58" width="3" height="12" rx="0.5" fill="#8b5cf6" className="opacity-40" />
+                      <rect x="27" y="52" width="3" height="18" rx="0.5" fill="#8b5cf6" className="opacity-50" />
+                      <rect x="70" y="55" width="3" height="15" rx="0.5" fill="#a78bfa" className="opacity-45" />
+                      <rect x="75" y="62" width="3" height="8" rx="0.5" fill="#a78bfa" className="opacity-35" />
                     </svg>
                   </div>
                 </div>
 
                 <div className="mb-1 px-1">
-                  <h4 className="font-mono font-bold text-[14.5px] text-dark-text light:text-light-text group-hover:text-accent transition-colors duration-200 uppercase tracking-wider leading-none">
+                  <h4 className="font-mono font-bold text-[14.5px] text-dark-text light:text-light-text uppercase tracking-wider leading-none">
                     Account / Ledger
                   </h4>
                   <p className="text-[11.5px] text-dark-text/50 light:text-light-text/50 mt-1.5 leading-normal font-sans font-medium">

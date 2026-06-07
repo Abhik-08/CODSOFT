@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -19,70 +19,9 @@ import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { VirtualCard } from '../components/dashboard/VirtualCard';
 import api from '../services/apiService';
+import { getTransactions, type TransactionInfo } from '../services/firestoreService';
 
-interface ActivityItem {
-  id: string;
-  type: 'security' | 'transaction' | 'settings';
-  icon: React.ComponentType<{ className?: string }>;
-  desc: string;
-  detail: string;
-  date: string;
-  status: 'success' | 'warning' | 'info';
-  colorClass: string;
-}
 
-const mockActivity: ActivityItem[] = [
-  { 
-    id: 'act-1', 
-    type: 'security', 
-    icon: FiLock, 
-    desc: 'ATM PIN code updated', 
-    detail: 'Authorized at Node_04 SF', 
-    date: '2 hours ago', 
-    status: 'success',
-    colorClass: 'text-accent bg-accent/10 border-accent/15'
-  },
-  { 
-    id: 'act-2', 
-    type: 'transaction', 
-    icon: FiArrowUpRight, 
-    desc: 'Cash Withdrawal Outflow', 
-    detail: 'Dispensed ₹200.00 | Ref: REF_9918231', 
-    date: '1 day ago', 
-    status: 'success',
-    colorClass: 'text-rose-500 bg-rose-500/10 border-rose-500/15'
-  },
-  { 
-    id: 'act-3', 
-    type: 'settings', 
-    icon: FiSliders, 
-    desc: 'Withdrawal Limit Updated', 
-    detail: 'Daily limit cap set to ₹20,000.00', 
-    date: '2 days ago', 
-    status: 'success',
-    colorClass: 'text-primary bg-primary/10 border-primary/15'
-  },
-  { 
-    id: 'act-4', 
-    type: 'transaction', 
-    icon: FiArrowDownLeft, 
-    desc: 'Cash Deposit Inflow', 
-    detail: 'Envelope audit ₹1,500.00 | Ref: REF_0192837', 
-    date: '3 days ago', 
-    status: 'success',
-    colorClass: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15'
-  },
-  { 
-    id: 'act-5', 
-    type: 'security', 
-    icon: FiShield, 
-    desc: 'Card Freeze Status Synced', 
-    detail: 'Local encryption database locked/unlocked', 
-    date: 'Last week', 
-    status: 'success',
-    colorClass: 'text-secondary bg-secondary/10 border-secondary/15'
-  },
-];
 
 const getDisplayTier = (tierValue: string) => {
   switch (tierValue) {
@@ -102,6 +41,116 @@ const getDisplayTier = (tierValue: string) => {
 export const Profile: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [transactions, setTransactions] = useState<TransactionInfo[]>([]);
+  const [loadingTxns, setLoadingTxns] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    let isMounted = true;
+    const fetchProfileTxns = async () => {
+      try {
+        const data = await getTransactions(user.uid);
+        if (isMounted) {
+          setTransactions(data);
+        }
+      } catch (err) {
+        console.error('Error fetching transactions for profile activity:', err);
+      } finally {
+        if (isMounted) {
+          setLoadingTxns(false);
+        }
+      }
+    };
+    fetchProfileTxns();
+    
+    const handleUpdate = () => {
+      fetchProfileTxns();
+    };
+    globalThis.addEventListener('profile_update', handleUpdate);
+    return () => {
+      isMounted = false;
+      globalThis.removeEventListener('profile_update', handleUpdate);
+    };
+  }, [user]);
+
+  const formatActivityDate = (ts: unknown) => {
+    if (!ts) return 'Pending...';
+    const timestampObj = ts as { toDate?: () => Date };
+    const dateObj = typeof timestampObj.toDate === 'function' ? timestampObj.toDate() : new Date(ts as string | number | Date);
+    
+    const now = new Date();
+    const diffMs = now.getTime() - dateObj.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    
+    return dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+  };
+
+  const renderActivityContent = () => {
+    if (loadingTxns) {
+      return (
+        <div className="py-8 text-center text-xs opacity-65 text-cyan-500/60 animate-pulse">
+          Retrieving live activity logs...
+        </div>
+      );
+    }
+    
+    if (transactions.length === 0) {
+      return (
+        <div className="py-8 text-center text-xs opacity-65 text-cyan-500/60">
+          No recent activity logs recorded.
+        </div>
+      );
+    }
+
+    return (
+      <ul className="-mb-8">
+        {transactions.slice(0, 5).map((tx, txIdx) => {
+          const isCredit = tx.type === 'credit';
+          const Icon = isCredit ? FiArrowDownLeft : FiArrowUpRight;
+          const colorClass = isCredit 
+            ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15' 
+            : 'text-rose-500 bg-rose-500/10 border-rose-500/15';
+          
+          return (
+            <li key={tx.id}>
+              <div className="relative pb-8">
+                {txIdx < Math.min(transactions.length, 5) - 1 && (
+                  <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-dark-border/10 light:bg-light-border/40" aria-hidden="true" />
+                )}
+                <div className="relative flex space-x-3.5">
+                  <div>
+                    <span className={`h-8.5 w-8.5 rounded-xl flex items-center justify-center border ${colorClass}`}>
+                      <Icon className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <div className="text-[12px] font-bold text-dark-text light:text-light-text flex justify-between items-start">
+                      <span>{isCredit ? 'Cash Deposit Inflow' : 'Cash Withdrawal Outflow'}</span>
+                      <span className="text-[10px] font-mono font-medium text-dark-text/35 light:text-light-text/40 whitespace-nowrap pl-2">
+                        {formatActivityDate(tx.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-dark-text/50 light:text-light-text/50 mt-0.5 leading-normal font-sans font-medium">
+                      {tx.description} | Value: ₹{tx.amount.toLocaleString('en-IN')} | Ref: {tx.id.slice(0, 10).toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
+
   const [isFrozen, setIsFrozen] = useState(() => {
     return localStorage.getItem('apex_card_frozen') === 'true';
   });
@@ -720,39 +769,8 @@ export const Profile: React.FC = () => {
               transition={{ delay: 0.1 }}
               className="glass-card premium-card-shadow rounded-3xl p-5 border border-dark-border/15 light:border-light-border/40 space-y-4"
             >
-              <div className="flow-root">
-                <ul className="-mb-8">
-                  {mockActivity.map((act, actIdx) => {
-                    const Icon = act.icon;
-                    return (
-                      <li key={act.id}>
-                        <div className="relative pb-8">
-                          {actIdx < mockActivity.length - 1 && (
-                            <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-dark-border/10 light:bg-light-border/40" aria-hidden="true" />
-                          )}
-                          <div className="relative flex space-x-3.5">
-                            <div>
-                              <span className={`h-8.5 w-8.5 rounded-xl flex items-center justify-center border ${act.colorClass}`}>
-                                <Icon className="w-4 h-4" />
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0 pt-0.5">
-                              <div className="text-[12px] font-bold text-dark-text light:text-light-text flex justify-between items-start">
-                                <span>{act.desc}</span>
-                                <span className="text-[10px] font-mono font-medium text-dark-text/35 light:text-light-text/40 whitespace-nowrap pl-2">
-                                  {act.date}
-                                </span>
-                              </div>
-                              <p className="text-[10px] font-mono text-dark-text/50 light:text-light-text/50 mt-0.5 leading-normal">
-                                {act.detail}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+              <div className="flow-root font-mono">
+                {renderActivityContent()}
               </div>
             </motion.div>
           </div>

@@ -30,7 +30,7 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="hidden md:flex flex-col w-64 h-[calc(100vh-80px)] bg-transparent p-4 sticky top-20 select-none">
+    <aside className="hidden md:flex flex-col w-64 h-[calc(100vh-96px)] bg-transparent p-4 sticky top-24 select-none">
       {/* Navigation Links */}
       <nav className="flex-1 space-y-3 mt-4">
         {navItems.map((item) => {

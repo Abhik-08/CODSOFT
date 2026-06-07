@@ -472,7 +472,7 @@ const AIChatWidget: React.FC = () => {
               {/* Header */}
               <div className="chat-header">
                 <div className="chat-header-title">
-                  <img src="/nexus_ai_logo.jpg" alt="Nexus AI" className="chat-header-logo-img" />
+                  <img src="/nexus_ai_logo.png" alt="Nexus AI" className="chat-header-logo-img" />
                   <span>Nexus AI Assistant</span>
                 </div>
                 <button className="chat-close-btn" onClick={() => setIsOpen(false)}>
@@ -542,7 +542,7 @@ const AIChatWidget: React.FC = () => {
             {isOpen ? (
               <FiX size={24} />
             ) : (
-              <img src="/nexus_ai_logo.jpg" alt="Nexus AI Logo" className="chat-fab-logo-img" />
+              <img src="/nexus_ai_logo.png" alt="Nexus AI Logo" className="chat-fab-logo-img" />
             )}
             {!isOpen && <span className="chat-fab-notification-dot"></span>}
           </button>
