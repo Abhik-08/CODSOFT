@@ -83,8 +83,10 @@ public class AtmController {
     public ResponseEntity<ApiResponseDTO<TransactionResponseDTO>> deposit(@Valid @RequestBody DepositRequestDTO request) {
         String userId = getAuthenticatedUserId();
         // Log exact value with full precision to diagnose any future amount discrepancies
-        logger.info("REST Request: Deposit amount={} (exact={}) for user {}", 
-                request.getAmount(), String.format("%.10f", request.getAmount()), userId);
+        if (logger.isInfoEnabled()) {
+            logger.info("REST Request: Deposit amount={} (exact={}) for user {}",
+                    request.getAmount(), String.format("%.10f", request.getAmount()), userId);
+        }
         TransactionResponseDTO response = accountService.deposit(userId, request.getAmount(), request.getDescription());
         logger.info("Deposit completed: stored amount={}, postBalance={} for user {}",
                 response.getAmount(), response.getPostTransactionBalance(), userId);
