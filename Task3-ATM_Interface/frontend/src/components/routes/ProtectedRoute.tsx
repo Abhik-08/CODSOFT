@@ -24,11 +24,18 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
     setProgress(0);
     const timer = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 98) {
-          return 98; // Wait at 98% until firebase authentication resolves
+        if (prev >= 99) {
+          return 99; // Hold at 99% max
+        }
+        if (prev >= 95) {
+          // Crawl slowly by 0.1% every tick to show constant active progress
+          return prev + 0.1;
+        }
+        if (prev >= 85) {
+          return prev + 1;
         }
         const step = Math.floor(Math.random() * 8) + 4;
-        return Math.min(prev + step, 98);
+        return Math.min(prev + step, 95);
       });
     }, 120);
 
@@ -101,7 +108,7 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
               </p>
             </div>
             <span className="text-[28px] font-bold tracking-[0.05em] text-emerald-400 font-mono">
-              {progress.toString().padStart(3, '0')}%
+              {Math.floor(progress).toString().padStart(3, '0')}%
             </span>
           </div>
 

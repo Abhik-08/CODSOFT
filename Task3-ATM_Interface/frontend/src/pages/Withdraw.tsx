@@ -130,22 +130,27 @@ export const Withdraw: React.FC = () => {
     setShowPinModal(false);
     setVerificationPin('');
 
-    const calculatedNewBalance = currentBalance - numAmount;
-    setChamberBalance(calculatedNewBalance);
-    setShowChamber(true);
-
+    // Execute withdrawal database transaction first. Only show chamber if successful.
     await executeWithdrawal();
   };
 
   const executeWithdrawal = async () => {
     setIsProcessing(true);
-    setProcessingStage('auth');
+    
+    // Perform instant client-side velocity check against cached/auth balance and limit before request
+    if (numAmount > dailyLimit) {
+      toast.error(`Transaction exceeds your daily limit of ₹${dailyLimit.toLocaleString('en-IN')}`);
+      setIsProcessing(false);
+      return;
+    }
+    if (numAmount > currentBalance) {
+      toast.error('Insufficient funds in checking dossier');
+      setIsProcessing(false);
+      return;
+    }
 
     try {
-      await sleep(800);
-      setProcessingStage('counting');
-      
-      // Execute the database transaction atomically while the dispenser is counting
+      // 1. Immediately request the transaction on the backend
       const liveTxnId = await addTransactionAtomically(
         user!.uid,
         'debit',
@@ -153,6 +158,15 @@ export const Withdraw: React.FC = () => {
         `Withdrawal - ${getMethodName(mix)}`
       );
 
+      // 2. Transaction succeeded: Mount and animate the visual cash chamber
+      const calculatedNewBalance = currentBalance - numAmount;
+      setChamberBalance(calculatedNewBalance);
+      setShowChamber(true);
+      setProcessingStage('auth');
+
+      await sleep(600);
+      setProcessingStage('counting');
+      
       await refreshBalance();
 
       await sleep(1000);
@@ -175,9 +189,9 @@ export const Withdraw: React.FC = () => {
       setIsProcessing(false);
       setShowSuccess(true);
       toast.success('Withdrawal cleared! Please collect your cash notes.');
-    } catch (error) {
+    } catch (error: any) {
       console.warn('Withdrawal validation/execution failed:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Withdrawal failed. System error.';
+      const errorMsg = error.message || 'Withdrawal failed. System limit or error.';
       toast.error(errorMsg);
       setIsProcessing(false);
       setShowChamber(false);

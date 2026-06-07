@@ -48,22 +48,17 @@ export const syncUserDocument = async (user: FirebaseUser): Promise<void> => {
         localStorage.setItem('apex_mock_accounts', JSON.stringify(accounts));
       }
     } else {
-      try {
-        await ensureAccountExists(user.uid);
-      } catch (error) {
+      ensureAccountExists(user.uid).catch((error) => {
         console.error('Failed to ensure account exists for mock user:', error);
-      }
+      });
     }
     return;
   }
 
-  try {
-    // Automatically guarantee that the corresponding checking accounts document exists
-    await ensureAccountExists(user.uid);
-  } catch (error) {
-    console.error('Error ensuring checking account exists on backend:', error);
-    throw error;
-  }
+  // Sync with backend asynchronously (non-blocking) to expedite auth loading
+  ensureAccountExists(user.uid).catch((error) => {
+    console.error('Error ensuring checking account exists on backend asynchronously:', error);
+  });
 };
 
 /**
