@@ -329,10 +329,10 @@ export default function AuthLayout() {
         {/* Bottom text captions */}
         <div className="text-center space-y-2 z-10 max-w-md pb-6">
           <h2 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-[#4a1535] dark:text-[#eaacd2]">
-            Turn your ideas into reality.
+            Empowering Academic Excellence.
           </h2>
           <p className="text-xs lg:text-sm font-bold text-[#782c59] dark:text-[#cfa0bf] max-w-xs mx-auto opacity-90">
-            Start for free and get attractive offers from the community
+            Securely manage database records, portfolios, and grade computations from your console.
           </p>
         </div>
       </div>
