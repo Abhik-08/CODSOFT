@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+@theme {
+  --color-vault-bg: var(--vault-bg);
+  --color-vault-fg: var(--vault-fg);
+  --color-vault-card: var(--vault-card);
+  --color-vault-border: var(--vault-border);
+  --color-vault-accent: var(--vault-accent);
+  --color-vault-cyan: var(--vault-cyan);
+  --color-vault-emerald: var(--vault-emerald);
+  --color-vault-destructive: var(--vault-destructive);
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+/* Light Mode Variables */
+:root {
+  --vault-bg: #ffffff;
+  --vault-fg: #0f172a;
+  --vault-card: #ffffff;
+  --vault-border: #e2e8f0;
+  --vault-accent: #10b981;
+  --vault-cyan: #0ea5e9;
+  --vault-emerald: #059669;
+  --vault-destructive: #e11d48;
+  
+  --vault-glass-bg: rgba(255, 255, 255, 0.7);
+  --vault-glass-border: rgba(16, 185, 129, 0.12);
+
+  font-family: var(--font-sans);
+  background-color: var(--vault-bg);
+  color: var(--vault-fg);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Dark Mode Variables */
+:root.dark {
+  --vault-bg: #030712;
+  --vault-fg: #f3f4f6;
+  --vault-card: #0b0f19;
+  --vault-border: #1f2937;
+  --vault-accent: #34d399;
+  --vault-cyan: #06b6d4;
+  --vault-emerald: #10b981;
+  --vault-destructive: #f43f5e;
+  
+  --vault-glass-bg: rgba(11, 15, 25, 0.65);
+  --vault-glass-border: rgba(52, 211, 153, 0.08);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--vault-bg);
+  color: var(--vault-fg);
+  overflow-x: hidden;
+}
+
+/* Glassmorphism styling utilities */
+.vault-glass {
+  background: var(--vault-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--vault-glass-border);
+}
+
+.vault-glass-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vault-glass-hover:hover {
+  background: var(--vault-glass-bg);
+  border-color: var(--vault-accent);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.dark .vault-glass-hover:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(99, 102, 241, 0.1);
+}
+
+/* Neon glow classes */
+.vault-glow-cyan {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+}
+
+.vault-glow-accent {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--vault-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vault-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vault-accent);
+}
