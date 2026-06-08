@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthContext } from '../../context/AuthContext'
-import { User, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
+import { ArrowRight, AlertCircle } from 'lucide-react'
 
 export default function RegisterPage() {
   const { registerWithEmail } = useAuthContext()
@@ -35,10 +35,28 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-1">
-        <h3 className="text-xl font-bold tracking-tight text-vault-fg">Create administrator account</h3>
-        <p className="text-xs text-slate-400">Register new dashboard privileges for class management</p>
+    <div className="space-y-6 text-left">
+      {/* stylized logo */}
+      <div className="flex justify-center lg:justify-start">
+        <div className="text-[#781f5a] dark:text-[#eaacd2]">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="6" r="2.5" fill="currentColor" />
+            <circle cx="20" cy="34" r="2.5" fill="currentColor" />
+            <circle cx="6" cy="20" r="2.5" fill="currentColor" />
+            <circle cx="34" cy="20" r="2.5" fill="currentColor" />
+            <path d="M20 10V30M10 20H30M13 14H27M13 26H27" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Header */}
+      <div className="text-center lg:text-left space-y-1">
+        <h3 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white transition-all">
+          Create administrator account
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Register new dashboard privileges for class management
+        </p>
       </div>
 
       {/* Dynamic Error display */}
@@ -49,14 +67,13 @@ export default function RegisterPage() {
         </div>
       )}
 
-      <form onSubmit={handleRegister} className="space-y-5">
+      <form onSubmit={handleRegister} className="space-y-4">
         {/* Name input */}
-        <div className="space-y-2">
-          <label htmlFor="name" className="block text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+        <div className="space-y-1">
+          <label htmlFor="name" className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
             Full Name
           </label>
-          <div className="relative flex items-center rounded-xl bg-slate-50/60 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 focus-within:bg-white dark:focus-within:bg-[#070b14]/50 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 transition-all duration-200 shadow-sm hover:border-slate-300 dark:hover:border-white/10">
-            <User size={16} className="absolute left-3.5 text-slate-400 dark:text-slate-500" />
+          <div className="relative flex items-center rounded-lg border border-slate-200 dark:border-white/10 focus-within:border-[#781f5a] focus-within:ring-2 focus-within:ring-[#781f5a]/10 bg-white dark:bg-[#151419] transition-all shadow-sm">
             <input
               id="name"
               type="text"
@@ -64,18 +81,17 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Professor John Doe"
-              className="w-full bg-transparent pl-11 pr-4 py-3 text-sm text-vault-fg placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none font-medium"
+              className="w-full bg-transparent px-3 py-2 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
             />
           </div>
         </div>
 
         {/* Email input */}
-        <div className="space-y-2">
-          <label htmlFor="email" className="block text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+        <div className="space-y-1">
+          <label htmlFor="email" className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
             Institutional Email
           </label>
-          <div className="relative flex items-center rounded-xl bg-slate-50/60 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 focus-within:bg-white dark:focus-within:bg-[#070b14]/50 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 transition-all duration-200 shadow-sm hover:border-slate-300 dark:hover:border-white/10">
-            <Mail size={16} className="absolute left-3.5 text-slate-400 dark:text-slate-500" />
+          <div className="relative flex items-center rounded-lg border border-slate-200 dark:border-white/10 focus-within:border-[#781f5a] focus-within:ring-2 focus-within:ring-[#781f5a]/10 bg-white dark:bg-[#151419] transition-all shadow-sm">
             <input
               id="email"
               type="email"
@@ -83,26 +99,25 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@university.edu"
-              className="w-full bg-transparent pl-11 pr-4 py-3 text-sm text-vault-fg placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none font-medium"
+              className="w-full bg-transparent px-3 py-2 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
             />
           </div>
         </div>
 
         {/* Password input */}
-        <div className="space-y-2">
-          <label htmlFor="password" className="block text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+        <div className="space-y-1">
+          <label htmlFor="password" className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
             Password
           </label>
-          <div className="relative flex items-center rounded-xl bg-slate-50/60 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 focus-within:bg-white dark:focus-within:bg-[#070b14]/50 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 transition-all duration-200 shadow-sm hover:border-slate-300 dark:hover:border-white/10">
-            <Lock size={16} className="absolute left-3.5 text-slate-400 dark:text-slate-500" />
+          <div className="relative flex items-center rounded-lg border border-slate-200 dark:border-white/10 focus-within:border-[#781f5a] focus-within:ring-2 focus-within:ring-[#781f5a]/10 bg-white dark:bg-[#151419] transition-all shadow-sm">
             <input
               id="password"
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full bg-transparent pl-11 pr-4 py-3 text-sm text-vault-fg placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none font-medium"
+              placeholder="•••••••••••••"
+              className="w-full bg-transparent px-3 py-2 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
             />
           </div>
         </div>
@@ -112,23 +127,23 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-vault-accent to-vault-cyan hover:from-vault-accent/95 hover:to-vault-cyan/95 disabled:from-vault-accent/50 disabled:to-vault-cyan/50 text-white font-bold text-sm py-3 rounded-xl shadow-lg shadow-vault-accent/15 dark:shadow-vault-accent/25 hover:shadow-vault-accent/25 dark:hover:shadow-vault-accent/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full bg-[#781f5a] hover:bg-[#8e296c] dark:bg-[#eaacd2] dark:hover:bg-[#f3c1de] dark:text-[#3d122c] disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md"
           >
             {loading ? (
               <span className="w-5 h-5 border-2 border-white/35 border-t-white rounded-full animate-spin" />
             ) : (
               <>
-                <span>Request Account Access</span>
-                <ArrowRight size={16} />
+                <span>Register</span>
+                <ArrowRight size={14} />
               </>
             )}
           </button>
         </div>
       </form>
 
-      <div className="text-xs text-center text-slate-500">
+      <div className="text-xs text-center text-slate-500 pt-2">
         Already have an account?{' '}
-        <Link to="/login" className="text-vault-accent hover:underline font-semibold">
+        <Link to="/login" className="text-[#781f5a] dark:text-[#eaacd2] hover:underline font-bold">
           Sign In
         </Link>
       </div>

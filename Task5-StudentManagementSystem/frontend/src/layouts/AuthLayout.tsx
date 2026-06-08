@@ -1,25 +1,15 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { Outlet, Link } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
-import { Sun, Moon, ArrowLeft, Database, Award, Sparkles, Brain } from 'lucide-react'
+import { Sun, Moon, ArrowLeft } from 'lucide-react'
 import { motion } from 'motion/react'
 
-// Premium Interactive Futuristic Centerpiece representing Academic Intelligence
-const AcademicIntelligenceVisualizer = () => {
+// Premium Interactive Skeleton Developer Visualizer mockup
+const SkeletonDeveloperVisualizer = () => {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
-
-  const particles = useMemo(() => {
-    return Array.from({ length: 25 }, (_, i) => ({
-      id: i,
-      size: Math.random() * 3 + 2,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      duration: Math.random() * 6 + 6,
-      delay: Math.random() * -12,
-      opacity: Math.random() * 0.4 + 0.15,
-    }))
-  }, [])
 
   React.useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -28,8 +18,8 @@ const AcademicIntelligenceVisualizer = () => {
       const x = e.clientX - rect.left - rect.width / 2
       const y = e.clientY - rect.top - rect.height / 2
       setTilt({
-        x: -y / 18,
-        y: x / 18,
+        x: -y / 25,
+        y: x / 25,
       })
     }
 
@@ -48,279 +38,244 @@ const AcademicIntelligenceVisualizer = () => {
     }
   }, [])
 
+  const strokeColor = isDark ? '#eaacd2' : '#4a1535'
+  const boneColor = isDark ? '#fbf8ff' : '#fdfcf7'
+  const bubbleBg = isDark ? '#5d1c44' : '#4c1233'
+  const dotsColor = '#ffffff'
+  const laptopLid = isDark ? '#3d3b45' : '#ced1d1'
+  const keyboardBg = isDark ? '#2e2c36' : '#a7a9ac'
+  const leafColors = isDark 
+    ? {
+        l1: '#7a2b4b',
+        l2: '#a855f7',
+        l3: '#ea53ab',
+        l4: '#06b6d4',
+      }
+    : {
+        l1: '#7a2b4b',
+        l2: '#bc4642',
+        l3: '#d67645',
+        l4: '#ecac52',
+      }
+
   return (
     <div
       ref={containerRef}
-      className="relative w-full max-w-[500px] h-[500px] flex items-center justify-center select-none cursor-default"
-      style={{ perspective: 1200 }}
+      className="relative w-full max-w-[550px] h-[450px] flex items-center justify-center select-none cursor-default"
+      style={{ perspective: 1000 }}
     >
-      {/* Background Soft Ambient Glow */}
-      <div className="absolute w-[380px] h-[380px] rounded-full bg-gradient-to-tr from-vault-cyan/15 to-vault-accent/15 blur-[90px] -z-10" />
-
-      {/* Floating particles background inside visualizer bounds */}
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full bg-vault-cyan/35 dark:bg-vault-accent/25 pointer-events-none"
-          style={{
-            width: p.size,
-            height: p.size,
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            opacity: p.opacity,
-          }}
-          animate={{
-            y: [0, -45, 0],
-            opacity: [p.opacity, p.opacity * 2, p.opacity],
-          }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: p.delay,
-          }}
-        />
-      ))}
-
-      {/* Main 3D tilt container */}
       <motion.div
-        className="relative w-[450px] h-[450px] flex items-center justify-center"
-        style={{
-          transformStyle: "preserve-3d",
-        }}
-        animate={{
-          rotateX: tilt.x,
-          rotateY: tilt.y,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 85,
-          damping: 20,
-        }}
+        className="relative w-full h-full flex items-center justify-center"
+        style={{ transformStyle: 'preserve-3d' }}
+        animate={{ rotateX: tilt.x, rotateY: tilt.y }}
+        transition={{ type: 'spring', stiffness: 90, damping: 20 }}
       >
-        {/* Constellation Lines & Flow Paths */}
+        {/* Floating stars, planets, and background elements inside SVG */}
         <svg
-          className="absolute inset-0 w-full h-full overflow-visible select-none pointer-events-none z-0"
-          viewBox="0 0 500 500"
+          className="w-full h-full overflow-visible select-none"
+          viewBox="0 0 800 500"
         >
           <defs>
-            <linearGradient id="grad-portfolio" x1="250" y1="250" x2="100" y2="150" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="var(--color-vault-accent)" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="var(--color-vault-cyan)" stopOpacity="0.1" />
-            </linearGradient>
-            <linearGradient id="grad-analytics" x1="250" y1="250" x2="400" y2="150" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="var(--color-vault-accent)" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#a855f7" stopOpacity="0.1" />
-            </linearGradient>
-            <linearGradient id="grad-placement" x1="250" y1="250" x2="250" y2="410" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="var(--color-vault-accent)" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="var(--color-vault-emerald)" stopOpacity="0.1" />
+            <radialGradient id="glow-grad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={isDark ? '#eaacd2' : '#fdedd6'} stopOpacity={isDark ? '0.15' : '0.85'} />
+              <stop offset="100%" stopColor={isDark ? '#eaacd2' : '#fdedd6'} stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="planet-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#c93e43" />
+              <stop offset="100%" stopColor="#7a2b4b" />
             </linearGradient>
           </defs>
 
-          {/* Connection vectors */}
-          <path d="M 250 250 L 100 150" stroke="url(#grad-portfolio)" strokeWidth="1.5" strokeDasharray="4,4" />
-          <path d="M 250 250 L 400 150" stroke="url(#grad-analytics)" strokeWidth="1.5" strokeDasharray="4,4" />
-          <path d="M 250 250 L 250 410" stroke="url(#grad-placement)" strokeWidth="1.5" strokeDasharray="4,4" />
+          {/* Central Ambient Glow */}
+          <circle cx="400" cy="270" r="220" fill="url(#glow-grad)" />
 
-          {/* Sub-connections building depth */}
-          <path d="M 250 250 L 185 225" stroke="rgba(148, 163, 184, 0.15)" strokeWidth="1" />
-          <path d="M 250 250 L 315 225" stroke="rgba(148, 163, 184, 0.15)" strokeWidth="1" />
-          <path d="M 250 250 L 205 320" stroke="rgba(148, 163, 184, 0.15)" strokeWidth="1" />
-          <path d="M 250 250 L 295 320" stroke="rgba(148, 163, 184, 0.15)" strokeWidth="1" />
-          <path d="M 185 225 L 100 150" stroke="rgba(148, 163, 184, 0.12)" strokeWidth="1" />
-          <path d="M 315 225 L 400 150" stroke="rgba(148, 163, 184, 0.12)" strokeWidth="1" />
-          <path d="M 205 320 L 250 410" stroke="rgba(148, 163, 184, 0.12)" strokeWidth="1" />
-          <path d="M 295 320 L 250 410" stroke="rgba(148, 163, 184, 0.12)" strokeWidth="1" />
-          <path d="M 185 225 L 205 320" stroke="rgba(148, 163, 184, 0.08)" strokeWidth="1" />
-          <path d="M 315 225 L 295 320" stroke="rgba(148, 163, 184, 0.08)" strokeWidth="1" />
+          {/* Planet (top left) */}
+          <g transform="translate(0, 0)">
+            {/* Back part of planet ring */}
+            <path d="M 50,110 A 65,18 0 0 1 170,105" fill="none" stroke={isDark ? '#eaacd2' : '#ba3f42'} strokeWidth="6" transform="rotate(-15, 110, 110)" strokeLinecap="round" />
+            {/* Planet body */}
+            <circle cx="110" cy="110" r="40" fill="url(#planet-grad)" stroke={strokeColor} strokeWidth="2.5" />
+            {/* Front part of planet ring */}
+            <path d="M 170,105 A 65,18 0 0 1 50,110" fill="none" stroke={isDark ? '#eaacd2' : '#ba3f42'} strokeWidth="6" transform="rotate(-15, 110, 110)" strokeLinecap="round" />
+          </g>
 
-          {/* Ecosystem network intersections */}
-          <circle cx="185" cy="225" r="3" className="fill-vault-cyan/50" />
-          <circle cx="315" cy="225" r="3" className="fill-purple-500/50" />
-          <circle cx="205" cy="320" r="3" className="fill-vault-emerald/50" />
-          <circle cx="295" cy="320" r="3" className="fill-vault-emerald/50" />
+          {/* Small moon/planet (top left lower) */}
+          <g transform="translate(180, 150)">
+            <ellipse cx="0" cy="0" rx="20" ry="5" fill="none" stroke={strokeColor} strokeWidth="1.5" transform="rotate(-10, 0, 0)" />
+            <circle cx="0" cy="0" r="11" fill={isDark ? '#a855f7' : '#d67645'} stroke={strokeColor} strokeWidth="2" />
+          </g>
 
-          {/* Animated data transfer signals */}
-          <motion.path
-            d="M 250 250 L 100 150"
-            stroke="var(--color-vault-cyan)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            fill="none"
-            initial={{ strokeDasharray: "15, 120", strokeDashoffset: 0 }}
-            animate={{ strokeDashoffset: -135 }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.path
-            d="M 250 250 L 400 150"
-            stroke="#a855f7"
-            strokeWidth="2"
-            strokeLinecap="round"
-            fill="none"
-            initial={{ strokeDasharray: "15, 120", strokeDashoffset: 0 }}
-            animate={{ strokeDashoffset: -135 }}
-            transition={{ duration: 3.8, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.path
-            d="M 250 250 L 250 410"
-            stroke="var(--color-vault-emerald)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            fill="none"
-            initial={{ strokeDasharray: "15, 180", strokeDashoffset: 0 }}
-            animate={{ strokeDashoffset: -195 }}
-            transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
-          />
-        </svg>
+          {/* Small purple/magenta orb (mid right) */}
+          <circle cx="680" cy="220" r="14" fill={isDark ? '#ea53ab' : '#781f5a'} stroke={strokeColor} strokeWidth="2.5" />
+          <circle cx="170" cy="330" r="9" fill={isDark ? '#06b6d4' : '#bc4642'} stroke={strokeColor} strokeWidth="2" />
 
-        {/* --- CENTERPIECE: AI Brain Core --- */}
-        <div className="absolute top-[225px] left-[225px] -translate-x-1/2 -translate-y-1/2 flex items-center justify-center z-10 pointer-events-none select-none">
-          {/* Glowing pulse ring */}
-          <motion.div
-            className="absolute w-36 h-36 rounded-full border border-vault-accent/30 bg-vault-accent/5"
-            animate={{
-              scale: [0.95, 1.15, 0.95],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
+          {/* Floating Stars */}
+          <path d="M 300,50 L 302,58 L 310,60 L 302,62 L 300,70 L 298,62 L 290,60 L 298,58 Z" fill={isDark ? '#eaacd2' : '#ecac52'} />
+          <path d="M 620,70 L 622,78 L 630,80 L 622,82 L 620,90 L 618,82 L 610,80 L 618,78 Z" fill={isDark ? '#eaacd2' : '#ecac52'} />
+          <path d="M 500,100 L 501,104 L 505,105 L 501,106 L 500,110 L 499,106 L 495,105 L 499,104 Z" fill={isDark ? '#eaacd2' : '#ecac52'} />
 
-          {/* Clockwise rotating dashed orbit ring */}
-          <motion.div
-            className="absolute w-28 h-28 rounded-full border border-dashed border-vault-cyan/30"
-            animate={{ rotate: 360 }}
-            transition={{
-              duration: 22,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
-
-          {/* Counter-clockwise rotating dashed orbit ring */}
-          <motion.div
-            className="absolute w-24 h-24 rounded-full border border-dashed border-vault-accent/30"
-            animate={{ rotate: -360 }}
-            transition={{
-              duration: 18,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
-
-          {/* 3D Central Core Glassmorphic Badge */}
-          <motion.div
-            className="relative w-16 h-16 rounded-full bg-slate-900/90 dark:bg-slate-950/95 border-2 border-vault-accent/50 flex items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.3)] pointer-events-auto cursor-pointer"
-            style={{ transform: "translateZ(20px)" }}
-            whileHover={{ scale: 1.1, rotate: 8 }}
-            transition={{ type: "spring", stiffness: 300, damping: 12 }}
+          {/* Left Speech Bubble (Password) */}
+          <motion.g
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <Brain className="w-8 h-8 text-vault-accent animate-pulse" />
-            <Sparkles className="absolute -top-1.5 -right-1.5 w-4 h-4 text-vault-cyan" />
-          </motion.div>
-        </div>
+            <path
+              d="M 145,140 L 255,140 A 15,15 0 0 1 270,155 L 270,185 A 15,15 0 0 1 255,200 L 240,200 L 255,220 L 225,200 L 145,200 A 15,15 0 0 1 130,185 L 130,155 A 15,15 0 0 1 145,140 Z"
+              fill={bubbleBg}
+              stroke={strokeColor}
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+            />
+            <circle cx="165" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="179" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="193" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="207" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="221" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="235" cy="170" r="4.5" fill={dotsColor} />
+          </motion.g>
 
-        {/* --- TOP LEFT: Orbiting Credential System (translateZ: 60px) --- */}
-        <motion.div
-          className="absolute top-[150px] left-[100px] -translate-x-1/2 -translate-y-1/2 p-3 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-xl z-20 flex flex-col items-center justify-center gap-1.5 w-[140px] hover:border-vault-accent/40 transition-colors duration-300 pointer-events-auto"
-          style={{ transform: "translateZ(60px)", transformStyle: "preserve-3d" }}
-          whileHover={{ scale: 1.05, y: -4 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15 }}
-        >
-          {/* Badges Stack */}
-          <div className="relative flex -space-x-1.5">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-md">
-              <Award className="w-3.5 h-3.5 text-white" />
-            </div>
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-vault-cyan to-blue-500 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-md">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </div>
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-vault-emerald to-teal-500 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-md">
-              <Database className="w-3.5 h-3.5 text-white" />
-            </div>
-          </div>
-          <span className="text-[10px] font-extrabold text-slate-800 dark:text-slate-200">Portfolio System</span>
-          <span className="text-[8px] font-bold text-vault-cyan bg-vault-cyan/10 dark:bg-vault-cyan/20 px-1.5 py-0.5 rounded font-mono uppercase tracking-wider">8 Badges Sync</span>
-        </motion.div>
+          {/* Right Speech Bubble (Password) */}
+          <motion.g
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          >
+            <path
+              d="M 545,140 L 655,140 A 15,15 0 0 1 670,155 L 670,185 A 15,15 0 0 1 655,200 L 575,200 L 545,220 L 560,200 L 545,200 A 15,15 0 0 1 530,185 L 530,155 A 15,15 0 0 1 545,140 Z"
+              fill={bubbleBg}
+              stroke={strokeColor}
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+            />
+            <circle cx="565" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="579" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="593" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="607" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="621" cy="170" r="4.5" fill={dotsColor} />
+            <circle cx="635" cy="170" r="4.5" fill={dotsColor} />
+          </motion.g>
 
-        {/* --- TOP RIGHT: Orbiting Analytics Matrix (translateZ: 40px) --- */}
-        <motion.div
-          className="absolute top-[150px] left-[400px] -translate-x-1/2 -translate-y-1/2 p-3 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-xl z-20 w-[170px] hover:border-vault-cyan/40 transition-colors duration-300 flex flex-col gap-1 pointer-events-auto"
-          style={{ transform: "translateZ(40px)", transformStyle: "preserve-3d" }}
-          whileHover={{ scale: 1.05, y: -4 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15 }}
-        >
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-extrabold text-slate-800 dark:text-slate-200">Academic Growth</span>
-            <span className="text-[9px] font-extrabold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded font-mono">+12.4%</span>
-          </div>
-          <div className="h-9 w-full mt-1 overflow-visible">
-            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 30">
-              <defs>
-                <linearGradient id="lineGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="var(--color-vault-cyan)" stopOpacity="0.8" />
-                  <stop offset="50%" stopColor="#a855f7" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="var(--color-vault-cyan)" stopOpacity="0.8" />
-                </linearGradient>
-              </defs>
-              <motion.path
-                d="M0,25 C15,22 25,2 40,15 C55,25 70,5 100,8"
-                fill="none"
-                stroke="url(#lineGlow)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 2.2, ease: "easeInOut" }}
-              />
-              <motion.circle
-                cx="100"
-                cy="8"
-                r="3"
-                className="fill-vault-cyan shadow-lg"
-                animate={{ scale: [1, 1.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-            </svg>
-          </div>
-          <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium">Real-time performance cohort</span>
-        </motion.div>
+          {/* SKELETON DEV CENTERPIECE */}
+          <g>
+            {/* Spine */}
+            <line x1="400" y1="240" x2="400" y2="340" stroke={strokeColor} strokeWidth="5" strokeLinecap="round" />
 
-        {/* --- BOTTOM CENTER: Orbiting Placement Readiness (translateZ: 85px) --- */}
-        <motion.div
-          className="absolute top-[410px] left-[250px] -translate-x-1/2 -translate-y-1/2 p-3 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-xl z-20 w-[190px] hover:border-vault-emerald/40 transition-colors duration-300 flex items-center gap-3 pointer-events-auto"
-          style={{ transform: "translateZ(85px)", transformStyle: "preserve-3d" }}
-          whileHover={{ scale: 1.05, y: 4 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15 }}
-        >
-          {/* Gauge */}
-          <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
-            <svg className="w-full h-full transform -rotate-90">
-              <circle cx="20" cy="20" r="16" stroke="rgba(148, 163, 184, 0.15)" strokeWidth="3.2" fill="transparent" />
-              <motion.circle
-                cx="20"
-                cy="20"
-                r="16"
-                stroke="var(--color-vault-emerald)"
-                strokeWidth="3.2"
-                fill="transparent"
-                strokeDasharray="100.5"
-                initial={{ strokeDashoffset: 100.5 }}
-                animate={{ strokeDashoffset: 100.5 * (1 - 0.94) }}
-                transition={{ duration: 2, ease: "easeOut" }}
+            {/* Ribs (Left & Right) */}
+            <path d="M 390,260 C 370,262 362,272 365,280 C 368,286 382,284 390,280" fill="none" stroke={strokeColor} strokeWidth="3" strokeLinecap="round" />
+            <path d="M 410,260 C 430,262 438,272 435,280 C 432,286 418,284 410,280" fill="none" stroke={strokeColor} strokeWidth="3" strokeLinecap="round" />
+
+            <path d="M 390,283 C 365,286 358,298 362,308 C 365,315 380,312 390,306" fill="none" stroke={strokeColor} strokeWidth="3" strokeLinecap="round" />
+            <path d="M 410,283 C 435,286 442,298 438,308 C 435,315 420,312 410,306" fill="none" stroke={strokeColor} strokeWidth="3" strokeLinecap="round" />
+
+            <path d="M 390,306 C 362,309 355,323 360,333 C 363,340 380,334 390,328" fill="none" stroke={strokeColor} strokeWidth="3" strokeLinecap="round" />
+            <path d="M 410,306 C 438,309 445,323 440,333 C 437,340 420,334 410,328" fill="none" stroke={strokeColor} strokeWidth="3" strokeLinecap="round" />
+
+            {/* Collarbone */}
+            <path d="M 358,242 C 378,238 422,238 442,242" fill="none" stroke={strokeColor} strokeWidth="3.5" strokeLinecap="round" />
+
+            {/* Neck Bones */}
+            <rect x="394" y="215" width="12" height="6" rx="2" fill={boneColor} stroke={strokeColor} strokeWidth="2.2" />
+            <rect x="394" y="223" width="12" height="6" rx="2" fill={boneColor} stroke={strokeColor} strokeWidth="2.2" />
+            <rect x="394" y="231" width="12" height="6" rx="2" fill={boneColor} stroke={strokeColor} strokeWidth="2.2" />
+
+            {/* Skull / Head */}
+            <path
+              d="M 370,165 C 370,130 380,120 400,120 C 420,120 430,130 430,165 C 430,177 435,183 432,190 C 428,197 422,200 422,210 C 422,213 418,215 415,215 L 385,215 C 382,215 378,213 378,210 C 378,200 372,197 368,190 C 365,183 370,177 370,165 Z"
+              fill={boneColor}
+              stroke={strokeColor}
+              strokeWidth="3"
+              strokeLinejoin="round"
+            />
+            {/* Eye sockets */}
+            <ellipse cx="387" cy="168" rx="9.5" ry="12" fill={isDark ? '#151419' : '#321025'} />
+            <ellipse cx="413" cy="168" rx="9.5" ry="12" fill={isDark ? '#151419' : '#321025'} />
+            {/* Glowing pupil dots */}
+            <circle cx="387" cy="168" r="2" fill={isDark ? '#eaacd2' : '#e56b8f'} />
+            <circle cx="413" cy="168" r="2" fill={isDark ? '#eaacd2' : '#e56b8f'} />
+            {/* Nose cavity */}
+            <path d="M 400,181 L 396,189 C 396,190.5 400,192 400,192 C 400,192 404,190.5 404,189 Z" fill={isDark ? '#151419' : '#321025'} />
+            {/* Teeth / Mouth */}
+            <path d="M 383,203 L 417,203" stroke={strokeColor} strokeWidth="2.5" />
+            <path d="M 388,198 L 388,208 M 394,198 L 394,208 M 400,198 L 400,208 M 406,198 L 406,208 M 412,198 L 412,208" stroke={strokeColor} strokeWidth="2" />
+
+            {/* Left Upper Arm */}
+            <line x1="358" y1="242" x2="295" y2="300" stroke={strokeColor} strokeWidth="6" strokeLinecap="round" />
+            <line x1="358" y1="242" x2="295" y2="300" stroke={boneColor} strokeWidth="3.0" strokeLinecap="round" />
+
+            {/* Left Forearm */}
+            <line x1="295" y1="300" x2="330" y2="382" stroke={strokeColor} strokeWidth="6" strokeLinecap="round" />
+            <line x1="295" y1="300" x2="330" y2="382" stroke={boneColor} strokeWidth="3.0" strokeLinecap="round" />
+
+            {/* Left Elbow Joint */}
+            <circle cx="295" cy="300" r="4.5" fill={boneColor} stroke={strokeColor} strokeWidth="2.5" />
+
+            {/* Right Upper Arm */}
+            <line x1="442" y1="242" x2="505" y2="300" stroke={strokeColor} strokeWidth="6" strokeLinecap="round" />
+            <line x1="442" y1="242" x2="505" y2="300" stroke={boneColor} strokeWidth="3.0" strokeLinecap="round" />
+
+            {/* Right Forearm */}
+            <line x1="505" y1="300" x2="470" y2="382" stroke={strokeColor} strokeWidth="6" strokeLinecap="round" />
+            <line x1="505" y1="300" x2="470" y2="382" stroke={boneColor} strokeWidth="3.0" strokeLinecap="round" />
+
+            {/* Right Elbow Joint */}
+            <circle cx="505" cy="300" r="4.5" fill={boneColor} stroke={strokeColor} strokeWidth="2.5" />
+
+            {/* Wrist Joints */}
+            <circle cx="330" cy="382" r="4" fill={boneColor} stroke={strokeColor} strokeWidth="2" />
+            <circle cx="470" cy="382" r="4" fill={boneColor} stroke={strokeColor} strokeWidth="2" />
+
+            {/* Laptop Open Screen */}
+            <polygon points="305,270 495,270 510,375 290,375" fill={laptopLid} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />
+            
+            {/* Logo on Laptop (skull) */}
+            <g transform="translate(400, 318) scale(0.6)">
+              <path
+                d="M -15,-10 C -15,-20 -8,-25 0,-25 C 8,-25 15,-20 15,-10 C 15,-1 11,5 8,10 L -8,10 C -11,5 -15,-1 -15,-10 Z"
+                fill={strokeColor}
               />
-            </svg>
-            <span className="absolute text-[9px] font-black text-slate-800 dark:text-white font-mono">94%</span>
-          </div>
-          <div className="text-left">
-            <p className="text-[10px] font-extrabold text-slate-800 dark:text-slate-200">Placement Readiness</p>
-            <p className="text-[8px] text-slate-400 dark:text-slate-500">Tier-1 cohort index optimized</p>
-          </div>
-        </motion.div>
+              <circle cx="-5" cy="-8" r="3" fill={boneColor} />
+              <circle cx="5" cy="-8" r="3" fill={boneColor} />
+              <polygon points="0,-2 -2,2 2,2" fill={boneColor} />
+            </g>
+
+            {/* Laptop Base (Keyboard area) */}
+            <polygon points="255,375 545,375 570,410 230,410" fill={laptopLid} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />
+            <polygon points="275,381 525,381 542,403 258,403" fill={keyboardBg} opacity="0.85" />
+            <rect x="375" y="404" width="50" height="4" rx="1" fill={isDark ? '#474554' : '#80868b'} />
+
+            {/* Skeleton fingers typing (micro-animated) */}
+            <motion.path
+              d="M 330,382 Q 315,382 308,385 M 330,382 Q 318,387 312,391 M 330,382 Q 322,392 318,396"
+              fill="none"
+              stroke={strokeColor}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              animate={{ rotate: [0, -3, 0] }}
+              transition={{ duration: 0.15, repeat: Infinity, ease: 'linear' }}
+            />
+            <motion.path
+              d="M 470,382 Q 485,382 492,385 M 470,382 Q 482,387 488,391 M 470,382 Q 478,392 482,396"
+              fill="none"
+              stroke={strokeColor}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              animate={{ rotate: [0, 3, 0] }}
+              transition={{ duration: 0.15, repeat: Infinity, ease: 'linear', delay: 0.08 }}
+            />
+          </g>
+
+          {/* Botanical Leaves at the bottom */}
+          <path d="M 160,430 C 160,430 180,350 240,370 C 240,370 210,440 160,430 Z" fill={leafColors.l1} stroke={strokeColor} strokeWidth="2" />
+          <path d="M 640,430 C 640,430 620,350 560,370 C 560,370 590,440 640,430 Z" fill={leafColors.l1} stroke={strokeColor} strokeWidth="2" />
+
+          <path d="M 190,440 C 190,440 210,340 280,375 C 280,375 240,450 190,440 Z" fill={leafColors.l2} stroke={strokeColor} strokeWidth="2" />
+          <path d="M 610,440 C 610,440 590,340 520,375 C 520,375 560,450 610,440 Z" fill={leafColors.l2} stroke={strokeColor} strokeWidth="2" />
+
+          <path d="M 220,445 C 220,445 250,360 320,390 C 320,390 280,460 220,445 Z" fill={leafColors.l3} stroke={strokeColor} strokeWidth="2" />
+          <path d="M 580,445 C 580,445 550,360 480,390 C 480,390 520,460 580,445 Z" fill={leafColors.l3} stroke={strokeColor} strokeWidth="2" />
+
+          <path d="M 260,450 C 260,450 290,380 350,400 C 350,400 320,465 260,450 Z" fill={leafColors.l4} stroke={strokeColor} strokeWidth="2" />
+          <path d="M 540,450 C 540,450 510,380 450,400 C 450,400 480,465 540,450 Z" fill={leafColors.l4} stroke={strokeColor} strokeWidth="2" />
+        </svg>
       </motion.div>
     </div>
   )
@@ -330,16 +285,37 @@ export default function AuthLayout() {
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <div className="min-h-screen w-screen flex flex-col lg:grid lg:grid-cols-10 bg-vault-bg font-sans overflow-x-hidden relative transition-colors duration-300">
+    <div className="min-h-screen w-screen flex flex-col lg:grid lg:grid-cols-10 bg-white dark:bg-[#07050a] font-sans overflow-x-hidden relative transition-colors duration-300">
       
-      {/* LEFT COLUMN: Clean Institutional Authentication Panel (40% width on desktop) */}
-      <div className="col-span-10 lg:col-span-4 flex flex-col justify-between p-6 sm:p-12 relative overflow-hidden bg-vault-bg min-h-screen z-10">
+      {/* LEFT COLUMN: Premium Skeleton Visualizer (60% width on desktop, hidden on mobile/tablet) */}
+      <div className="hidden lg:flex lg:col-span-6 flex-col justify-between items-center p-8 sm:p-12 relative overflow-hidden min-h-screen bg-gradient-to-br from-[#fbead2] via-[#f7e0c9] to-[#f5d5be] dark:from-[#1b0d19] dark:via-[#130711] dark:to-[#0a0209] transition-colors duration-300">
+        {/* Top Spacer */}
+        <div className="w-full h-8" />
+
+        {/* Centerpiece visualizer */}
+        <div className="relative w-full flex-1 flex items-center justify-center z-10 py-4">
+          <SkeletonDeveloperVisualizer />
+        </div>
+
+        {/* Bottom text captions */}
+        <div className="text-center space-y-2 z-10 max-w-md pb-6">
+          <h2 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-[#4a1535] dark:text-[#eaacd2]">
+            Turn your ideas into reality.
+          </h2>
+          <p className="text-xs lg:text-sm font-bold text-[#782c59] dark:text-[#cfa0bf] max-w-xs mx-auto opacity-90">
+            Start for free and get attractive offers from the community
+          </p>
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN: Clean Minimalist Authentication Form (40% width on desktop) */}
+      <div className="col-span-10 lg:col-span-4 flex flex-col justify-between p-6 sm:p-12 relative overflow-hidden bg-white dark:bg-[#07050a] min-h-screen z-10">
         
         {/* Top bar controls */}
         <div className="w-full flex justify-between items-center z-20">
           <Link
             to="/"
-            className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-vault-fg transition-colors group"
+            className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-[#781f5a] dark:hover:text-[#eaacd2] transition-colors group"
           >
             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
             <span>Back to home</span>
@@ -347,109 +323,24 @@ export default function AuthLayout() {
 
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-xl border border-slate-200 dark:border-vault-border/50 hover:bg-slate-50 dark:hover:bg-vault-card transition-all text-slate-400 hover:text-vault-fg shadow-sm flex items-center justify-center cursor-pointer"
+            className="p-2 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-slate-400 hover:text-slate-800 dark:hover:text-white shadow-sm flex items-center justify-center cursor-pointer"
             aria-label="Toggle visual theme"
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
         </div>
 
-        {/* Form Container Card - Floating Glass Card */}
+        {/* Form Container Card - Clean minimalist wrapper */}
         <div className="my-auto py-8 flex justify-center items-center w-full">
-          <div className="relative w-full max-w-md group">
-            {/* Ambient Soft Glow Behind the Login Card */}
-            <div className="absolute -inset-2 bg-gradient-to-r from-vault-accent/15 to-vault-cyan/15 rounded-2xl blur-3xl opacity-60 dark:opacity-45 group-hover:opacity-80 transition duration-1000 -z-10" />
-            
-            {/* Gradient Border Wrapper */}
-            <div className="rounded-2xl p-[1px] bg-gradient-to-b from-slate-200/60 to-slate-300/40 dark:from-white/10 dark:to-white/5 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] transition-all duration-500">
-              {/* Floating Glassmorphic Container */}
-              <div className="w-full bg-white/45 dark:bg-[#070b14]/50 backdrop-blur-2xl p-8 rounded-[15px] relative z-10 transition-all duration-300">
-                
-                {/* Mobile/Tablet Header: branding details */}
-                <div className="flex flex-col items-center mb-8 lg:hidden">
-                  <div className="h-11 w-11 rounded-lg bg-gradient-to-tr from-vault-emerald to-vault-cyan flex items-center justify-center font-bold text-white text-lg shadow-md mb-2">
-                    EV
-                  </div>
-                  <h2 className="text-xl font-bold tracking-tight text-vault-fg">EduVault AI</h2>
-                  <p className="text-xs text-slate-400">Student Intelligence Platform</p>
-                </div>
-
-                {/* Active page route (Login / Register form) */}
-                <div className="w-full">
-                  <Outlet />
-                </div>
-              </div>
-            </div>
+          <div className="w-full max-w-md">
+            <Outlet />
           </div>
         </div>
 
         {/* Footer copyright */}
-        <div className="text-center lg:text-left text-[11px] text-slate-400 dark:text-slate-500 z-10">
+        <div className="text-center text-[11px] text-slate-400 dark:text-slate-500 z-10">
           &copy; {new Date().getFullYear()} EduVault AI. All institutional rights reserved.
         </div>
-      </div>
-
-      {/* RIGHT COLUMN: Premium Student Intelligence Dashboard Visualization (60% width on desktop) */}
-      <div className="col-span-10 lg:col-span-6 flex flex-col justify-between items-center p-8 sm:p-12 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-white/5 relative overflow-hidden min-h-[600px] lg:min-h-screen">
-        
-        {/* Background Mesh Gradients & Animated Soft Orbs */}
-        <div className="absolute inset-0 bg-slate-50/30 dark:bg-[#070b14] overflow-hidden pointer-events-none z-0">
-          {/* Grid lines */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808007_1px,transparent_1px),linear-gradient(to_bottom,#80808007_1px,transparent_1px)] bg-[size:30px_30px] opacity-100" />
-          
-          {/* Animated Glow Orb 1 */}
-          <motion.div 
-            className="absolute -top-[10%] -left-[10%] w-[55%] h-[55%] rounded-full bg-vault-cyan/12 dark:bg-vault-cyan/10 blur-[110px]"
-            animate={{
-              x: [0, 45, 0],
-              y: [0, 30, 0],
-            }}
-            transition={{
-              duration: 14,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-          {/* Animated Glow Orb 2 */}
-          <motion.div 
-            className="absolute -bottom-[10%] -right-[10%] w-[65%] h-[65%] rounded-full bg-vault-accent/12 dark:bg-vault-accent/8 blur-[120px]"
-            animate={{
-              x: [0, -35, 0],
-              y: [0, -45, 0],
-            }}
-            transition={{
-              duration: 17,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-          {/* Soft Central blending glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[75%] h-[75%] rounded-full bg-gradient-to-tr from-[#0ea5e9]/5 to-[#10b981]/5 blur-[90px] opacity-50" />
-        </div>
-
-        {/* Brand logo at the top */}
-        <div className="relative z-10 w-full flex items-center justify-between lg:justify-start gap-3">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-vault-emerald to-vault-cyan flex items-center justify-center font-bold text-white shadow-lg shadow-vault-emerald/20">
-              EV
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-                EduVault AI
-              </h1>
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-mono tracking-wider">STUDENT INTELLIGENCE PLATFORM</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Futuristic Academic Intelligence Visualizer centerpiece */}
-        <div className="relative w-full flex-1 flex items-center justify-center z-10 py-4">
-          <AcademicIntelligenceVisualizer />
-        </div>
-
-        {/* Spacer bottom */}
-        <div className="w-full h-4" />
-
       </div>
 
     </div>
