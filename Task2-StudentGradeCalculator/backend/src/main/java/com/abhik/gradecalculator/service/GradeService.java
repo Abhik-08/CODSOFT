@@ -25,11 +25,7 @@ public class GradeService {
         long completeCount = totalCount - incompleteCount;
 
         // 1. Total Marks & Percentage
-        int totalMarks = subjects.stream()
-                .filter(s -> s.getIncomplete() == null || !s.getIncomplete())
-                .mapToInt(Subject::getMarks)
-                .sum();
-        
+        int totalMarks = calculateTotalMarks(subjects);
         double percentage = completeCount > 0 ? (double) totalMarks / completeCount : 0.0;
 
         // 2. Core Metrics
@@ -41,35 +37,17 @@ public class GradeService {
         // 3. Subject-wise Analysis & Grade Distribution
         Map<String, String> subjectPerformance = new LinkedHashMap<>();
         Map<String, Integer> gradeDistribution = initGradeDistribution();
-
-        for (Subject subject : subjects) {
-            boolean isSubInc = subject.getIncomplete() != null && subject.getIncomplete();
-            String subPerformance = isSubInc ? "Incomplete" : getSubjectPerformance(subject.getMarks());
-            subjectPerformance.put(subject.getSubjectName(), subPerformance);
-            
-            String subGrade = isSubInc ? "I" : getSubjectGrade(subject.getMarks());
-            gradeDistribution.put(subGrade, gradeDistribution.get(subGrade) + 1);
-        }
+        analyzeSubjects(subjects, subjectPerformance, gradeDistribution);
 
         // 4. Pass/Fail Status & Extremes
-        long passedCount = subjects.stream()
-                .filter(s -> s.getIncomplete() == null || !s.getIncomplete())
-                .filter(s -> s.getMarks() != null && s.getMarks() >= 40)
-                .count();
-        
-        boolean failedAnySubject = subjects.stream()
-                .anyMatch(s -> (s.getIncomplete() != null && s.getIncomplete()) || s.getMarks() == null || s.getMarks() < 40);
+        long passedCount = calculatePassedCount(subjects);
+        boolean failedAnySubject = checkFailedAnySubject(subjects);
         
         String status = (!grade.equals("F") && !grade.equals("I") && !failedAnySubject) ? "PASSED" : "FAILED";
         double passPercentage = ((double) passedCount / totalCount) * 100.0;
 
-        Optional<Subject> highestOpt = subjects.stream()
-                .filter(s -> s.getIncomplete() == null || !s.getIncomplete())
-                .max(Comparator.comparingInt(Subject::getMarks));
-        
-        Optional<Subject> lowestOpt = subjects.stream()
-                .filter(s -> s.getIncomplete() == null || !s.getIncomplete())
-                .min(Comparator.comparingInt(Subject::getMarks));
+        Optional<Subject> highestOpt = findHighestSubject(subjects);
+        Optional<Subject> lowestOpt = findLowestSubject(subjects);
 
         int highestMark = highestOpt.map(Subject::getMarks).orElse(0);
         int lowestMark = lowestOpt.map(Subject::getMarks).orElse(0);
@@ -123,23 +101,66 @@ public class GradeService {
             validationErrors.put("studentName", "Student name is required");
         }
         for (int i = 0; i < subjects.size(); i++) {
-            Subject s = subjects.get(i);
-            if (s.getSubjectName() == null || s.getSubjectName().trim().isEmpty()) {
-                validationErrors.put(SUBJECTS_PREFIX + i + "].subjectName", "Subject name is required");
-            }
-            if (s.getIncomplete() != null && s.getIncomplete()) {
-                // Marks are not required or validated if incomplete
-            } else {
-                if (s.getMarks() == null) {
-                    validationErrors.put(SUBJECTS_PREFIX + i + "].marks", "Marks are required");
-                } else if (s.getMarks() < 0 || s.getMarks() > 100) {
-                    validationErrors.put(SUBJECTS_PREFIX + i + "].marks", "Marks must be between 0 and 100");
-                }
-            }
+            validateSubject(subjects.get(i), i, validationErrors);
         }
         if (!validationErrors.isEmpty()) {
             throw new ValidationException(validationErrors);
         }
+    }
+
+    private void validateSubject(Subject subject, int index, Map<String, String> validationErrors) {
+        if (subject.getSubjectName() == null || subject.getSubjectName().trim().isEmpty()) {
+            validationErrors.put(SUBJECTS_PREFIX + index + "].subjectName", "Subject name is required");
+        }
+        if (subject.getIncomplete() == null || !subject.getIncomplete()) {
+            if (subject.getMarks() == null) {
+                validationErrors.put(SUBJECTS_PREFIX + index + "].marks", "Marks are required");
+            } else if (subject.getMarks() < 0 || subject.getMarks() > 100) {
+                validationErrors.put(SUBJECTS_PREFIX + index + "].marks", "Marks must be between 0 and 100");
+            }
+        }
+    }
+
+    private int calculateTotalMarks(List<Subject> subjects) {
+        return subjects.stream()
+                .filter(s -> s.getIncomplete() == null || !s.getIncomplete())
+                .mapToInt(Subject::getMarks)
+                .sum();
+    }
+
+    private void analyzeSubjects(List<Subject> subjects, Map<String, String> subjectPerformance, Map<String, Integer> gradeDistribution) {
+        for (Subject subject : subjects) {
+            boolean isSubInc = subject.getIncomplete() != null && subject.getIncomplete();
+            String subPerformance = isSubInc ? "Incomplete" : getSubjectPerformance(subject.getMarks());
+            subjectPerformance.put(subject.getSubjectName(), subPerformance);
+            
+            String subGrade = isSubInc ? "I" : getSubjectGrade(subject.getMarks());
+            gradeDistribution.put(subGrade, gradeDistribution.get(subGrade) + 1);
+        }
+    }
+
+    private long calculatePassedCount(List<Subject> subjects) {
+        return subjects.stream()
+                .filter(s -> s.getIncomplete() == null || !s.getIncomplete())
+                .filter(s -> s.getMarks() != null && s.getMarks() >= 40)
+                .count();
+    }
+
+    private boolean checkFailedAnySubject(List<Subject> subjects) {
+        return subjects.stream()
+                .anyMatch(s -> (s.getIncomplete() != null && s.getIncomplete()) || s.getMarks() == null || s.getMarks() < 40);
+    }
+
+    private Optional<Subject> findHighestSubject(List<Subject> subjects) {
+        return subjects.stream()
+                .filter(s -> s.getIncomplete() == null || !s.getIncomplete())
+                .max(Comparator.comparingInt(Subject::getMarks));
+    }
+
+    private Optional<Subject> findLowestSubject(List<Subject> subjects) {
+        return subjects.stream()
+                .filter(s -> s.getIncomplete() == null || !s.getIncomplete())
+                .min(Comparator.comparingInt(Subject::getMarks));
     }
 
     private double calculateStdDev(List<Subject> subjects, double percentage, long completeCount) {
