@@ -4,3 +4,5 @@ export const Input = () => null;
 export const Card = () => null;
 export const Modal = () => null;
 export const Loader = () => null;
+export * from './EduVaultLogo'
+

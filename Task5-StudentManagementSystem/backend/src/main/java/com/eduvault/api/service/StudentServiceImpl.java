@@ -7,27 +7,32 @@ import com.eduvault.api.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
+@SuppressWarnings("null")
 public class StudentServiceImpl implements StudentService {
 
+    private static final String NOT_FOUND_MSG = "Student not found with id: ";
+
+    private final StudentRepository studentRepository;
+
     @Autowired
-    private StudentRepository studentRepository;
+    public StudentServiceImpl(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
 
     @Override
     public List<StudentDto> getAllStudents() {
         return studentRepository.findAll().stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public StudentDto getStudentById(Long id) {
         Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MSG + id));
         return convertToDto(student);
     }
 
@@ -41,7 +46,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public StudentDto updateStudent(Long id, StudentDto studentDto) {
         Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MSG + id));
         
         student.setFirstName(studentDto.getFirstName());
         student.setLastName(studentDto.getLastName());
@@ -61,7 +66,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public void deleteStudent(Long id) {
         Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MSG + id));
         studentRepository.delete(student);
     }
 

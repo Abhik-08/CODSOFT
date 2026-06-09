@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthContext } from '../../context/AuthContext'
 import { ArrowRight, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react'
+import { EduVaultLogo } from '../../components/common/EduVaultLogo'
 
 export default function LoginPage() {
   const { loginWithGoogle, loginWithEmail, resetPassword } = useAuthContext()
@@ -60,7 +61,7 @@ export default function LoginPage() {
     try {
       await resetPassword(email)
       setMessage('A password reset link has been dispatched to your email.')
-      setIsForgotPassword(false) // Toggle back after successful send
+      setIsForgotPassword(false)
     } catch (err: any) {
       setError(err.message || 'Failed to send reset email.')
     } finally {
@@ -70,57 +71,48 @@ export default function LoginPage() {
 
   return (
     <div className="space-y-6 text-left">
-      {/* stylized logo */}
+      {/* Reusable premium logo */}
       {!isForgotPassword && (
         <div className="flex justify-center lg:justify-start">
-          <div className="text-[#781f5a] dark:text-[#eaacd2]">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="20" cy="6" r="2.5" fill="currentColor" />
-              <circle cx="20" cy="34" r="2.5" fill="currentColor" />
-              <circle cx="6" cy="20" r="2.5" fill="currentColor" />
-              <circle cx="34" cy="20" r="2.5" fill="currentColor" />
-              <path d="M20 10V30M10 20H30M13 14H27M13 26H27" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            </svg>
-          </div>
+          <EduVaultLogo showText={true} iconSize={58} textSize="text-2xl" />
         </div>
       )}
 
       {/* Dynamic Header based on Login vs Forgot Password state */}
-      <div className="text-center lg:text-left space-y-1">
-        <h3 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white transition-all">
-          {isForgotPassword ? 'Reset password' : 'Login to your Account'}
+      <div className="text-center lg:text-left space-y-1 pt-2">
+        <h3 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white transition-all">
+          {isForgotPassword ? 'Reset Access' : 'Sign In'}
         </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">
           {isForgotPassword 
             ? 'Enter your institutional email to reset access' 
-            : 'See what is going on with your business'}
+            : 'Access the Student Intelligence Console'}
         </p>
       </div>
 
       {/* Alert Banners */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-lg animate-fadeIn">
+        <div className="flex items-center gap-2.5 p-3.5 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold rounded-xl animate-fadeIn">
           <AlertCircle size={15} className="shrink-0" />
           <p className="font-medium">{error}</p>
         </div>
       )}
 
       {message && (
-        <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 text-vault-emerald text-xs rounded-lg animate-fadeIn">
+        <div className="flex items-center gap-2.5 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-vault-emerald text-xs font-semibold rounded-xl animate-fadeIn">
           <CheckCircle2 size={15} className="shrink-0" />
           <p className="font-medium">{message}</p>
         </div>
       )}
 
-      {/* Social Oauth / Google Authentication Section */}
+      {/* Social Google Authentication Section */}
       {!isForgotPassword && (
         <div className="space-y-4">
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white dark:bg-[#151419] border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-[0.98] px-4 py-2.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer disabled:opacity-50 shadow-sm"
+            className="w-full flex items-center justify-center gap-3 bg-white dark:bg-[#151419] border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-[0.98] px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-350 transition-all duration-200 cursor-pointer disabled:opacity-50 shadow-sm"
           >
-            {/* Google icon */}
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -130,10 +122,10 @@ export default function LoginPage() {
             <span>Continue with Google</span>
           </button>
 
-          {/* Dotted / dashed separator line */}
+          {/* Separator line */}
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-dashed border-slate-200 dark:border-white/10"></div>
-            <span className="flex-shrink mx-4 text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider">or Sign in with Email</span>
+            <span className="flex-shrink mx-4 text-slate-400 dark:text-slate-500 text-[9px] font-black uppercase tracking-wider">or sign in with email</span>
             <div className="flex-grow border-t border-dashed border-slate-200 dark:border-white/10"></div>
           </div>
         </div>
@@ -144,30 +136,30 @@ export default function LoginPage() {
         className="space-y-4"
       >
         {/* Email Address Input */}
-        <div className="space-y-1">
-          <label htmlFor="email" className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wide">
             Email
           </label>
-          <div className="relative flex items-center rounded-lg border border-slate-200 dark:border-white/10 focus-within:border-[#781f5a] focus-within:ring-2 focus-within:ring-[#781f5a]/10 bg-white dark:bg-[#151419] transition-all shadow-sm">
+          <div className="relative flex items-center rounded-xl border border-slate-200 dark:border-white/10 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 bg-white dark:bg-[#151419] transition-all shadow-sm">
             <input
               id="email"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="mail@abc.com"
-              className="w-full bg-transparent px-3 py-2 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
+              placeholder="operator@institution.edu"
+              className="w-full bg-transparent px-4 py-2.5 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-semibold"
             />
           </div>
         </div>
 
-        {/* Password Input (Hidden if inside Forgot Password flow) */}
+        {/* Password Input */}
         {!isForgotPassword && (
-          <div className="space-y-1">
-            <label htmlFor="password" className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+          <div className="space-y-1.5">
+            <label htmlFor="password" className="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wide">
               Password
             </label>
-            <div className="relative flex items-center rounded-lg border border-slate-200 dark:border-white/10 focus-within:border-[#781f5a] focus-within:ring-2 focus-within:ring-[#781f5a]/10 bg-white dark:bg-[#151419] transition-all shadow-sm pr-10">
+            <div className="relative flex items-center rounded-xl border border-slate-200 dark:border-white/10 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 bg-white dark:bg-[#151419] transition-all shadow-sm pr-10">
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -175,12 +167,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="•••••••••••••"
-                className="w-full bg-transparent px-3 py-2 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
+                className="w-full bg-transparent px-4 py-2.5 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-semibold"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 text-slate-400 hover:text-[#781f5a] dark:hover:text-[#eaacd2] transition-colors focus:outline-none flex items-center justify-center"
+                className="absolute right-3 text-slate-400 hover:text-vault-accent transition-colors focus:outline-none flex items-center justify-center"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -190,20 +182,20 @@ export default function LoginPage() {
 
         {/* Remember me & Forgot password row */}
         {!isForgotPassword && (
-          <div className="flex justify-between items-center text-xs font-semibold pt-1">
-            <label className="flex items-center gap-2 text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+          <div className="flex justify-between items-center text-xs font-bold pt-1">
+            <label className="flex items-center gap-2 text-slate-450 dark:text-slate-500 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded border-slate-300 text-[#781f5a] focus:ring-[#781f5a] cursor-pointer accent-[#781f5a]"
+                className="rounded border-slate-300 text-vault-accent focus:ring-vault-accent cursor-pointer accent-vault-accent"
               />
               <span>Remember Me</span>
             </label>
             <button
               type="button"
               onClick={() => setIsForgotPassword(true)}
-              className="text-[#781f5a] hover:text-[#8e296c] dark:text-[#eaacd2] hover:underline transition-colors font-bold cursor-pointer"
+              className="text-vault-accent hover:text-vault-accent/90 transition-colors font-extrabold cursor-pointer"
             >
               Forgot Password?
             </button>
@@ -215,13 +207,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#781f5a] hover:bg-[#8e296c] dark:bg-[#eaacd2] dark:hover:bg-[#f3c1de] dark:text-[#3d122c] disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            className="w-full bg-gradient-to-r from-vault-accent to-vault-cyan hover:opacity-95 disabled:opacity-50 text-white font-black text-xs py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-vault-accent/10"
           >
             {loading ? (
               <span className="w-5 h-5 border-2 border-white/35 border-t-white rounded-full animate-spin" />
             ) : (
               <>
-                <span>{isForgotPassword ? 'Send Reset Instructions' : 'Login'}</span>
+                <span>{isForgotPassword ? 'Send Reset Instructions' : 'Launch Platform'}</span>
                 {!isForgotPassword && <ArrowRight size={14} />}
               </>
             )}
@@ -233,7 +225,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => setIsForgotPassword(false)}
-            className="w-full text-center text-xs text-slate-400 hover:text-slate-600 font-semibold transition-colors mt-2 cursor-pointer"
+            className="w-full text-center text-xs text-slate-400 hover:text-slate-600 font-bold transition-colors mt-2 cursor-pointer"
           >
             Back to Sign In
           </button>
@@ -241,10 +233,10 @@ export default function LoginPage() {
       </form>
 
       {!isForgotPassword && (
-        <div className="text-xs text-center text-slate-500 pt-2">
+        <div className="text-xs text-center font-semibold text-slate-450 dark:text-slate-500 pt-2">
           Not Registered Yet?{' '}
-          <Link to="/register" className="text-[#781f5a] dark:text-[#eaacd2] hover:underline font-bold">
-            Create an account
+          <Link to="/register" className="text-vault-accent hover:underline font-extrabold">
+            Create Staff Account
           </Link>
         </div>
       )}

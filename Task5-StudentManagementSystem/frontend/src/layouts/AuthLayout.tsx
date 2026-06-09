@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Outlet, Link } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 import { Sun, Moon, ArrowLeft } from 'lucide-react'
@@ -60,7 +60,7 @@ const SkeletonDeveloperVisualizer = () => {
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!containerRef.current) return
       const rect = containerRef.current.getBoundingClientRect()
@@ -90,7 +90,7 @@ const SkeletonDeveloperVisualizer = () => {
   return (
     <div
       ref={containerRef}
-      className="relative w-full max-w-[550px] h-[450px] flex items-center justify-center select-none cursor-default"
+      className="relative w-full max-w-[550px] h-[260px] sm:h-[360px] lg:h-[450px] flex items-center justify-center select-none cursor-default"
       style={{ perspective: 1000 }}
     >
       <motion.div
@@ -316,35 +316,14 @@ export default function AuthLayout() {
   return (
     <div className="min-h-screen w-screen flex flex-col lg:grid lg:grid-cols-10 bg-white dark:bg-[#07050a] font-sans overflow-x-hidden relative transition-colors duration-300">
       
-      {/* LEFT COLUMN: Premium Skeleton Visualizer (60% width on desktop, hidden on mobile/tablet) */}
-      <div className="hidden lg:flex lg:col-span-6 flex-col justify-between items-center p-8 sm:p-12 relative overflow-hidden min-h-screen bg-gradient-to-br from-[#fbead2] via-[#f7e0c9] to-[#f5d5be] dark:from-[#1b0d19] dark:via-[#130711] dark:to-[#0a0209] transition-colors duration-300">
-        {/* Top Spacer */}
-        <div className="w-full h-8" />
-
-        {/* Centerpiece visualizer */}
-        <div className="relative w-full flex-1 flex items-center justify-center z-10 py-4">
-          <SkeletonDeveloperVisualizer />
-        </div>
-
-        {/* Bottom text captions */}
-        <div className="text-center space-y-2 z-10 max-w-md pb-6">
-          <h2 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-[#4a1535] dark:text-[#eaacd2]">
-            Empowering Academic Excellence.
-          </h2>
-          <p className="text-xs lg:text-sm font-bold text-[#782c59] dark:text-[#cfa0bf] max-w-xs mx-auto opacity-90">
-            Securely manage database records, portfolios, and grade computations from your console.
-          </p>
-        </div>
-      </div>
-
-      {/* RIGHT COLUMN: Clean Minimalist Authentication Form (40% width on desktop) */}
-      <div className="col-span-10 lg:col-span-4 flex flex-col justify-between p-6 sm:p-12 relative overflow-hidden bg-white dark:bg-[#07050a] min-h-screen z-10">
+      {/* LEFT COLUMN: Clean Minimalist Authentication Form (40% width on desktop) */}
+      <div className="w-full col-span-10 lg:col-span-4 flex flex-col justify-between p-6 sm:p-12 relative overflow-hidden bg-white dark:bg-[#07050a] min-h-screen z-10 shrink-0">
         
         {/* Top bar controls */}
         <div className="w-full flex justify-between items-center z-20">
           <Link
             to="/"
-            className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-[#781f5a] dark:hover:text-[#eaacd2] transition-colors group"
+            className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-vault-accent transition-colors group"
           >
             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
             <span>Back to home</span>
@@ -359,16 +338,42 @@ export default function AuthLayout() {
           </button>
         </div>
 
+        {/* Mobile / Tablet Illustration (Visible ONLY on md and below) */}
+        <div className="flex lg:hidden w-full max-w-[280px] sm:max-w-[320px] mx-auto items-center justify-center py-6 z-10">
+          <SkeletonDeveloperVisualizer />
+        </div>
+
         {/* Form Container Card - Clean minimalist wrapper */}
-        <div className="my-auto py-8 flex justify-center items-center w-full">
+        <div className="my-auto py-4 sm:py-8 flex justify-center items-center w-full z-10">
           <div className="w-full max-w-md">
             <Outlet />
           </div>
         </div>
 
         {/* Footer copyright */}
-        <div className="text-center text-[11px] text-slate-400 dark:text-slate-500 z-10">
+        <div className="text-center text-[10px] font-semibold text-slate-450 dark:text-slate-500 z-10">
           &copy; {new Date().getFullYear()} EduVault AI. All institutional rights reserved.
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN: Premium Illustration (60% width on desktop, hidden on mobile but visible on desktop/tablet) */}
+      <div className="hidden lg:flex lg:col-span-6 flex-col justify-between items-center p-8 sm:p-12 relative overflow-hidden min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-[#0d1527] dark:via-[#090e18] dark:to-[#05070d] transition-colors duration-300 border-l border-slate-200 dark:border-white/5">
+        {/* Top Spacer */}
+        <div className="w-full h-8" />
+
+        {/* Centerpiece illustration */}
+        <div className="relative w-full flex-1 flex items-center justify-center z-10 py-4 max-w-[480px] aspect-square">
+          <SkeletonDeveloperVisualizer />
+        </div>
+
+        {/* Bottom text captions */}
+        <div className="text-center space-y-2.5 z-10 max-w-md pb-6">
+          <h2 className="text-2xl lg:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+            Empowering Academic Excellence.
+          </h2>
+          <p className="text-xs lg:text-sm font-semibold text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed opacity-90">
+            Securely manage database records, portfolios, and cohort grade diagnostics from your console.
+          </p>
         </div>
       </div>
 
