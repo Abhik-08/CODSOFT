@@ -24,12 +24,15 @@ const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Set local persistence for session retention
-try {
-  if (!isMockMode) {
+// Set local persistence for session retention
+if (isMockMode) {
+  console.warn('Firebase config is missing or placeholder values detected. Running in mock mode.');
+} else {
+  try {
     await setPersistence(auth, browserLocalPersistence);
+  } catch (err) {
+    console.error('Failed to set Firebase Auth persistence:', err);
   }
-} catch (err) {
-  console.error('Failed to set Firebase Auth persistence:', err);
 }
 
 export { auth, db, googleProvider };

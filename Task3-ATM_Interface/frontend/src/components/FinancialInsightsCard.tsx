@@ -25,7 +25,7 @@ const FinancialInsightsCard: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiService.get('/ai/insights');
+      const res = await apiService.get('/ai/insights', { timeout: 30000 });
       setData(res.data);
     } catch (err) {
       console.error('Error loading AI insights:', err);

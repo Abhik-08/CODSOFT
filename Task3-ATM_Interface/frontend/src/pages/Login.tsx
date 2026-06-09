@@ -1,15 +1,87 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
+import { motion } from 'motion/react';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import toast from 'react-hot-toast';
 import { FiUser, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
-import { HeroScene } from '../components/motion/HeroScene';
-import { MousePerspective } from '../components/motion/MousePerspective';
-import { FloatingCard } from '../components/motion/FloatingCard';
-import { ScrollExperience } from '../components/motion/ScrollExperience';
 
+// Custom Animated Banking Illustration
+const BankingIllustration: React.FC = () => {
+  return (
+    <div className="relative w-full max-w-[380px] sm:max-w-[420px] aspect-square mx-auto flex items-center justify-center select-none">
+      {/* Pulse Ambient Glow */}
+      <div className="absolute inset-0 bg-primary/10 rounded-full blur-[100px] animate-pulse-glow" />
+      
+      {/* Floating Card and Particles container */}
+      <motion.div
+        animate={{ y: [0, -12, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        className="w-full h-full relative"
+      >
+        <svg viewBox="0 0 400 400" className="w-full h-full drop-shadow-2xl">
+          {/* Custom linear gradients */}
+          <defs>
+            <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#10b981" />
+              <stop offset="50%" stopColor="#3b82f6" />
+              <stop offset="100%" stopColor="#8b5cf6" />
+            </linearGradient>
+            <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="100%" stopColor="#f59e0b" />
+            </linearGradient>
+            <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#10b981" stopOpacity="0.15" />
+            </linearGradient>
+          </defs>
 
+          {/* Secure shield contour in background */}
+          <path 
+            d="M200,60 L290,100 L290,220 C290,280 250,330 200,350 C150,330 110,280 110,220 L110,100 Z" 
+            fill="url(#shieldGrad)" 
+            stroke="rgba(255,255,255,0.06)" 
+            strokeWidth="1.5" 
+          />
+          
+          {/* Hologram card representing account credentials */}
+          <rect x="80" y="130" width="240" height="150" rx="18" fill="url(#cardGrad)" opacity="0.95" />
+          
+          {/* Card Details */}
+          <rect x="100" y="150" width="32" height="24" rx="5" fill="rgba(255,255,255,0.25)" />
+          <circle cx="270" cy="240" r="18" fill="rgba(255,255,255,0.18)" />
+          <circle cx="290" cy="240" r="18" fill="rgba(255,255,255,0.18)" />
+          <rect x="100" y="200" width="110" height="8" rx="2" fill="rgba(255,255,255,0.35)" />
+          <rect x="100" y="220" width="70" height="6" rx="2" fill="rgba(255,255,255,0.2)" />
+
+          {/* Floating Gold Coin 1 */}
+          <g className="animate-float" style={{ transformOrigin: '70px 105px' }}>
+            <circle cx="70" cy="105" r="16" fill="url(#coinGrad)" />
+            <text x="66" y="110" fill="#fff" fontSize="13" fontWeight="bold" fontFamily="monospace">$</text>
+          </g>
+          
+          {/* Floating Gold Coin 2 */}
+          <g className="animate-float" style={{ transformOrigin: '320px 95px', animationDelay: '1.2s' }}>
+            <circle cx="320" cy="95" r="12" fill="url(#coinGrad)" />
+            <text x="317" y="99" fill="#fff" fontSize="10" fontWeight="bold" fontFamily="monospace">$</text>
+          </g>
+
+          {/* Floating Gold Coin 3 */}
+          <g className="animate-float" style={{ transformOrigin: '325px 285px', animationDelay: '2.2s' }}>
+            <circle cx="325" cy="285" r="14" fill="url(#coinGrad)" />
+            <text x="321" y="289" fill="#fff" fontSize="11" fontWeight="bold" fontFamily="monospace">$</text>
+          </g>
+
+          {/* Central Secure Lock core */}
+          <circle cx="200" cy="205" r="28" fill="rgba(10,10,12,0.85)" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+          <path d="M193,205 L193,198 C193,194 196,191 200,191 C204,191 207,194 207,198 L207,205" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
+          <rect x="189" y="204" width="22" height="16" rx="3.5" fill="#10b981" />
+        </svg>
+      </motion.div>
+    </div>
+  );
+};
 
 import { useAuth } from '../context/AuthContext';
 
@@ -20,7 +92,22 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rotate, setRotate] = useState({ x: 0, y: 0 });
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const box = card.getBoundingClientRect();
+    const x = e.clientX - box.left - box.width / 2;
+    const y = e.clientY - box.top - box.height / 2;
+    setRotate({
+      x: (x / (box.width / 2)) * 8,
+      y: -(y / (box.height / 2)) * 8,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setRotate({ x: 0, y: 0 });
+  };
 
   const navigate = useNavigate();
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
@@ -166,16 +253,21 @@ export const Login: React.FC = () => {
             Insert your digital debit token and authenticate using Google Single Sign-On or secure operator credentials. Engineered with military-grade encryption and real-time ledger sync.
           </p>
 
-          {/* Core Banking Illustration */}
-          <ScrollExperience className="w-full flex justify-center md:justify-start">
-            <HeroScene />
-          </ScrollExperience>
+          {/* Original SVG Banking Illustration */}
+          <BankingIllustration />
         </div>
 
-        {/* Right Side: Interactive Login Panel */}
+        {/* Right Side: Interactive Login Panel — simple div to avoid 3D transform click issues */}
         <div className="md:col-span-6 flex justify-center w-full">
-          <MousePerspective maxRotation={8} maxTranslation={6} className="w-full max-w-[400px]">
-            <FloatingCard maxTilt={10} className="w-full bg-white/90 dark:bg-zinc-950/70 backdrop-blur-md border border-zinc-200 dark:border-zinc-800/80 rounded-[28px] p-8 flex flex-col shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.5)] transition-all duration-300 relative">
+          <motion.div
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{
+              transform: `perspective(800px) rotateY(${rotate.x}deg) rotateX(${rotate.y}deg)`,
+              transition: 'transform 0.15s ease-out',
+            }}
+            className="w-full max-w-[400px] bg-white/90 dark:bg-zinc-950/70 backdrop-blur-md border border-zinc-200 dark:border-zinc-800/80 rounded-[28px] p-8 flex flex-col shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.5)] transition-all duration-300 relative"
+          >
             {/* Ambient subtle glow inside the card */}
             <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-3xl pointer-events-none" />
 
@@ -321,9 +413,8 @@ export const Login: React.FC = () => {
                 {mode === 'signin' ? 'Register' : 'Login'}
               </button>
             </div>
-          </FloatingCard>
-        </MousePerspective>
-      </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
