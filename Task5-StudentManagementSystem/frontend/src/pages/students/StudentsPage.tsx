@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Plus, Search, Trash2, Eye, X, AlertCircle } from 'lucide-react'
 import { useStudents } from '../../hooks/useStudents'
-import { studentService } from '../../services/studentService'
 import type { Student } from '../../types/student'
 
 export default function StudentsPage() {
-  const { students, loading } = useStudents()
+  const { students, loading, addStudent, deleteStudent, bulkDelete } = useStudents()
   const navigate = useNavigate()
-  const [studentList, setStudentList] = useState<Student[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -29,13 +27,6 @@ export default function StudentsPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Sync hook students to local state
-  useEffect(() => {
-    if (students && students.length > 0) {
-      setStudentList(students)
-    }
-  }, [students])
-
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       setSelectedIds(filteredStudents.map(s => s.id))
@@ -53,13 +44,10 @@ export default function StudentsPage() {
   const handleBulkDelete = async () => {
     if (!globalThis.confirm(`Are you sure you want to remove the ${selectedIds.length} selected student records?`)) return
     try {
-      await Promise.all(selectedIds.map(id => studentService.delete(id)))
-      setStudentList(prev => prev.filter(s => !selectedIds.includes(s.id)))
+      await bulkDelete(selectedIds)
       setSelectedIds([])
     } catch (err) {
-      console.warn('Bulk delete API fallback:', err)
-      setStudentList(prev => prev.filter(s => !selectedIds.includes(s.id)))
-      setSelectedIds([])
+      console.error('Bulk delete error:', err)
     }
   }
 
@@ -70,7 +58,7 @@ export default function StudentsPage() {
   }
 
   // Filter students based on search query, department, and status
-  const filteredStudents = studentList.filter((s) => {
+  const filteredStudents = students.filter((s) => {
     const query = searchQuery.toLowerCase().trim()
     const matchesSearch = !query || (
       s.firstName.toLowerCase().includes(query) ||
@@ -84,7 +72,7 @@ export default function StudentsPage() {
     return matchesSearch && matchesDept && matchesStatus
   })
 
-  // Handle student creation
+  // Handle student creation — writes to Firestore, onSnapshot updates UI
   const handleAddStudent = async (e: React.SyntheticEvent) => {
     e.preventDefault()
     if (!firstName || !lastName || !email || !enrollmentNumber || !dateOfBirth) {
@@ -95,60 +83,37 @@ export default function StudentsPage() {
     setIsSubmitting(true)
     setFormError(null)
 
-    const newStudentData = {
-      firstName,
-      lastName,
-      email,
-      enrollmentNumber,
-      dateOfBirth,
-      department,
-      semester: Number(semester),
-      status,
-      imageUrl: ''
-    }
-
     try {
-      // Try calling backend API
-      const createdStudent = await studentService.create(newStudentData)
-      // Append the computed/returned GPA if any
-      const fullStudent: Student = {
-        ...createdStudent,
+      await addStudent({
+        firstName,
+        lastName,
+        email,
+        enrollmentNumber,
+        dateOfBirth,
+        department,
+        semester: Number(semester),
+        status,
         gpa: Number(gpa) || 8,
-        grades: [],
-        attendance: []
-      }
-      setStudentList((prev) => [fullStudent, ...prev])
+        imageUrl: ''
+      })
       setIsAddModalOpen(false)
       resetForm()
     } catch (err: any) {
-      console.warn('Backend API create failed, falling back to local state append:', err)
-      // Local Sandbox Fallback
-      const fallbackStudent: Student = {
-        id: Date.now().toString(),
-        ...newStudentData,
-        gpa: Number(gpa) || 8,
-        grades: [],
-        attendance: []
-      }
-      setStudentList((prev) => [fallbackStudent, ...prev])
-      setIsAddModalOpen(false)
-      resetForm()
+      console.error('Firestore add student error:', err)
+      setFormError('Failed to register student. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Handle student deletion
+  // Handle student deletion — Firestore delete, onSnapshot updates UI
   const handleDeleteStudent = async (id: string) => {
     if (!globalThis.confirm('Are you sure you want to remove this student from the registry?')) return
 
     try {
-      await studentService.delete(id)
-      setStudentList((prev) => prev.filter((s) => s.id !== id))
+      await deleteStudent(id)
     } catch (err: any) {
-      console.warn('Backend API delete failed, falling back to local state removal:', err)
-      // Local Sandbox Fallback
-      setStudentList((prev) => prev.filter((s) => s.id !== id))
+      console.error('Firestore delete student error:', err)
     }
   }
 

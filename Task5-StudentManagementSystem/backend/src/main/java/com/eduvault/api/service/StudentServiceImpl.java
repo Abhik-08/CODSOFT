@@ -58,6 +58,8 @@ public class StudentServiceImpl implements StudentService {
         student.setStatus(studentDto.getStatus());
         student.setImageUrl(studentDto.getImageUrl());
         student.setGpa(studentDto.getGpa());
+        student.setAttendance(studentDto.getAttendance());
+        student.setPlacementReady(studentDto.getPlacementReady());
 
         Student updatedStudent = studentRepository.save(student);
         return convertToDto(updatedStudent);
@@ -68,6 +70,17 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MSG + id));
         studentRepository.delete(student);
+    }
+
+    @Override
+    public List<StudentDto> searchStudents(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return getAllStudents();
+        }
+        return studentRepository.findByLastNameContainingIgnoreCaseOrFirstNameContainingIgnoreCase(query, query)
+                .stream()
+                .map(this::convertToDto)
+                .toList();
     }
 
     private StudentDto convertToDto(Student student) {
@@ -83,6 +96,8 @@ public class StudentServiceImpl implements StudentService {
         dto.setStatus(student.getStatus());
         dto.setImageUrl(student.getImageUrl());
         dto.setGpa(student.getGpa());
+        dto.setAttendance(student.getAttendance());
+        dto.setPlacementReady(student.getPlacementReady());
         return dto;
     }
 
@@ -99,6 +114,8 @@ public class StudentServiceImpl implements StudentService {
                 .status(dto.getStatus())
                 .imageUrl(dto.getImageUrl())
                 .gpa(dto.getGpa())
+                .attendance(dto.getAttendance())
+                .placementReady(dto.getPlacementReady())
                 .build();
     }
 }

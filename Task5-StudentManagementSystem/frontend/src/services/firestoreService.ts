@@ -1,16 +1,33 @@
-import { doc, getDoc, setDoc, collection, serverTimestamp } from 'firebase/firestore'
+import {
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  serverTimestamp,
+  writeBatch
+} from 'firebase/firestore'
 import { db } from '../firebase/firebase'
 import type { User, FirestoreUser } from '../types/auth'
+import type { Student } from '../types/student'
 
-// Reusable Collection References
+// ─── Collection References ───────────────────────────────────────────
 export const usersCollection = collection(db, 'users')
 export const studentsCollection = collection(db, 'students')
+export const portfoliosCollection = collection(db, 'portfolios')
 
 /**
  * Firestore Service Layer
  * Reusable database operations for EduVault AI.
  */
 export const firestoreService = {
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  USER OPERATIONS (existing — unchanged)
+  // ═══════════════════════════════════════════════════════════════════
+
   /**
    * Syncs user login details to the 'users' Firestore collection
    */
@@ -108,5 +125,77 @@ export const firestoreService = {
       console.error('Error in getUserProfile:', err)
       return null
     }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  STUDENT OPERATIONS
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Adds a new student document to Firestore
+   */
+  async addStudent(student: Omit<Student, 'id'>): Promise<string> {
+    const docRef = await addDoc(studentsCollection, {
+      ...student,
+      createdAt: serverTimestamp()
+    })
+    return docRef.id
+  },
+
+  /**
+   * Updates an existing student document
+   */
+  async updateStudent(id: string, data: Partial<Student>): Promise<void> {
+    const studentRef = doc(db, 'students', id)
+    await updateDoc(studentRef, { ...data, updatedAt: serverTimestamp() })
+  },
+
+  /**
+   * Deletes a single student document
+   */
+  async deleteStudent(id: string): Promise<void> {
+    const studentRef = doc(db, 'students', id)
+    await deleteDoc(studentRef)
+  },
+
+  /**
+   * Bulk deletes multiple student documents in a batch
+   */
+  async bulkDeleteStudents(ids: string[]): Promise<void> {
+    const batch = writeBatch(db)
+    ids.forEach((id) => {
+      const studentRef = doc(db, 'students', id)
+      batch.delete(studentRef)
+    })
+    await batch.commit()
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  PORTFOLIO OPERATIONS
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Adds a new portfolio document to Firestore
+   */
+  async addPortfolio(portfolio: {
+    studentName: string
+    template: string
+    theme: string
+    deployed: boolean
+    deployUrl?: string
+  }): Promise<string> {
+    const docRef = await addDoc(portfoliosCollection, {
+      ...portfolio,
+      createdAt: serverTimestamp()
+    })
+    return docRef.id
+  },
+
+  /**
+   * Updates an existing portfolio document
+   */
+  async updatePortfolio(id: string, data: Record<string, unknown>): Promise<void> {
+    const portfolioRef = doc(db, 'portfolios', id)
+    await updateDoc(portfolioRef, data)
   }
 }

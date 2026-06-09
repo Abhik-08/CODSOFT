@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   GitBranch
 } from 'lucide-react'
+import { usePortfolios } from '../../hooks/usePortfolios'
 
 // Helper classes for preview themes styling
 const getThemeClass = (theme: string) => {
@@ -144,22 +145,22 @@ export default function PortfolioPage() {
   const [selectedTheme, setSelectedTheme] = useState('emerald')
   const [selectedTemplate, setSelectedTemplate] = useState('Developer')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedPortfolios, setGeneratedPortfolios] = useState([
-    { name: 'Sarah Jenkins', template: 'Developer', theme: 'Obsidian', date: '2026-06-08' },
-    { name: 'Marcus Lee', template: 'AI Engineer', theme: 'Cyberpunk', date: '2026-06-07' }
-  ])
+
+  // Firestore-backed portfolios
+  const { portfolios, addPortfolio, markDeployed } = usePortfolios()
+
   const [newStudentName, setNewStudentName] = useState('Anya Patel')
   const [deployingId, setDeployingId] = useState<string | null>(null)
-  const [deployedPortfolios, setDeployedPortfolios] = useState<string[]>([])
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  const handleDeploy = (name: string) => {
-    setDeployingId(name)
+  const handleDeploy = (portfolio: { id: string; studentName: string }) => {
+    setDeployingId(portfolio.id)
     setTimeout(() => {
+      const deployUrl = `https://${portfolio.studentName.toLowerCase().replace(/\s+/g, '-')}.eduvault.app`
+      markDeployed(portfolio.id, deployUrl)
       setDeployingId(null)
-      setDeployedPortfolios(prev => [...prev, name])
-      alert(`Portfolio deployed successfully!\nLive URL: https://${name.toLowerCase().replace(/\s+/g, '-')}.eduvault.app`)
+      alert(`Portfolio deployed successfully!\nLive URL: ${deployUrl}`)
     }, 1500)
   }
 
@@ -167,11 +168,11 @@ export default function PortfolioPage() {
     alert(`Generating artifact bundle for ${name}...\nDownloaded: ${name.toLowerCase().replace(/\s+/g, '-')}-portfolio.zip`)
   }
 
-  const renderDeployButtonContent = (name: string) => {
-    if (deployingId === name) {
+  const renderDeployButtonContent = (portfolio: { id: string; deployed: boolean }) => {
+    if (deployingId === portfolio.id) {
       return <span className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
     }
-    if (deployedPortfolios.includes(name)) {
+    if (portfolio.deployed) {
       return (
         <>
           <Check size={9} />
@@ -202,19 +203,22 @@ export default function PortfolioPage() {
     { id: 'minimalist', label: 'Mono Minimalist', primary: '#0f172a', desc: 'Stark black-and-white print layout.' }
   ]
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true)
-    setTimeout(() => {
-      setIsGenerating(false)
-      const date = new Date().toISOString().split('T')[0]
-      setGeneratedPortfolios(prev => [
-        { name: newStudentName, template: selectedTemplate, theme: selectedTheme.toUpperCase(), date },
-        ...prev
-      ])
+    try {
+      await addPortfolio({
+        studentName: newStudentName,
+        template: selectedTemplate,
+        theme: selectedTheme.toUpperCase()
+      })
       setToastMessage(`VERIFIABLE BUNDLE: Completed portfolio compiling for ${newStudentName} using the ${selectedTemplate} template.`)
       setShowToast(true)
       setTimeout(() => setShowToast(false), 3800)
-    }, 2000)
+    } catch (err) {
+      console.error('Failed to create portfolio:', err)
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   // Get dynamic mock preview elements
@@ -446,96 +450,102 @@ export default function PortfolioPage() {
 
       </div>
 
-      {/* SECTION D: Stored Portfolios Gallery */}
+      {/* SECTION D: Stored Portfolios Gallery — from Firestore */}
       <div className="vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-pink-400" />
           <span>Section D: Portfolio Studio Gallery</span>
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {generatedPortfolios.map((item) => (
-            <motion.div
-              key={`${item.name}-${item.template}`}
-              whileHover={{ y: -4 }}
-              className="vault-glass rounded-2xl border border-slate-200/80 dark:border-white/5 overflow-hidden flex flex-col justify-between shadow-sm hover:border-vault-cyan/30 transition-all duration-300 relative group p-3.5"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-vault-cyan/5 to-vault-accent/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -z-10" />
+        {portfolios.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-xs text-slate-400 font-semibold">No portfolios generated yet. Use the compiler above to create your first one.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {portfolios.map((item) => (
+              <motion.div
+                key={item.id}
+                whileHover={{ y: -4 }}
+                className="vault-glass rounded-2xl border border-slate-200/80 dark:border-white/5 overflow-hidden flex flex-col justify-between shadow-sm hover:border-vault-cyan/30 transition-all duration-300 relative group p-3.5"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-vault-cyan/5 to-vault-accent/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -z-10" />
 
-              {/* Browser Preview Frame */}
-              <div className={`w-full h-24 rounded-lg border flex flex-col overflow-hidden mb-3.5 relative ${getGalleryBrowserClass(item.theme)}`}>
-                <div className="h-5 border-b border-slate-200/40 dark:border-white/5 bg-slate-50/20 dark:bg-white/5 px-2 flex items-center gap-1">
-                  <div className="h-1.5 w-1.5 rounded-full bg-red-400/70" />
-                  <div className="h-1.5 w-1.5 rounded-full bg-yellow-400/70" />
-                  <div className="h-1.5 w-1.5 rounded-full bg-green-400/70" />
-                </div>
-                <div className="flex-1 p-2 flex flex-col justify-between text-left">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h5 className="text-[10px] font-bold tracking-tight">{item.name}</h5>
-                      <span className="text-[6.5px] px-1 py-0.2 bg-slate-200/30 dark:bg-white/5 border border-slate-300/30 rounded font-mono uppercase mt-0.5 inline-block">
-                        {item.template}
-                      </span>
+                {/* Browser Preview Frame */}
+                <div className={`w-full h-24 rounded-lg border flex flex-col overflow-hidden mb-3.5 relative ${getGalleryBrowserClass(item.theme)}`}>
+                  <div className="h-5 border-b border-slate-200/40 dark:border-white/5 bg-slate-50/20 dark:bg-white/5 px-2 flex items-center gap-1">
+                    <div className="h-1.5 w-1.5 rounded-full bg-red-400/70" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-yellow-400/70" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-400/70" />
+                  </div>
+                  <div className="flex-1 p-2 flex flex-col justify-between text-left">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h5 className="text-[10px] font-bold tracking-tight">{item.studentName}</h5>
+                        <span className="text-[6.5px] px-1 py-0.2 bg-slate-200/30 dark:bg-white/5 border border-slate-300/30 rounded font-mono uppercase mt-0.5 inline-block">
+                          {item.template}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-[6.5px] opacity-55 pt-1 border-t border-slate-200/20 dark:border-white/5">
+                      <span>Verified Badge</span>
+                      <span className="font-mono">v1.2</span>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-[6.5px] opacity-55 pt-1 border-t border-slate-200/20 dark:border-white/5">
-                    <span>Verified Badge</span>
-                    <span className="font-mono">v1.2</span>
+                </div>
+
+                {/* Student Details info */}
+                <div className="space-y-1 text-left px-1">
+                  <p className="text-xs font-black text-slate-800 dark:text-white truncate">{item.studentName}</p>
+                  
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">{item.template}</span>
+                    <span className={`text-[8px] font-black font-mono px-1.5 py-0.2 rounded uppercase tracking-wider ${getGalleryPillClass(item.theme)}`}>
+                      {item.theme}
+                    </span>
                   </div>
+                  
+                  <p className="text-[9px] font-semibold text-slate-450 dark:text-slate-500 mt-1">Compiled: {item.createdAt}</p>
                 </div>
-              </div>
 
-              {/* Student Details info */}
-              <div className="space-y-1 text-left px-1">
-                <p className="text-xs font-black text-slate-800 dark:text-white truncate">{item.name}</p>
-                
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">{item.template}</span>
-                  <span className={`text-[8px] font-black font-mono px-1.5 py-0.2 rounded uppercase tracking-wider ${getGalleryPillClass(item.theme)}`}>
-                    {item.theme}
-                  </span>
+                {/* Action Buttons */}
+                <div className="grid grid-cols-3 gap-1.5 mt-3.5 px-0.5">
+                  <button 
+                    className="flex items-center justify-center gap-0.5 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-350 rounded-lg font-bold text-[9px] cursor-pointer transition-colors"
+                    onClick={() => {
+                      setNewStudentName(item.studentName)
+                      setSelectedTemplate(item.template)
+                      setSelectedTheme(item.theme.toLowerCase())
+                    }}
+                    title="Load in Preview"
+                  >
+                    <span>Preview</span>
+                  </button>
+                  
+                  <button 
+                    className="flex items-center justify-center gap-0.5 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-350 rounded-lg font-bold text-[9px] cursor-pointer transition-colors"
+                    onClick={() => handleDownloadZip(item.studentName)}
+                  >
+                    <Download size={9} />
+                    <span>ZIP</span>
+                  </button>
+
+                  <button 
+                    className={`flex items-center justify-center gap-0.5 py-1.5 rounded-lg font-extrabold text-[9px] cursor-pointer transition-all ${
+                      item.deployed
+                        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-black'
+                        : 'bg-vault-accent hover:opacity-95 text-white border border-vault-accent/20'
+                    }`}
+                    onClick={() => handleDeploy(item)}
+                    disabled={deployingId === item.id}
+                  >
+                    {renderDeployButtonContent(item)}
+                  </button>
                 </div>
-                
-                <p className="text-[9px] font-semibold text-slate-450 dark:text-slate-500 mt-1">Compiled: {item.date}</p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="grid grid-cols-3 gap-1.5 mt-3.5 px-0.5">
-                <button 
-                  className="flex items-center justify-center gap-0.5 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-350 rounded-lg font-bold text-[9px] cursor-pointer transition-colors"
-                  onClick={() => {
-                    setNewStudentName(item.name)
-                    setSelectedTemplate(item.template)
-                    setSelectedTheme(item.theme.toLowerCase())
-                  }}
-                  title="Load in Preview"
-                >
-                  <span>Preview</span>
-                </button>
-                
-                <button 
-                  className="flex items-center justify-center gap-0.5 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-350 rounded-lg font-bold text-[9px] cursor-pointer transition-colors"
-                  onClick={() => handleDownloadZip(item.name)}
-                >
-                  <Download size={9} />
-                  <span>ZIP</span>
-                </button>
-
-                <button 
-                  className={`flex items-center justify-center gap-0.5 py-1.5 rounded-lg font-extrabold text-[9px] cursor-pointer transition-all ${
-                    deployedPortfolios.includes(item.name)
-                      ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-black'
-                      : 'bg-vault-accent hover:opacity-95 text-white border border-vault-accent/20'
-                  }`}
-                  onClick={() => handleDeploy(item.name)}
-                  disabled={deployingId === item.name}
-                >
-                  {renderDeployButtonContent(item.name)}
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
       <AnimatePresence>

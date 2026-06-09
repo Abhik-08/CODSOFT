@@ -221,6 +221,16 @@ export default function DashboardPage() {
   const placementReadyCount = students.filter(s => s.gpa >= 8.5).length
   const placementRate = totalStudents > 0 ? Math.round((placementReadyCount / totalStudents) * 100) : 0
 
+  // Calculate attendance dynamically from student records
+  const attendanceStats = students.map(s => {
+    if (!s.attendance || s.attendance.length === 0) return 100 // no records = assume 100%
+    const presentCount = s.attendance.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length
+    return (presentCount / s.attendance.length) * 100
+  })
+  const avgAttendance = totalStudents > 0
+    ? Number((attendanceStats.reduce((sum, a) => sum + a, 0) / totalStudents).toFixed(1))
+    : 0
+
   const skills = ["Machine Learning", "Fullstack Development", "Cloud Architecting", "Embedded Systems"]
   const mostCommonSkill = skills[0]
 
@@ -398,11 +408,11 @@ export default function DashboardPage() {
           <div className="flex justify-between items-end text-left">
             <div>
               <h3 className="text-2xl font-black tracking-tight">
-                <AnimatedCount value={94.2} suffix="%" />
+                <AnimatedCount value={avgAttendance} suffix="%" />
               </h3>
-              <span className="text-[9.5px] font-bold text-emerald-500 flex items-center gap-0.5"><TrendingUp size={10} /> +0.4%</span>
+              <span className="text-[9.5px] font-bold text-emerald-500 flex items-center gap-0.5"><TrendingUp size={10} /> Live</span>
             </div>
-            <Sparkline points={[93.1, 93.5, 93.8, 94, 94.2]} stroke="var(--color-vault-cyan)" />
+            <Sparkline points={[avgAttendance * 0.97, avgAttendance * 0.98, avgAttendance * 0.99, avgAttendance, avgAttendance]} stroke="var(--color-vault-cyan)" />
           </div>
         </motion.div>
 

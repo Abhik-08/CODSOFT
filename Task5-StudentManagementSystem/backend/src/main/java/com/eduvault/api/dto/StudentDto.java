@@ -38,4 +38,6 @@ public class StudentDto {
 
     private String imageUrl;
     private Double gpa;
+    private Double attendance;
+    private Boolean placementReady;
 }

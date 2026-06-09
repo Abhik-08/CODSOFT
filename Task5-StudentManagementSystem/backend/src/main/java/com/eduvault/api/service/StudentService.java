@@ -9,4 +9,5 @@ public interface StudentService {
     StudentDto createStudent(StudentDto studentDto);
     StudentDto updateStudent(Long id, StudentDto studentDto);
     void deleteStudent(Long id);
+    List<StudentDto> searchStudents(String query);
 }
