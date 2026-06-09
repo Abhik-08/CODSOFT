@@ -167,7 +167,7 @@ export const useStudents = () => {
   const addStudent = async (student: Omit<Student, 'id' | 'grades' | 'attendance'> & { gpa?: number }) => {
     const payload: Omit<Student, 'id'> = {
       ...student,
-      gpa: student.gpa ?? 8.0,
+      gpa: student.gpa ?? 8,
       grades: [],
       attendance: []
     }
