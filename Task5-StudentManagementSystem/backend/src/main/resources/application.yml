@@ -6,6 +6,10 @@ server:
 spring:
   application:
     name: eduvault-api
+  test:
+    mockmvc:
+      servlet:
+        context-path: /api
   
   datasource:
     url: jdbc:h2:mem:eduvaultdb;DB_CLOSE_DELAY=-1

@@ -14,6 +14,12 @@ export interface Attendance {
   remarks?: string;
 }
 
+export interface SemesterData {
+  semesterName: string;
+  gpa: number;
+  courses: string[];
+}
+
 export interface Student {
   id: string;
   firstName: string;
@@ -28,4 +34,6 @@ export interface Student {
   attendance: Attendance[];
   imageUrl?: string;
   gpa: number;
+  attendanceRate?: number;
+  semesters?: SemesterData[];
 }

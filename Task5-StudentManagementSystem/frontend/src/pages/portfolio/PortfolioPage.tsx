@@ -1,566 +1,1561 @@
-import { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { 
-  Code, 
-  BarChart3, 
-  Brain, 
-  Palette, 
-  Sparkles, 
   Globe, 
   Download, 
   Play, 
   Check, 
-  Laptop,
-  CheckCircle2,
-  GitBranch
+  CheckCircle2, 
+  GitBranch,
+  Plus,
+  Trash2,
+  Edit3,
+  Copy,
+  ArrowLeft,
+  ExternalLink,
+  Award,
+  FileText
 } from 'lucide-react'
 import { usePortfolios } from '../../hooks/usePortfolios'
+import { useStudents } from '../../hooks/useStudents'
+import { useAuthContext } from '../../context/AuthContext'
+import type { Portfolio, ProjectItem, AchievementItem, CertificateItem } from '../../types/portfolio'
 
-// Helper classes for preview themes styling
+// Define the 5 Premium Themes Styling
 const getThemeClass = (theme: string) => {
-  switch (theme) {
-    case 'obsidian': 
+  const t = theme.toLowerCase()
+  switch (t) {
+    case 'nexus dark': 
       return {
-        bg: 'bg-[#080d19] text-emerald-400 border-emerald-500/20',
-        card: 'bg-emerald-500/5 border-emerald-500/10 text-slate-300',
+        bg: 'bg-[#080d19] text-emerald-400 border-emerald-500/20 font-mono',
+        card: 'bg-emerald-950/20 border-emerald-500/20 text-slate-355',
+        pill: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+        textAccent: 'text-emerald-400',
+        button: 'bg-emerald-500 hover:bg-emerald-600 text-[#080d19]',
+        avatar: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
+        title: 'text-emerald-400 font-mono font-black uppercase'
+      }
+    case 'aurora glass':
+      return {
+        bg: 'bg-gradient-to-br from-[#120c1f] via-[#1a0e35] to-[#120c1f] text-violet-300 border-violet-500/20 font-sans',
+        card: 'backdrop-blur-md bg-white/5 border border-white/10 text-violet-200/90 shadow-lg shadow-violet-950/25',
+        pill: 'bg-violet-500/20 text-violet-300 border border-violet-500/30',
+        textAccent: 'text-pink-400',
+        button: 'bg-gradient-to-r from-violet-555 to-pink-500 text-white',
+        avatar: 'border-violet-500/30 text-violet-300 bg-violet-500/10',
+        title: 'text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-pink-300 font-extrabold'
+      }
+    case 'quantum blue':
+      return {
+        bg: 'bg-[#09111e] text-cyan-400 border-cyan-500/20 font-sans',
+        card: 'bg-cyan-950/15 border border-cyan-500/20 text-slate-300',
+        pill: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20',
+        textAccent: 'text-cyan-400',
+        button: 'bg-cyan-500 text-black hover:bg-cyan-600',
+        avatar: 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10',
+        title: 'text-cyan-300 font-black'
+      }
+    case 'minimal elite':
+      return {
+        bg: 'bg-white text-stone-900 border-stone-300 font-serif',
+        card: 'bg-stone-50 border border-stone-200 text-stone-750 shadow-sm',
+        pill: 'bg-stone-100 text-stone-850 border border-stone-300 font-sans',
+        textAccent: 'text-stone-900 font-bold',
+        button: 'bg-stone-900 text-white hover:bg-stone-800 font-sans',
+        avatar: 'border-stone-300 text-stone-700 bg-stone-100',
+        title: 'text-stone-900 font-serif italic font-extrabold'
+      }
+    case 'creative pulse':
+      return {
+        bg: 'bg-[#0c050f] text-orange-400 border-orange-500/20 font-sans',
+        card: 'bg-orange-500/5 border border-orange-555/15 text-orange-200',
+        pill: 'bg-orange-500/10 text-orange-400 border border-orange-500/20 font-mono',
+        textAccent: 'text-orange-400',
+        button: 'bg-orange-500 text-black font-extrabold hover:bg-orange-600',
+        avatar: 'border-orange-500/30 text-orange-400 bg-orange-500/10',
+        title: 'text-orange-400 font-black tracking-wide'
+      }
+    default:
+      return {
+        bg: 'bg-[#080d19] text-emerald-400 border-emerald-500/20 font-mono',
+        card: 'bg-emerald-950/20 border-emerald-500/20 text-slate-355',
         pill: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
         textAccent: 'text-emerald-400',
         button: 'bg-emerald-500 text-[#080d19]',
-        avatar: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
-      }
-    case 'cyberpunk':
-      return {
-        bg: 'bg-[#120720] text-pink-400 border-pink-500/20 font-sans',
-        card: 'bg-pink-500/5 border-pink-500/10 text-slate-300',
-        pill: 'bg-pink-500/10 text-pink-400 border border-pink-500/20 font-mono',
-        textAccent: 'text-pink-400',
-        button: 'bg-pink-500 text-white',
-        avatar: 'border-pink-500/30 text-pink-400 bg-pink-500/10'
-      }
-    case 'minimalist':
-      return {
-        bg: 'bg-white text-slate-900 border-slate-300 font-serif',
-        card: 'bg-slate-50 border-slate-200 text-slate-700',
-        pill: 'bg-slate-100 text-slate-800 border border-slate-300',
-        textAccent: 'text-slate-900',
-        button: 'bg-slate-900 text-white',
-        avatar: 'border-slate-300 text-slate-700 bg-slate-100'
-      }
-    default: // emerald / standard
-      return {
-        bg: 'bg-slate-50 dark:bg-[#061811] text-emerald-600 dark:text-emerald-400 border-emerald-500/10',
-        card: 'bg-white dark:bg-[#092218] border-slate-200 dark:border-emerald-500/10 text-slate-700 dark:text-slate-300',
-        pill: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20',
-        textAccent: 'text-emerald-600 dark:text-emerald-400',
-        button: 'bg-emerald-500 text-white',
-        avatar: 'border-emerald-500/20 text-emerald-500 bg-emerald-500/10'
+        avatar: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
+        title: 'text-emerald-400 font-mono font-black uppercase'
       }
   }
 }
 
-// Stored portfolios browser mockup styling
 const getGalleryBrowserClass = (theme: string) => {
   const t = theme.toLowerCase()
-  if (t === 'obsidian') return 'bg-[#0b1329] border-emerald-500/20 text-emerald-400'
-  if (t === 'cyberpunk') return 'bg-[#1b1130] border-pink-500/20 text-pink-400'
-  if (t === 'emerald') return 'bg-slate-50 dark:bg-[#051c12] border-emerald-500/20 text-emerald-500'
-  return 'bg-white dark:bg-[#070b14]/70 border-slate-200 dark:border-white/5 text-slate-800 dark:text-slate-300'
+  switch (t) {
+    case 'nexus dark':
+      return 'bg-[#0b1329] border-emerald-500/20 text-emerald-400 font-mono'
+    case 'aurora glass':
+      return 'bg-[#1b1130] border-violet-500/20 text-violet-300'
+    case 'quantum blue':
+      return 'bg-[#0a182b] border-cyan-500/20 text-cyan-400'
+    case 'minimal elite':
+      return 'bg-stone-50 border-stone-300 text-stone-900 font-serif'
+    default:
+      return 'bg-[#1a0c16] border-orange-555/20 text-orange-400'
+  }
 }
 
 const getGalleryPillClass = (theme: string) => {
   const t = theme.toLowerCase()
-  if (t === 'obsidian') return 'bg-emerald-500/10 text-emerald-400'
-  if (t === 'cyberpunk') return 'bg-pink-500/10 text-pink-400'
-  if (t === 'emerald') return 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300'
-  return 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-350'
+  if (t === 'nexus dark') return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+  if (t === 'aurora glass') return 'bg-violet-500/10 text-violet-300 border border-violet-500/20'
+  if (t === 'quantum blue') return 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+  if (t === 'minimal elite') return 'bg-stone-100 text-stone-750 border border-stone-250'
+  if (t === 'creative pulse') return 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
+  return 'bg-slate-100 dark:bg-white/10 text-slate-500'
 }
 
-// Portfolio Dynamic Data mapping based on Template Selected
-const getTemplateMockData = (tpl: string) => {
-  switch (tpl) {
-    case 'Data Analyst':
-      return {
-        role: 'Data Analyst & Insights Architect',
-        bio: 'Extracting academic intelligence through structured dataset modeling, SQL analytics pipelines, and Tableau cohorts dashboarding.',
-        projects: [
-          { name: 'Cohort CGPA Progression Query', desc: 'Custom SQL view clustering student GPA drift factors.', stars: 14 },
-          { name: 'Graduation Readiness Dashboard', desc: 'Interactive visual scorecard projecting cohort placement parameters.', stars: 22 }
-        ],
-        badgeIcon: BarChart3
-      }
-    case 'AI Engineer':
-      return {
-        role: 'AI Engineer & Neural Architect',
-        bio: 'Designing predictive student diagnostics engines, Deep Learning regression models, and cohort attendance warning classifiers.',
-        projects: [
-          { name: 'Academic Diagnostic Classifier', desc: 'Predictive cohort grade model utilizing decision networks.', stars: 34 },
-          { name: 'Proactive Attendance Alert Pipeline', desc: 'System tracking attendance fluctuations and dispatching warnings.', stars: 28 }
-        ],
-        badgeIcon: Brain
-      }
-    case 'Creative':
-      return {
-        role: 'Creative UI & Interaction Developer',
-        bio: 'Designing premium student-facing registries, dark futuristic consoles, glassmorphic analytics cards, and micro-interactions.',
-        projects: [
-          { name: 'EduVault Command Console Layout', desc: 'Ultra-premium dashboard interface utilizing SVG nodes and orbits.', stars: 45 },
-          { name: 'Academic Orbit Portal Visualizer', desc: 'Dynamic visual map of institution metrics and active indicators.', stars: 52 }
-        ],
-        badgeIcon: Palette
-      }
-    case 'Research':
-      return {
-        role: 'Academic Researcher & Thesis Lead',
-        bio: 'Publishing academic research studies on educational diagnostic indicators, algorithmic evaluation metrics, and peer networks.',
-        projects: [
-          { name: 'Algorithmic Retention Analysis 2026', desc: 'Regression modeling paper predicting cohort dropout rates.', stars: 12 },
-          { name: 'Cognitive Diagnostic Indicators Research', desc: 'Investigation comparing neural networks against standard linear scores.', stars: 18 }
-        ],
-        badgeIcon: Sparkles
-      }
-    case 'Minimalist':
-      return {
-        role: 'Systems Engineer & Minimalist',
-        bio: 'Focusing on database constraints, clean typography density, raw system metrics, and robust API endpoints security.',
-        projects: [
-          { name: 'Institutional Registry Indexer', desc: 'High throughput query layer indexing 10k records in under 8ms.', stars: 19 },
-          { name: 'Session Authorization Guard', desc: 'Granular security headers protecting session tokens.', stars: 30 }
-        ],
-        badgeIcon: Laptop
-      }
-    default: // Developer
-      return {
-        role: 'Software Developer & Systems Architect',
-        bio: 'Building full-stack institutional student registry software using React, Spring Boot, PostgreSQL, and Firebase APIs.',
-        projects: [
-          { name: 'Verifiable Portfolio Compiler Engine', desc: 'Dynamic preview compiler compiling HTML templates on-the-fly.', stars: 41 },
-          { name: 'Multi-Role Session Authorization Guard', desc: 'Strict security boundaries checking registrar permissions.', stars: 27 }
-        ],
-        badgeIcon: Code
-      }
-  }
+// Sub-Component: Live Compiler Preview Panel
+interface PreviewProps {
+  formTheme: string;
+  formStudentId: string | number;
+  formTitle: string;
+  formSummary: string;
+  formSkills: string[];
+  formProjects: ProjectItem[];
+  formAchievements: AchievementItem[];
+  formCertificates: CertificateItem[];
+  formGithubUrl?: string;
+  formLinkedinUrl?: string;
+  formPortfolioName: string;
+  formTemplateType: string;
+  studentNameResolver: (sId: string | number) => string;
+  formAbout?: string;
+  formEmail?: string;
+  formPhone?: string;
+  formSocialLinks?: Record<string, string>;
+}
+
+const LivePreviewPanel: React.FC<PreviewProps> = ({
+  formTheme,
+  formStudentId,
+  formTitle,
+  formSummary,
+  formSkills,
+  formProjects,
+  formAchievements,
+  formCertificates,
+  formGithubUrl,
+  formLinkedinUrl,
+  formPortfolioName,
+  formTemplateType,
+  studentNameResolver,
+  formAbout,
+  formEmail,
+  formPhone,
+  formSocialLinks
+}) => {
+  const currentPreviewTheme = getThemeClass(formTheme)
+
+  return (
+    <div className="vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4 flex flex-col h-full justify-between">
+      <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+        <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+        <span>Live Compiler Preview ({formTheme})</span>
+      </h3>
+
+      <div className="flex-1 w-full border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-lg flex flex-col min-h-[440px] bg-[#070b14]/90">
+        
+        {/* Browser control bar */}
+        <div className="h-9 border-b border-slate-150 dark:border-white/5 bg-slate-50 dark:bg-white/5 px-3.5 flex items-center gap-2">
+          <div className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
+          <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/80" />
+          <div className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
+          <div className="h-5 flex-1 max-w-[250px] rounded bg-slate-200/50 dark:bg-white/5 flex items-center px-2">
+            <Globe size={9} className="text-slate-400 shrink-0" />
+            <span className="text-[7.5px] text-slate-400 truncate ml-1 font-mono">
+              http://localhost:3000/portfolios/{formPortfolioName.toLowerCase().replace(/\s+/g, '-')}
+            </span>
+          </div>
+        </div>
+
+        {/* Dynamic Theme Render Window */}
+        <div className={`flex-1 p-5 relative overflow-y-auto flex flex-col justify-between text-left transition-colors duration-300 text-[10px] leading-relaxed ${currentPreviewTheme.bg}`}>
+          <div className="space-y-4">
+            
+            {/* HERO & PROFILE */}
+            <div className="pb-3 border-b border-slate-200/20 dark:border-white/5 flex justify-between items-start gap-4">
+              <div className="space-y-1.5">
+                <h4 className={`text-base leading-tight ${currentPreviewTheme.title}`}>
+                  {studentNameResolver(formStudentId)}
+                </h4>
+                <p className="text-[9.5px] opacity-90 font-extrabold uppercase tracking-wide">
+                  {formTitle || 'Professional Title Layout'}
+                </p>
+                <span className={`text-[7.5px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${currentPreviewTheme.pill}`}>
+                  {formTemplateType} Template
+                </span>
+              </div>
+              <div className={`h-10 w-10 rounded-full border flex items-center justify-center font-black text-sm shrink-0 ${currentPreviewTheme.avatar}`}>
+                {studentNameResolver(formStudentId)[0] || 'U'}
+              </div>
+            </div>
+
+            {/* SUMMARY SECTION */}
+            {formSummary && (
+              <div className="space-y-1">
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-50 block">About Me</span>
+                <p className="opacity-80 leading-normal font-medium">{formSummary}</p>
+              </div>
+            )}
+
+            {/* DETAILED BIO SECTION */}
+            {formAbout && (
+              <div className="space-y-1 pt-1 border-t border-slate-200/10 dark:border-white/5">
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-50 block">Detailed Biography</span>
+                <p className="opacity-85 leading-normal font-medium whitespace-pre-line">{formAbout}</p>
+              </div>
+            )}
+
+            {/* SKILLS SECTION */}
+            {formSkills.length > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-50 block">Core Competencies</span>
+                <div className="flex flex-wrap gap-1">
+                  {formSkills.map((sk) => (
+                    <span key={sk} className={`text-[8px] font-black px-1.5 py-0.2 rounded ${currentPreviewTheme.pill}`}>
+                      {sk}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* PROJECTS SECTION */}
+            {formProjects.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-50 block">Featured Project Works</span>
+                <div className="space-y-1.5">
+                  {formProjects.map((p, idx) => (
+                    <div key={`${p.title}-${idx}`} className={`p-2.5 rounded-xl ${currentPreviewTheme.card}`}>
+                      <div className="flex justify-between items-center font-bold">
+                        <span className="text-[10px] font-black flex items-center gap-1.5">
+                          <GitBranch size={9} className="text-vault-cyan" />
+                          <span>{p.title}</span>
+                        </span>
+                        {p.link && (
+                          <a href={p.link} target="_blank" rel="noreferrer" className="text-[8px] text-vault-cyan hover:underline flex items-center gap-0.5">
+                            <span>Repo</span>
+                            <ExternalLink size={7} />
+                          </a>
+                        )}
+                      </div>
+                      <p className="text-[8.5px] opacity-75 mt-0.5 leading-normal">{p.description}</p>
+                      {p.technologies && (
+                        <p className="text-[7.5px] text-slate-400 font-mono mt-1">Stack: {p.technologies}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* HONORS & CERTS */}
+            {(formAchievements.length > 0 || formCertificates.length > 0) && (
+              <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-200/20 dark:border-white/5">
+                {/* Achievements preview */}
+                {formAchievements.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[7.5px] font-black uppercase tracking-widest opacity-50 block">Honors</span>
+                    <div className="space-y-1">
+                      {formAchievements.map((ach, idx) => (
+                        <div key={`${ach.title}-${idx}`} className="text-[8px]">
+                          <p className="font-extrabold flex items-center gap-1 text-slate-200">
+                            <Award size={8} className="text-amber-400" />
+                            <span>{ach.title}</span>
+                          </p>
+                          <p className="opacity-60">{ach.issuer}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Certificates preview */}
+                {formCertificates.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[7.5px] font-black uppercase tracking-widest opacity-50 block">Certs</span>
+                    <div className="space-y-1">
+                      {formCertificates.map((c, idx) => (
+                        <div key={`${c.name}-${idx}`} className="text-[8px]">
+                          <p className="font-extrabold flex items-center gap-1 text-slate-200">
+                            <FileText size={8} className="text-vault-cyan" />
+                            <span>{c.name}</span>
+                          </p>
+                          <p className="opacity-60">{c.issuingOrganization}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* CONTACT & SOCIAL FOOTER */}
+            {(formEmail || formPhone || formGithubUrl || formLinkedinUrl || Object.keys(formSocialLinks || {}).length > 0) && (
+              <div className="pt-3 border-t border-slate-200/20 dark:border-white/5 space-y-2 text-[8px] opacity-80 font-bold">
+                {(formEmail || formPhone) && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 opacity-70">
+                    {formEmail && <span>Email: {formEmail}</span>}
+                    {formPhone && <span>Phone: {formPhone}</span>}
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-0.5">
+                    <CheckCircle2 size={9} className={currentPreviewTheme.textAccent} />
+                    <span>EduVault Verified</span>
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {formGithubUrl && (
+                      <a href={formGithubUrl} target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-0.5">
+                        <span>GitHub</span>
+                        <ExternalLink size={7} />
+                      </a>
+                    )}
+                    {formLinkedinUrl && (
+                      <a href={formLinkedinUrl} target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-0.5">
+                        <span>LinkedIn</span>
+                        <ExternalLink size={7} />
+                      </a>
+                    )}
+                    {formSocialLinks?.website && (
+                      <a href={formSocialLinks.website} target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-0.5">
+                        <span>Website</span>
+                        <ExternalLink size={7} />
+                      </a>
+                    )}
+                    {formSocialLinks?.twitter && (
+                      <a href={formSocialLinks.twitter} target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-0.5">
+                        <span>Twitter</span>
+                        <ExternalLink size={7} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
 }
 
 export default function PortfolioPage() {
-  const [selectedTheme, setSelectedTheme] = useState('emerald')
-  const [selectedTemplate, setSelectedTemplate] = useState('Developer')
-  const [isGenerating, setIsGenerating] = useState(false)
+  const { user } = useAuthContext()
+  const { portfolios, loading: loadingPortfolios, error: portfoliosError, currentStudentId, addPortfolio, updatePortfolio, deletePortfolio, duplicatePortfolio } = usePortfolios()
+  const { students } = useStudents()
 
-  // Firestore-backed portfolios
-  const { portfolios, addPortfolio, markDeployed } = usePortfolios()
+  // App States
+  const [editorMode, setEditorMode] = useState<boolean>(false)
+  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null)
+  
+  // Editor Form Fields
+  const [formStudentId, setFormStudentId] = useState<string | number>(0)
+  const [formPortfolioName, setFormPortfolioName] = useState<string>('')
+  const [formTemplateType, setFormTemplateType] = useState<string>('Developer')
+  const [formTheme, setFormTheme] = useState<string>('Nexus Dark')
+  const [formTitle, setFormTitle] = useState<string>('')
+  const [formSummary, setFormSummary] = useState<string>('')
+  const [formStatus, setFormStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT')
+  const [formGithubUrl, setFormGithubUrl] = useState<string>('')
+  const [formLinkedinUrl, setFormLinkedinUrl] = useState<string>('')
+  
+  // New visual portfolio info fields
+  const [formAbout, setFormAbout] = useState<string>('')
+  const [formEmail, setFormEmail] = useState<string>('')
+  const [formPhone, setFormPhone] = useState<string>('')
+  const [formSocialLinks, setFormSocialLinks] = useState<Record<string, string>>({})
 
-  const [newStudentName, setNewStudentName] = useState('Anya Patel')
-  const [deployingId, setDeployingId] = useState<string | null>(null)
+  // Rich Sub-Lists
+  const [formSkills, setFormSkills] = useState<string[]>([])
+  const [formProjects, setFormProjects] = useState<ProjectItem[]>([])
+  const [formAchievements, setFormAchievements] = useState<AchievementItem[]>([])
+  const [formCertificates, setFormCertificates] = useState<CertificateItem[]>([])
+
+  // Editor Sub-Lists Modals/Fields states
+  const [skillInput, setSkillInput] = useState<string>('')
+  
+  // Project input fields
+  const [projTitle, setProjTitle] = useState('')
+  const [projDesc, setProjDesc] = useState('')
+  const [projLink, setProjLink] = useState('')
+  const [projTech, setProjTech] = useState('')
+  const [projRole, setProjRole] = useState('')
+
+  // Achievement input fields
+  const [achTitle, setAchTitle] = useState('')
+  const [achIssuer, setAchIssuer] = useState('')
+  const [achDate, setAchDate] = useState('')
+  const [achDesc, setAchDesc] = useState('')
+
+  // Certificate input fields
+  const [certName, setCertName] = useState('')
+  const [certIssuer, setCertIssuer] = useState('')
+  const [certDate, setCertDate] = useState('')
+  const [certUrl, setCertUrl] = useState('')
+
+  // UI state
+  const [editorTab, setEditorTab] = useState<'basic' | 'skills_projects' | 'ach_certs'>('basic')
+  const [saving, setSaving] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  const handleDeploy = (portfolio: { id: string; studentName: string }) => {
-    setDeployingId(portfolio.id)
-    setTimeout(() => {
-      const deployUrl = `https://${portfolio.studentName.toLowerCase().replace(/\s+/g, '-')}.eduvault.app`
-      markDeployed(portfolio.id, deployUrl)
-      setDeployingId(null)
-      alert(`Portfolio deployed successfully!\nLive URL: ${deployUrl}`)
-    }, 1500)
-  }
+  // Delete confirm modal states
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [targetDeleteId, setTargetDeleteId] = useState<string | number | null>(null)
 
-  const handleDownloadZip = (name: string) => {
-    alert(`Generating artifact bundle for ${name}...\nDownloaded: ${name.toLowerCase().replace(/\s+/g, '-')}-portfolio.zip`)
-  }
+  // Unsaved changes confirm modal states
+  const [unsavedChangesConfirmOpen, setUnsavedChangesConfirmOpen] = useState(false)
 
-  const renderDeployButtonContent = (portfolio: { id: string; deployed: boolean }) => {
-    if (deployingId === portfolio.id) {
-      return <span className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+  // Auto load logged in student context
+  useEffect(() => {
+    if (currentStudentId) {
+      setFormStudentId(currentStudentId)
+    } else if (students.length > 0 && !formStudentId) {
+      setFormStudentId(students[0].id)
     }
-    if (portfolio.deployed) {
+  }, [currentStudentId, students, formStudentId])
+
+  // Map studentId to Name for presentation
+  const getStudentName = useCallback((sId: string | number) => {
+    const found = students.find(s => String(s.id) === String(sId))
+    return found ? `${found.firstName} ${found.lastName}` : `Student ID: ${sId}`
+  }, [students])
+
+  const hasUnsavedChanges = useCallback(() => {
+    if (!editorMode) return false;
+    
+    const initial = selectedPortfolio || {
+      portfolioName: 'New Portfolio Layout',
+      templateType: 'Developer',
+      theme: 'Nexus Dark',
+      title: 'Full-Stack Software Engineering Showcase',
+      summary: 'Dedicated developer focused on high-performance cloud applications, Java APIs, and interactive React user interfaces.',
+      portfolioStatus: 'DRAFT',
+      githubUrl: 'https://github.com/subject',
+      linkedinUrl: 'https://linkedin.com/in/subject',
+      skills: ['React', 'TypeScript', 'Spring Boot', 'REST APIs', 'PostgreSQL', 'Docker'],
+      projects: [
+        { title: 'EduVault Command Center', description: 'Advanced academic control deck utilizing JPA database transactions.', link: 'https://github.com/repo1', technologies: 'React, Spring Boot, Postgres', role: 'Lead Architect' },
+        { title: 'Predictive Diagnostic Model', description: 'Convolutional classification system predicting cohort risks.', link: 'https://github.com/repo2', technologies: 'Python, TensorFlow', role: 'ML Engineer' }
+      ],
+      achievements: [
+        { title: 'Dean\'s Honor List 2025', issuer: 'School of Computing', date: '2025-06', description: 'Maintained continuous CGPA average of 9.25' }
+      ],
+      certificates: [
+        { name: 'Certified Spring Developer', issuingOrganization: 'Pivotal / VMware', issueDate: '2025-09', credentialUrl: 'https://certs.com/123' }
+      ],
+      about: 'Experienced developer specializing in frontend and backend system engineering. Enthusiastic about creating beautiful user interfaces and robust APIs.',
+      email: 'student.showcase@eduvault.edu',
+      phone: '+1 (555) 019-2834',
+      socialLinks: {
+        github: 'https://github.com/subject',
+        linkedin: 'https://linkedin.com/in/subject',
+        twitter: 'https://twitter.com/subject',
+        portfolio: 'https://portfolio.subject.com'
+      }
+    };
+
+    return (
+      formPortfolioName !== (initial.portfolioName || '') ||
+      formTemplateType !== (initial.templateType || 'Developer') ||
+      formTheme !== (initial.theme || 'Nexus Dark') ||
+      formTitle !== (initial.title || '') ||
+      formSummary !== (initial.summary || '') ||
+      formStatus !== (initial.portfolioStatus || 'DRAFT') ||
+      formGithubUrl !== (initial.githubUrl || '') ||
+      formLinkedinUrl !== (initial.linkedinUrl || '') ||
+      formAbout !== (initial.about || '') ||
+      formEmail !== (initial.email || '') ||
+      formPhone !== (initial.phone || '') ||
+      JSON.stringify(formSkills) !== JSON.stringify(initial.skills || []) ||
+      JSON.stringify(formProjects) !== JSON.stringify(initial.projects || []) ||
+      JSON.stringify(formAchievements) !== JSON.stringify(initial.achievements || []) ||
+      JSON.stringify(formCertificates) !== JSON.stringify(initial.certificates || []) ||
+      JSON.stringify(formSocialLinks) !== JSON.stringify(initial.socialLinks || {})
+    );
+  }, [
+    editorMode, selectedPortfolio, formPortfolioName, formTemplateType, formTheme,
+    formTitle, formSummary, formStatus, formGithubUrl, formLinkedinUrl,
+    formAbout, formEmail, formPhone, formSkills, formProjects,
+    formAchievements, formCertificates, formSocialLinks
+  ]);
+
+  const handleOpenCreate = () => {
+    setSelectedPortfolio(null)
+    setFormPortfolioName('New Portfolio Layout')
+    setFormTemplateType('Developer')
+    setFormTheme('Nexus Dark')
+    setFormTitle('Full-Stack Software Engineering Showcase')
+    setFormSummary('Dedicated developer focused on high-performance cloud applications, Java APIs, and interactive React user interfaces.')
+    setFormStatus('DRAFT')
+    setFormGithubUrl('https://github.com/subject')
+    setFormLinkedinUrl('https://linkedin.com/in/subject')
+    setFormSkills(['React', 'TypeScript', 'Spring Boot', 'REST APIs', 'PostgreSQL', 'Docker'])
+    setFormProjects([
+      { title: 'EduVault Command Center', description: 'Advanced academic control deck utilizing JPA database transactions.', link: 'https://github.com/repo1', technologies: 'React, Spring Boot, Postgres', role: 'Lead Architect' },
+      { title: 'Predictive Diagnostic Model', description: 'Convolutional classification system predicting cohort risks.', link: 'https://github.com/repo2', technologies: 'Python, TensorFlow', role: 'ML Engineer' }
+    ])
+    setFormAchievements([
+      { title: 'Dean\'s Honor List 2025', issuer: 'School of Computing', date: '2025-06', description: 'Maintained continuous CGPA average of 9.25' }
+    ])
+    setFormCertificates([
+      { name: 'Certified Spring Developer', issuingOrganization: 'Pivotal / VMware', issueDate: '2025-09', credentialUrl: 'https://certs.com/123' }
+    ])
+    setFormAbout('Experienced developer specializing in frontend and backend system engineering. Enthusiastic about creating beautiful user interfaces and robust APIs.')
+    setFormEmail('student.showcase@eduvault.edu')
+    setFormPhone('+1 (555) 019-2834')
+    setFormSocialLinks({
+      github: 'https://github.com/subject',
+      linkedin: 'https://linkedin.com/in/subject',
+      twitter: 'https://twitter.com/subject',
+      portfolio: 'https://portfolio.subject.com'
+    })
+    if (currentStudentId) {
+      setFormStudentId(currentStudentId)
+    } else if (students.length > 0) {
+      setFormStudentId(students[0].id)
+    }
+    setEditorTab('basic')
+    setEditorMode(true)
+  }
+
+  const handleOpenEdit = (portfolio: Portfolio) => {
+    setSelectedPortfolio(portfolio)
+    setFormStudentId(portfolio.studentId)
+    setFormPortfolioName(portfolio.portfolioName)
+    setFormTemplateType(portfolio.templateType)
+    setFormTheme(portfolio.theme)
+    setFormTitle(portfolio.title)
+    setFormSummary(portfolio.summary)
+    setFormStatus(portfolio.portfolioStatus)
+    setFormGithubUrl(portfolio.githubUrl || '')
+    setFormLinkedinUrl(portfolio.linkedinUrl || '')
+    setFormSkills(portfolio.skills)
+    setFormProjects(portfolio.projects)
+    setFormAchievements(portfolio.achievements)
+    setFormCertificates(portfolio.certificates)
+    setFormAbout(portfolio.about || '')
+    setFormEmail(portfolio.email || '')
+    setFormPhone(portfolio.phone || '')
+    setFormSocialLinks(portfolio.socialLinks || {})
+    setEditorTab('basic')
+    setEditorMode(true)
+  }
+
+  const handleSavePortfolio = async () => {
+    if (!formPortfolioName.trim() || !formTitle.trim()) {
+      alert('Portfolio name and title are required.')
+      return
+    }
+    setSaving(true)
+    const payload: Omit<Portfolio, 'id'> = {
+      studentId: formStudentId,
+      portfolioName: formPortfolioName,
+      templateType: formTemplateType,
+      theme: formTheme,
+      title: formTitle,
+      summary: formSummary,
+      skills: formSkills,
+      projects: formProjects,
+      achievements: formAchievements,
+      certificates: formCertificates,
+      githubUrl: formGithubUrl,
+      linkedinUrl: formLinkedinUrl,
+      portfolioStatus: formStatus,
+      about: formAbout,
+      email: formEmail,
+      phone: formPhone,
+      socialLinks: formSocialLinks
+    }
+
+    try {
+      if (selectedPortfolio?.id) {
+        await updatePortfolio(selectedPortfolio.id, payload)
+        triggerToast('Portfolio saved successfully!')
+      } else {
+        await addPortfolio(payload)
+        triggerToast('New portfolio compiled and created!')
+      }
+      setEditorMode(false)
+    } catch (err) {
+      console.error('Error saving portfolio record:', err)
+      alert('Error saving portfolio record. Reference developer logs.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDuplicate = async (pId: string | number) => {
+    try {
+      await duplicatePortfolio(pId)
+      triggerToast('Portfolio cloned successfully!')
+    } catch (err) {
+      console.error('Error duplicating portfolio:', err)
+      alert('Duplication failed.')
+    }
+  }
+
+  const handleDelete = (pId: string | number) => {
+    setTargetDeleteId(pId)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!targetDeleteId) return
+    try {
+      await deletePortfolio(targetDeleteId)
+      triggerToast('Portfolio record deleted.')
+    } catch (err) {
+      console.error('Error deleting portfolio:', err)
+      alert('Deletion failed.')
+    } finally {
+      setDeleteConfirmOpen(false)
+      setTargetDeleteId(null)
+    }
+  }
+
+  const handleExitEditor = () => {
+    if (hasUnsavedChanges()) {
+      setUnsavedChangesConfirmOpen(true)
+    } else {
+      setEditorMode(false)
+    }
+  }
+
+  const handleConfirmDiscard = () => {
+    setUnsavedChangesConfirmOpen(false)
+    setEditorMode(false)
+  }
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg)
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 3500)
+  }
+
+  // Visual helper prompts for out-of-scope tasks
+  const triggerComingSoon = (featureName: string) => {
+    alert(`COMING SOON: ${featureName}\nEduVault is prepared to generate fully compiled static assets (ZIP, HTML deployment) in the next sprint phase.`)
+  }
+
+  // Skills input handlers
+  const handleAddSkill = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && skillInput.trim()) {
+      e.preventDefault()
+      if (!formSkills.includes(skillInput.trim())) {
+        setFormSkills([...formSkills, skillInput.trim()])
+      }
+      setSkillInput('')
+    }
+  }
+
+  const handleRemoveSkill = (skill: string) => {
+    setFormSkills(formSkills.filter(s => s !== skill))
+  }
+
+  // Project handlers
+  const handleAddProject = (e: React.SyntheticEvent) => {
+    e.preventDefault()
+    if (!projTitle.trim()) return
+    const newProj: ProjectItem = {
+      title: projTitle,
+      description: projDesc,
+      link: projLink || undefined,
+      technologies: projTech || undefined,
+      role: projRole || undefined
+    }
+    setFormProjects([...formProjects, newProj])
+    setProjTitle(''); setProjDesc(''); setProjLink(''); setProjTech(''); setProjRole('')
+  }
+
+  const handleRemoveProject = (index: number) => {
+    setFormProjects(formProjects.filter((_, i) => i !== index))
+  }
+
+  // Achievement handlers
+  const handleAddAchievement = (e: React.SyntheticEvent) => {
+    e.preventDefault()
+    if (!achTitle.trim()) return
+    const newAch: AchievementItem = {
+      title: achTitle,
+      issuer: achIssuer || undefined,
+      date: achDate || undefined,
+      description: achDesc || undefined
+    }
+    setFormAchievements([...formAchievements, newAch])
+    setAchTitle(''); setAchIssuer(''); setAchDate(''); setAchDesc('')
+  }
+
+  const handleRemoveAchievement = (index: number) => {
+    setFormAchievements(formAchievements.filter((_, i) => i !== index))
+  }
+
+  // Certificate handlers
+  const handleAddCertificate = (e: React.SyntheticEvent) => {
+    e.preventDefault()
+    if (!certName.trim()) return
+    const newCert: CertificateItem = {
+      name: certName,
+      issuingOrganization: certIssuer || undefined,
+      issueDate: certDate || undefined,
+      credentialUrl: certUrl || undefined
+    }
+    setFormCertificates([...formCertificates, newCert])
+    setCertName(''); setCertIssuer(''); setCertDate(''); setCertUrl('')
+  }
+
+  const handleRemoveCertificate = (index: number) => {
+    setFormCertificates(formCertificates.filter((_, i) => i !== index))
+  }
+
+  // Extracted Gallery view renderer
+  const renderGalleryContent = () => {
+    if (loadingPortfolios && portfolios.length === 0) {
       return (
-        <>
-          <Check size={9} />
-          <span>Live</span>
-        </>
+        <div className="vault-glass p-12 text-center rounded-2xl border border-vault-border flex flex-col items-center justify-center space-y-3">
+          <div className="h-6 w-6 border-2 border-vault-cyan/30 border-t-vault-cyan rounded-full animate-spin" />
+          <p className="text-xs text-slate-400 font-semibold">Loading verifiable portfolio registries from Firestore...</p>
+        </div>
       )
     }
+
+    if (portfolios.length === 0) {
+      return (
+        <div className="vault-glass p-12 text-center rounded-2xl border border-vault-border space-y-3">
+          <p className="text-xs text-slate-400 font-semibold">No portfolios created for this student registry yet.</p>
+          <button
+            onClick={handleOpenCreate}
+            className="px-3.5 py-2 bg-vault-accent text-white rounded-lg text-xs font-bold hover:bg-vault-accent/90"
+          >
+            Create First Portfolio
+          </button>
+        </div>
+      )
+    }
+
     return (
-      <>
-        <Play size={9} />
-        <span>Deploy</span>
-      </>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {portfolios.map((item) => (
+          <motion.div
+            key={item.id}
+            whileHover={{ y: -3 }}
+            className="vault-glass rounded-2xl border border-slate-200/80 dark:border-white/5 overflow-hidden flex flex-col justify-between shadow-sm hover:border-vault-cyan/35 transition-all duration-300 relative group p-4"
+          >
+            {/* Browser Top Bar Preview */}
+            <div className={`w-full h-20 rounded-lg border flex flex-col overflow-hidden mb-3 relative ${getGalleryBrowserClass(item.theme)}`}>
+              <div className="h-4 border-b border-slate-200/30 dark:border-white/5 bg-slate-50/20 dark:bg-white/5 px-2 flex items-center gap-1">
+                <div className="h-1.5 w-1.5 rounded-full bg-red-400/80" />
+                <div className="h-1.5 w-1.5 rounded-full bg-yellow-400/80" />
+                <div className="h-1.5 w-1.5 rounded-full bg-green-400/80" />
+              </div>
+              <div className="flex-1 p-2 flex flex-col justify-between text-left">
+                <div>
+                  <h5 className="text-[10px] font-black tracking-tight leading-none truncate">{item.portfolioName}</h5>
+                  <span className="text-[7px] px-1 py-0.2 bg-slate-200/30 dark:bg-white/5 rounded font-semibold uppercase mt-1 inline-block">
+                    {item.templateType}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[6.5px] opacity-60">
+                  <span>EduVault AI Verified</span>
+                  <span className="text-[6px] tracking-widest">{item.portfolioStatus}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="space-y-1.5 text-left px-0.5">
+              <div className="flex justify-between items-start">
+                <p className="text-xs font-black text-slate-800 dark:text-white truncate max-w-[170px]" title={item.portfolioName}>
+                  {item.portfolioName}
+                </p>
+                <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                  item.portfolioStatus === 'PUBLISHED' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                }`}>
+                  {item.portfolioStatus}
+                </span>
+              </div>
+
+              <p className="text-[10px] text-slate-455 dark:text-slate-500 font-semibold truncate">
+                Owner: <span className="text-vault-fg font-black">{getStudentName(item.studentId)}</span>
+              </p>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[9px] font-extrabold text-slate-400 uppercase">{item.templateType}</span>
+                <span className={`text-[8.5px] font-black px-2 py-0.2 rounded font-mono uppercase ${getGalleryPillClass(item.theme)}`}>
+                  {item.theme}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center text-[8.5px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
+                {item.createdAt && (
+                  <span>Created: {new Date(item.createdAt).toISOString().split('T')[0]}</span>
+                )}
+                {item.updatedAt && (
+                  <span>Updated: {new Date(item.updatedAt).toISOString().split('T')[0]}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons Row */}
+            <div className="grid grid-cols-4 gap-1.5 mt-4">
+              <button
+                onClick={() => handleOpenEdit(item)}
+                className="flex items-center justify-center gap-1.5 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-355 rounded-xl font-extrabold text-[10px] cursor-pointer transition-colors"
+              >
+                <Edit3 size={11} className="text-vault-cyan" />
+                <span>Edit</span>
+              </button>
+              
+              <button
+                onClick={() => handleDuplicate(item.id!)}
+                className="flex items-center justify-center gap-1.5 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-355 rounded-xl font-extrabold text-[10px] cursor-pointer transition-colors"
+              >
+                <Copy size={11} className="text-vault-accent" />
+                <span>Copy</span>
+              </button>
+
+              <button
+                onClick={() => triggerComingSoon('ZIP Download Bundle')}
+                className="flex items-center justify-center gap-1.5 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-355 rounded-xl font-extrabold text-[10px] cursor-pointer transition-colors"
+              >
+                <Download size={11} className="text-slate-455" />
+                <span>ZIP</span>
+              </button>
+
+              <button
+                onClick={() => handleDelete(item.id!)}
+                className="flex items-center justify-center gap-1.5 py-2 bg-vault-destructive/10 border border-vault-destructive/20 hover:bg-vault-destructive/15 text-vault-destructive rounded-xl font-extrabold text-[10px] cursor-pointer transition-colors"
+              >
+                <Trash2 size={11} />
+                <span>Del</span>
+              </button>
+            </div>
+
+            {/* Static Deploy overlay */}
+            <div className="mt-2 border-t border-slate-200/50 dark:border-white/5 pt-2 flex items-center justify-between">
+              <span className="text-[9px] text-slate-555 font-semibold">Web Deployment</span>
+              <button
+                onClick={() => triggerComingSoon('Public Server Deployment')}
+                className="text-[9px] font-black text-vault-cyan flex items-center gap-0.5 hover:underline cursor-pointer"
+              >
+                <span>Deploy Package</span>
+                <Play size={8} />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     )
   }
 
-  const templates = [
-    { id: 'Developer', label: 'Developer Portfolio', desc: 'Optimized for software engineers with GitHub repositories integration.', icon: Code, color: 'text-vault-cyan bg-vault-cyan/10' },
-    { id: 'Data Analyst', label: 'Data Analyst Portfolio', desc: 'Focuses on datasets representation, SQL tables, and Tableau charts.', icon: BarChart3, color: 'text-vault-accent bg-vault-accent/10' },
-    { id: 'AI Engineer', label: 'AI Engineer Portfolio', desc: 'Designed for machine learning architectures and notebook highlights.', icon: Brain, color: 'text-violet-400 bg-violet-400/10' },
-    { id: 'Creative', label: 'Creative Portfolio', desc: 'Visually striking layouts for designers, frontends, and UI designers.', icon: Palette, color: 'text-pink-400 bg-pink-400/10' },
-    { id: 'Research', label: 'Research Portfolio', desc: 'Structured academic publication logs and thesis timelines.', icon: Sparkles, color: 'text-yellow-400 bg-yellow-400/10' }
-  ]
+  // Extracted Editor tab contents
+  const renderEditorContent = () => {
+    switch (editorTab) {
+      case 'skills_projects':
+        return (
+          <div className="space-y-4 pt-2">
+            {/* Skills entry */}
+            <div className="space-y-2">
+              <label htmlFor="skills-entry-input" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Skills Tags (Press Enter to Add)</label>
+              <input
+                id="skills-entry-input"
+                type="text"
+                value={skillInput}
+                onChange={(e) => setSkillInput(e.target.value)}
+                onKeyDown={handleAddSkill}
+                placeholder="Add a skill e.g. Docker..."
+                className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan"
+              />
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {formSkills.map((sk) => (
+                  <span key={sk} className="text-[10px] font-bold px-2 py-0.8 bg-vault-border border border-vault-border rounded-lg text-slate-305 flex items-center gap-1">
+                    <span>{sk}</span>
+                    <button type="button" onClick={() => handleRemoveSkill(sk)} className="text-red-400 hover:text-red-500 font-extrabold cursor-pointer">×</button>
+                  </span>
+                ))}
+              </div>
+            </div>
 
-  const themes = [
-    { id: 'emerald', label: 'Emerald Mint', primary: '#10b981', desc: 'Clean, professional SaaS styling.' },
-    { id: 'obsidian', label: 'Obsidian Dark', primary: '#34d399', desc: 'Linear-inspired dark engineering theme.' },
-    { id: 'cyberpunk', label: 'Cyberpunk Neon', primary: '#ec4899', desc: 'Glowing neon accents with high-contrast text.' },
-    { id: 'minimalist', label: 'Mono Minimalist', primary: '#0f172a', desc: 'Stark black-and-white print layout.' }
-  ]
+            {/* Projects list */}
+            <div className="space-y-3 border-t border-slate-200/50 dark:border-white/5 pt-3">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-vault-cyan">Project History</h4>
+              
+              {/* Projects Nested form */}
+              <form onSubmit={handleAddProject} className="p-3 bg-slate-100/50 dark:bg-white/5 rounded-xl border border-slate-200/60 dark:border-white/5 space-y-2 text-left">
+                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">New Project</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Project Title"
+                    value={projTitle}
+                    onChange={(e) => setProjTitle(e.target.value)}
+                    className="text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Role e.g. Lead"
+                    value={projRole}
+                    onChange={(e) => setProjRole(e.target.value)}
+                    className="text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                </div>
+                <textarea
+                  placeholder="Project Description"
+                  value={projDesc}
+                  onChange={(e) => setProjDesc(e.target.value)}
+                  rows={2}
+                  className="w-full text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan resize-none"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Technologies"
+                    value={projTech}
+                    onChange={(e) => setProjTech(e.target.value)}
+                    className="text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                  <input
+                    type="url"
+                    placeholder="Link e.g. GitHub URL"
+                    value={projLink}
+                    onChange={(e) => setProjLink(e.target.value)}
+                    className="text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    className="px-3 py-1 bg-vault-cyan hover:bg-vault-cyan/90 text-[#070b14] font-black text-[9px] rounded uppercase cursor-pointer"
+                  >
+                    Add Project
+                  </button>
+                </div>
+              </form>
 
-  const handleGenerate = async () => {
-    setIsGenerating(true)
-    try {
-      await addPortfolio({
-        studentName: newStudentName,
-        template: selectedTemplate,
-        theme: selectedTheme.toUpperCase()
-      })
-      setToastMessage(`VERIFIABLE BUNDLE: Completed portfolio compiling for ${newStudentName} using the ${selectedTemplate} template.`)
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 3800)
-    } catch (err) {
-      console.error('Failed to create portfolio:', err)
-    } finally {
-      setIsGenerating(false)
+              {/* Display current projects */}
+              <div className="space-y-1.5 max-h-[160px] overflow-y-auto">
+                {formProjects.map((p, idx) => (
+                  <div key={`${p.title}-${idx}`} className="flex justify-between items-start p-2 rounded bg-slate-100/50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-[10px]">
+                    <div>
+                      <p className="font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5">
+                        <GitBranch size={10} className="text-vault-cyan" />
+                        <span>{p.title}</span>
+                        {p.role && <span className="opacity-50 text-[9px]">({p.role})</span>}
+                      </p>
+                      <p className="opacity-75 leading-tight mt-0.5">{p.description}</p>
+                      {p.technologies && <p className="text-[8.5px] text-vault-cyan font-semibold mt-1">Tech: {p.technologies}</p>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveProject(idx)}
+                      className="text-red-400 hover:text-red-500 font-extrabold shrink-0 ml-2 cursor-pointer"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </div>
+        )
+      case 'ach_certs':
+        return (
+          <div className="space-y-4 pt-2">
+            {/* Honors & Achievements */}
+            <div className="space-y-3">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-vault-cyan">Achievements & Honors</h4>
+              
+              {/* Nested Achievement Form */}
+              <div className="p-3 bg-slate-100/50 dark:bg-white/5 rounded-xl border border-slate-200/60 dark:border-white/5 space-y-2 text-left">
+                <div className="grid grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Title e.g. Academic Award"
+                    value={achTitle}
+                    onChange={(e) => setAchTitle(e.target.value)}
+                    className="col-span-2 text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Date e.g. 2025-06"
+                    value={achDate}
+                    onChange={(e) => setAchDate(e.target.value)}
+                    className="text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Issuer Organization"
+                    value={achIssuer}
+                    onChange={(e) => setAchIssuer(e.target.value)}
+                    className="col-span-2 text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddAchievement}
+                    className="bg-vault-cyan hover:bg-vault-cyan/90 text-[#070b14] font-black text-[9px] rounded uppercase cursor-pointer"
+                  >
+                    Add Honor
+                  </button>
+                </div>
+                <input
+                  placeholder="Brief Description"
+                  value={achDesc}
+                  onChange={(e) => setAchDesc(e.target.value)}
+                  className="w-full text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+
+              {/* Display current achievements */}
+              <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
+                {formAchievements.map((ach, idx) => (
+                  <div key={`${ach.title}-${idx}`} className="flex justify-between items-center p-2 rounded bg-slate-100/50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-[10px]">
+                    <div>
+                      <p className="font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5">
+                        <Award size={10} className="text-vault-accent" />
+                        <span>{ach.title}</span>
+                        {ach.date && <span className="opacity-55 font-mono">({ach.date})</span>}
+                      </p>
+                      {ach.issuer && <p className="text-[9px] text-slate-400">Issuer: {ach.issuer}</p>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAchievement(idx)}
+                      className="text-red-400 hover:text-red-500 font-extrabold shrink-0 ml-2 cursor-pointer"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Certifications */}
+            <div className="space-y-3 border-t border-slate-200/50 dark:border-white/5 pt-3">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-vault-cyan">Certifications & Credentials</h4>
+              
+              {/* Nested Cert Form */}
+              <div className="p-3 bg-slate-100/50 dark:bg-white/5 rounded-xl border border-slate-200/60 dark:border-white/5 space-y-2 text-left">
+                <div className="grid grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Cert Name e.g. AWS Pract."
+                    value={certName}
+                    onChange={(e) => setCertName(e.target.value)}
+                    className="col-span-2 text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Issue Date"
+                    value={certDate}
+                    onChange={(e) => setCertDate(e.target.value)}
+                    className="text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Issuing Authority"
+                    value={certIssuer}
+                    onChange={(e) => setCertIssuer(e.target.value)}
+                    className="col-span-2 text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCertificate}
+                    className="bg-vault-cyan hover:bg-vault-cyan/90 text-[#070b14] font-black text-[9px] rounded uppercase cursor-pointer"
+                  >
+                    Add Cert
+                  </button>
+                </div>
+                <input
+                  type="url"
+                  placeholder="Credential Verification URL"
+                  value={certUrl}
+                  onChange={(e) => setCertUrl(e.target.value)}
+                  className="w-full text-[10.5px] px-2.5 py-1.5 rounded border border-slate-250 dark:border-white/5 bg-slate-900/40 text-white focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+
+              {/* Display current certs */}
+              <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
+                {formCertificates.map((cert, idx) => (
+                  <div key={`${cert.name}-${idx}`} className="flex justify-between items-center p-2 rounded bg-slate-100/50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-[10px]">
+                    <div>
+                      <p className="font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5">
+                        <FileText size={10} className="text-vault-cyan" />
+                        <span>{cert.name}</span>
+                      </p>
+                      {cert.issuingOrganization && <p className="text-[9px] text-slate-400">{cert.issuingOrganization} | {cert.issueDate}</p>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCertificate(idx)}
+                      className="text-red-400 hover:text-red-500 font-extrabold shrink-0 ml-2 cursor-pointer"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </div>
+        )
+      default:
+        return (
+          <div className="space-y-3 pt-2">
+            {/* Student Target Selector */}
+            {user?.role === 'STUDENT' ? (
+              <div className="p-3.5 bg-vault-border rounded-xl border border-vault-border text-xs text-slate-455">
+                Locked Subject target: <span className="text-vault-fg font-black">{getStudentName(formStudentId)}</span>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <label htmlFor="student-selector" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Subject Student</label>
+                <select
+                  id="student-selector"
+                  value={formStudentId}
+                  onChange={(e) => setFormStudentId(e.target.value)}
+                  className="w-full text-xs font-bold px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-slate-800 dark:text-slate-300 focus:outline-none focus:border-vault-cyan"
+                >
+                  {students.map((s) => (
+                    <option key={s.id} value={s.id} className="dark:bg-slate-900">
+                      {s.firstName} {s.lastName} ({s.enrollmentNumber})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label htmlFor="portfolio-name-field" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Portfolio Layout Name</label>
+                <input
+                  id="portfolio-name-field"
+                  type="text"
+                  value={formPortfolioName}
+                  onChange={(e) => setFormPortfolioName(e.target.value)}
+                  placeholder="e.g. Senior Layout"
+                  className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="portfolio-title-field" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Professional Title</label>
+                <input
+                  id="portfolio-title-field"
+                  type="text"
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  placeholder="e.g. AI Research Scholar"
+                  className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+            </div>
+
+            {/* Visual Theme Gallery Selector */}
+            <div className="space-y-2">
+              <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Visual Theme Gallery</span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {[
+                  { name: 'Nexus Dark', desc: 'Dark / Emerald console', style: 'bg-[#080d19] border-emerald-500/25 text-emerald-450 font-mono' },
+                  { name: 'Aurora Glass', desc: 'Violet / Translucent', style: 'bg-gradient-to-br from-[#120c1f] to-[#1a0e35] border-violet-500/25 text-violet-300' },
+                  { name: 'Quantum Blue', desc: 'Cyber / High-contrast', style: 'bg-[#09111e] border-cyan-500/25 text-cyan-400' },
+                  { name: 'Minimal Elite', desc: 'Serif print / Clean white', style: 'bg-white border-stone-300 text-stone-900 shadow-sm font-serif' },
+                  { name: 'Creative Pulse', desc: 'Vibrant neon / Orange', style: 'bg-[#0c050f] border-orange-555/25 text-orange-400' }
+                ].map((themeOpt) => {
+                  const isSelected = formTheme === themeOpt.name;
+                  return (
+                    <button
+                      key={themeOpt.name}
+                      type="button"
+                      onClick={() => setFormTheme(themeOpt.name)}
+                      className={`flex flex-col justify-between p-3 rounded-2xl border text-left transition-all duration-300 h-28 hover:scale-[1.02] cursor-pointer ${themeOpt.style} ${
+                        isSelected ? 'ring-2 ring-vault-cyan border-transparent opacity-100' : 'opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-[9px] font-black uppercase tracking-wider leading-tight">{themeOpt.name}</span>
+                        {isSelected && <span className="h-2 w-2 rounded-full bg-vault-cyan animate-pulse" />}
+                      </div>
+                      <p className="text-[7.5px] opacity-85 leading-normal mt-2">{themeOpt.desc}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1.5 col-span-2">
+                <label htmlFor="portfolio-status-field" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Status</label>
+                <select
+                  id="portfolio-status-field"
+                  value={formStatus}
+                  onChange={(e) => setFormStatus(e.target.value as any)}
+                  className="w-full text-xs font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-slate-800 dark:text-slate-300 focus:outline-none focus:border-vault-cyan"
+                >
+                  <option value="DRAFT" className="dark:bg-slate-900">DRAFT</option>
+                  <option value="PUBLISHED" className="dark:bg-slate-900">PUBLISHED</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label htmlFor="contact-email" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Contact Email</label>
+                <input
+                  id="contact-email"
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  placeholder="e.g. contact@domain.com"
+                  className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="contact-phone" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Contact Phone</label>
+                <input
+                  id="contact-phone"
+                  type="tel"
+                  value={formPhone}
+                  onChange={(e) => setFormPhone(e.target.value)}
+                  placeholder="e.g. +1 (555) 000-0000"
+                  className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="summary-textarea" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Professional Summary</label>
+              <textarea
+                id="summary-textarea"
+                rows={2}
+                value={formSummary}
+                onChange={(e) => setFormSummary(e.target.value)}
+                placeholder="Write a brief professional summary..."
+                className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan resize-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="about-textarea" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Detailed About Me Biography</label>
+              <textarea
+                id="about-textarea"
+                rows={4}
+                value={formAbout}
+                onChange={(e) => setFormAbout(e.target.value)}
+                placeholder="Write your comprehensive biography..."
+                className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label htmlFor="github-url-field" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">GitHub Profile URL</label>
+                <input
+                  id="github-url-field"
+                  type="url"
+                  value={formGithubUrl}
+                  onChange={(e) => setFormGithubUrl(e.target.value)}
+                  placeholder="https://github.com/profile"
+                  className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="linkedin-url-field" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">LinkedIn Profile URL</label>
+                <input
+                  id="linkedin-url-field"
+                  type="url"
+                  value={formLinkedinUrl}
+                  onChange={(e) => setFormLinkedinUrl(e.target.value)}
+                  placeholder="https://linkedin.com/in/profile"
+                  className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 border-t border-slate-200/50 dark:border-white/5 pt-3">
+              <div className="space-y-1.5">
+                <label htmlFor="website-url-field" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Portfolio Website URL</label>
+                <input
+                  id="website-url-field"
+                  type="url"
+                  value={formSocialLinks?.website || ''}
+                  onChange={(e) => setFormSocialLinks({ ...formSocialLinks, website: e.target.value })}
+                  placeholder="https://myportfolio.com"
+                  className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="twitter-url-field" className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Twitter Profile URL</label>
+                <input
+                  id="twitter-url-field"
+                  type="url"
+                  value={formSocialLinks?.twitter || ''}
+                  onChange={(e) => setFormSocialLinks({ ...formSocialLinks, twitter: e.target.value })}
+                  placeholder="https://twitter.com/profile"
+                  className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-cyan"
+                />
+              </div>
+            </div>
+          </div>
+        )
     }
   }
 
-  // Get dynamic mock preview elements
-  const currentPreviewData = getTemplateMockData(selectedTemplate)
-  const previewTheme = getThemeClass(selectedTheme)
-
   return (
-    <div className="space-y-6 text-left font-sans">
+    <div className="space-y-6 text-left font-sans pb-10">
       
       {/* Header */}
-      <div>
-        <h2 className="text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-350 bg-clip-text text-transparent">
-          Portfolio Studio
-        </h2>
-        <p className="text-slate-400 mt-1 text-sm font-medium">Compile and deploy verifiable web portfolios for cohort members.</p>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        
-        {/* LEFT COLUMN: Controls & Configurations */}
-        <div className="xl:col-span-7 space-y-6 flex flex-col">
-          
-          {/* SECTION A: Templates Grid */}
-          <div className="vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-vault-cyan" />
-              <span>Section A: Select Portfolio Template</span>
-            </h3>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {templates.map((tpl) => {
-                const Icon = tpl.icon
-                const isSelected = selectedTemplate === tpl.id
-                return (
-                  <button
-                    key={tpl.id}
-                    onClick={() => setSelectedTemplate(tpl.id)}
-                    className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 cursor-pointer relative ${
-                      isSelected 
-                        ? 'border-vault-cyan bg-vault-cyan/5 shadow-[0_0_15px_rgba(6,182,212,0.08)]' 
-                        : 'border-slate-200/60 dark:border-white/5 hover:border-slate-350 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 shadow-sm'
-                    }`}
-                  >
-                    <div className={`p-2 rounded-lg shrink-0 ${tpl.color}`}>
-                      <Icon size={16} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5">
-                        <span>{tpl.label}</span>
-                        {isSelected && <Check size={11} className="text-vault-cyan" />}
-                      </p>
-                      <p className="text-[10.5px] text-slate-400 dark:text-slate-500 mt-1 leading-normal font-semibold">{tpl.desc}</p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* SECTION B: Generator Panel */}
-          <div className="vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-vault-accent" />
-              <span>Section B: Studio Compiler Options</span>
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <label htmlFor="student-name-target" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Student Subject Target</label>
-                  <input
-                    id="student-name-target"
-                    type="text"
-                    value={newStudentName}
-                    onChange={(e) => setNewStudentName(e.target.value)}
-                    placeholder="Student Name..."
-                    className="w-full text-xs font-bold px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 focus:outline-none focus:border-vault-accent transition-colors"
-                  />
-                </div>
-                
-                <div className="space-y-1.5">
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Compiler Visual Theme</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {themes.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => setSelectedTheme(t.id)}
-                        className={`px-3 py-2.5 rounded-xl text-[10px] font-extrabold border transition-all text-left flex items-center gap-2 cursor-pointer ${
-                          selectedTheme === t.id
-                            ? 'border-vault-accent bg-vault-accent/5 text-vault-accent'
-                            : 'border-slate-200/60 dark:border-white/5 text-slate-400 hover:text-vault-fg hover:bg-slate-50 dark:hover:bg-white/5'
-                        }`}
-                      >
-                        <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: t.primary }} />
-                        <span>{t.label.split(' ')[0]}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col justify-end gap-2.5">
-                <button
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-vault-accent to-vault-cyan hover:opacity-95 disabled:from-slate-450 disabled:to-slate-500 text-white rounded-xl font-black text-xs shadow-md shadow-vault-accent/15 cursor-pointer transition-all"
-                >
-                  {isGenerating ? (
-                    <>
-                      <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Compiling Studio Portfolio...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play size={13} />
-                      <span>Generate Portfolio Package</span>
-                    </>
-                  )}
-                </button>
-                
-                <button 
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl font-black text-xs shadow-sm cursor-pointer"
-                  onClick={() => handleDownloadZip(newStudentName)}
-                >
-                  <Download size={13} />
-                  <span>Download ZIP Bundle</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-350 bg-clip-text text-transparent">
+            Portfolio Studio
+          </h2>
+          <p className="text-slate-400 mt-1 text-sm font-medium">Manage student portfolio layouts, visual templates, and metadata showcases.</p>
         </div>
-
-        {/* RIGHT COLUMN: Section C Live Preview Window */}
-        <div className="xl:col-span-5 flex flex-col">
-          
-          {/* SECTION C: Mock Browser Preview */}
-          <div className="vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4 flex flex-col h-full justify-between">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-              <span>Section C: Live Compiler Preview</span>
-            </h3>
-
-            {/* Mock Web Browser Frame */}
-            <div className="flex-1 w-full border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-lg flex flex-col min-h-[360px] bg-white dark:bg-[#070b14]/90">
-              
-              {/* Browser control bar */}
-              <div className="h-9 border-b border-slate-150 dark:border-white/5 bg-slate-50 dark:bg-white/5 px-3.5 flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
-                <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-                <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-                <div className="h-5 flex-1 max-w-[240px] rounded bg-slate-200/50 dark:bg-white/5 flex items-center px-2">
-                  <Globe size={9} className="text-slate-400 shrink-0" />
-                  <span className="text-[8px] text-slate-400 truncate ml-1 font-mono">http://localhost:3000/{newStudentName.toLowerCase().replace(/\s+/g, '-')}-portfolio</span>
-                </div>
-              </div>
-
-              {/* Dynamic Theme Render Window */}
-              <div className={`flex-1 p-5 relative overflow-hidden flex flex-col justify-between text-left transition-colors duration-300 ${previewTheme.bg}`}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={selectedTheme + selectedTemplate + newStudentName}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                    className="space-y-4 h-full flex flex-col justify-between"
-                  >
-                    
-                    {/* Mock Profile layout based on theme */}
-                    <div className="space-y-3.5">
-                      {/* Name header & mock template tag */}
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="text-base font-black tracking-tight leading-none">
-                            {newStudentName}
-                          </h4>
-                          <span className={`text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase mt-2.5 inline-block tracking-wide ${previewTheme.pill}`}>
-                            {currentPreviewData.role}
-                          </span>
-                        </div>
-                        <div className={`h-8 w-8 rounded-full border flex items-center justify-center font-black text-xs ${previewTheme.avatar}`}>
-                          {newStudentName[0] || 'U'}
-                        </div>
-                      </div>
-
-                      {/* Mock bio content */}
-                      <p className="text-[10px] opacity-80 leading-relaxed font-semibold">
-                        {currentPreviewData.bio}
-                      </p>
-
-                      {/* High-Fidelity Project Highlight Cards */}
-                      <div className="space-y-2 pt-1.5">
-                        <span className="text-[9px] font-black uppercase tracking-wider opacity-50 block">Featured Records</span>
-                        {currentPreviewData.projects.map((proj) => (
-                          <div key={proj.name} className={`p-2 rounded-xl border text-[9.5px] space-y-1 ${previewTheme.card}`}>
-                            <div className="flex justify-between items-center">
-                              <span className="font-extrabold text-slate-800 dark:text-white flex items-center gap-1">
-                                <GitBranch size={10} className="text-vault-cyan" />
-                                <span>{proj.name}</span>
-                              </span>
-                              <span className="text-[8px] opacity-60 font-mono">★ {proj.stars}</span>
-                            </div>
-                            <p className="text-[8.5px] opacity-70 leading-normal">{proj.desc}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Verifiable Credentials Footer */}
-                    <div className="pt-3.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[8px] opacity-60 font-semibold">
-                      <span className="flex items-center gap-1">
-                        <CheckCircle2 size={10} className={previewTheme.textAccent} />
-                        <span>EduVault AI Verified Badge</span>
-                      </span>
-                      <span className="font-mono">v1.2.6</span>
-                    </div>
-
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* SECTION D: Stored Portfolios Gallery — from Firestore */}
-      <div className="vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4">
-        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-pink-400" />
-          <span>Section D: Portfolio Studio Gallery</span>
-        </h3>
-        
-        {portfolios.length === 0 ? (
-          <div className="py-8 text-center">
-            <p className="text-xs text-slate-400 font-semibold">No portfolios generated yet. Use the compiler above to create your first one.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {portfolios.map((item) => (
-              <motion.div
-                key={item.id}
-                whileHover={{ y: -4 }}
-                className="vault-glass rounded-2xl border border-slate-200/80 dark:border-white/5 overflow-hidden flex flex-col justify-between shadow-sm hover:border-vault-cyan/30 transition-all duration-300 relative group p-3.5"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-vault-cyan/5 to-vault-accent/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -z-10" />
-
-                {/* Browser Preview Frame */}
-                <div className={`w-full h-24 rounded-lg border flex flex-col overflow-hidden mb-3.5 relative ${getGalleryBrowserClass(item.theme)}`}>
-                  <div className="h-5 border-b border-slate-200/40 dark:border-white/5 bg-slate-50/20 dark:bg-white/5 px-2 flex items-center gap-1">
-                    <div className="h-1.5 w-1.5 rounded-full bg-red-400/70" />
-                    <div className="h-1.5 w-1.5 rounded-full bg-yellow-400/70" />
-                    <div className="h-1.5 w-1.5 rounded-full bg-green-400/70" />
-                  </div>
-                  <div className="flex-1 p-2 flex flex-col justify-between text-left">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h5 className="text-[10px] font-bold tracking-tight">{item.studentName}</h5>
-                        <span className="text-[6.5px] px-1 py-0.2 bg-slate-200/30 dark:bg-white/5 border border-slate-300/30 rounded font-mono uppercase mt-0.5 inline-block">
-                          {item.template}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-[6.5px] opacity-55 pt-1 border-t border-slate-200/20 dark:border-white/5">
-                      <span>Verified Badge</span>
-                      <span className="font-mono">v1.2</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Student Details info */}
-                <div className="space-y-1 text-left px-1">
-                  <p className="text-xs font-black text-slate-800 dark:text-white truncate">{item.studentName}</p>
-                  
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">{item.template}</span>
-                    <span className={`text-[8px] font-black font-mono px-1.5 py-0.2 rounded uppercase tracking-wider ${getGalleryPillClass(item.theme)}`}>
-                      {item.theme}
-                    </span>
-                  </div>
-                  
-                  <p className="text-[9px] font-semibold text-slate-450 dark:text-slate-500 mt-1">Compiled: {item.createdAt}</p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-1.5 mt-3.5 px-0.5">
-                  <button 
-                    className="flex items-center justify-center gap-0.5 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-350 rounded-lg font-bold text-[9px] cursor-pointer transition-colors"
-                    onClick={() => {
-                      setNewStudentName(item.studentName)
-                      setSelectedTemplate(item.template)
-                      setSelectedTheme(item.theme.toLowerCase())
-                    }}
-                    title="Load in Preview"
-                  >
-                    <span>Preview</span>
-                  </button>
-                  
-                  <button 
-                    className="flex items-center justify-center gap-0.5 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-350 rounded-lg font-bold text-[9px] cursor-pointer transition-colors"
-                    onClick={() => handleDownloadZip(item.studentName)}
-                  >
-                    <Download size={9} />
-                    <span>ZIP</span>
-                  </button>
-
-                  <button 
-                    className={`flex items-center justify-center gap-0.5 py-1.5 rounded-lg font-extrabold text-[9px] cursor-pointer transition-all ${
-                      item.deployed
-                        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-black'
-                        : 'bg-vault-accent hover:opacity-95 text-white border border-vault-accent/20'
-                    }`}
-                    onClick={() => handleDeploy(item)}
-                    disabled={deployingId === item.id}
-                  >
-                    {renderDeployButtonContent(item)}
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+        {editorMode ? null : (
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-vault-cyan to-vault-accent text-white rounded-xl text-xs font-black shadow-lg shadow-vault-cyan/15 hover:opacity-95 transition-all cursor-pointer"
+          >
+            <Plus size={14} />
+            <span>Create Portfolio</span>
+          </button>
         )}
       </div>
 
+      {portfoliosError && (
+        <div className="p-4 bg-vault-destructive/10 border border-vault-destructive/20 text-vault-destructive rounded-xl text-xs font-semibold">
+          {portfoliosError}
+        </div>
+      )}
+
+      {/* DUAL WORKSPACE LAYOUT */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        
+        {/* LEFT COLUMN: GALLERY OR EDITOR */}
+        <div className="xl:col-span-7 flex flex-col min-h-[500px]">
+          <AnimatePresence mode="wait">
+            {editorMode ? (
+              // ── EDITOR VIEW ──────────────────────────────────────────────
+              <motion.div
+                key="editor"
+                initial={{ opacity: 0, x: 15 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -15 }}
+                transition={{ duration: 0.2 }}
+                className="vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm space-y-4 text-left"
+              >
+                {/* Editor Top Control Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-250/30 dark:border-white/5">
+                  <button
+                    onClick={handleExitEditor}
+                    className="flex items-center gap-1 text-[11px] font-black text-slate-400 hover:text-vault-fg transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft size={12} />
+                    <span>Back to Gallery</span>
+                  </button>
+                  <p className="text-xs font-black uppercase text-vault-cyan">
+                    {selectedPortfolio ? 'Editing Portfolio Layout' : 'Compiling New Layout'}
+                  </p>
+                </div>
+
+                {/* Editor Tabs Navigation */}
+                <div className="grid grid-cols-3 gap-1.5 border-b border-slate-250/30 dark:border-white/5 pb-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab('basic')}
+                    className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
+                      editorTab === 'basic' ? 'bg-vault-cyan/10 text-vault-cyan border border-vault-cyan/25' : 'text-slate-400 hover:text-vault-fg'
+                    }`}
+                  >
+                    Basic & Theme
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab('skills_projects')}
+                    className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
+                      editorTab === 'skills_projects' ? 'bg-vault-cyan/10 text-vault-cyan border border-vault-cyan/25' : 'text-slate-400 hover:text-vault-fg'
+                    }`}
+                  >
+                    Skills & Projects
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab('ach_certs')}
+                    className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
+                      editorTab === 'ach_certs' ? 'bg-vault-cyan/10 text-vault-cyan border border-vault-cyan/25' : 'text-slate-400 hover:text-vault-fg'
+                    }`}
+                  >
+                    Certs & Honors
+                  </button>
+                </div>
+
+                {/* Tab Form Fields */}
+                {renderEditorContent()}
+
+                {/* Form Action save/cancel */}
+                <div className="flex gap-2 pt-3 border-t border-slate-250/30 dark:border-white/5 justify-end">
+                  <button
+                    type="button"
+                    onClick={handleExitEditor}
+                    className="px-4 py-2.5 bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 rounded-xl font-black text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSavePortfolio}
+                    disabled={saving}
+                    className="px-5 py-2.5 bg-gradient-to-r from-vault-accent to-vault-cyan text-white rounded-xl font-black text-xs shadow-md shadow-vault-accent/15 hover:opacity-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    {saving ? 'Saving...' : 'Save Portfolio'}
+                  </button>
+                </div>
+
+              </motion.div>
+            ) : (
+              // ── GALLERY VIEW ──────────────────────────────────────────────
+              <motion.div
+                key="gallery"
+                initial={{ opacity: 0, x: -15 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 15 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                {renderGalleryContent()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* RIGHT COLUMN: REAL-TIME PREVIEW PANEL */}
+        <div className="xl:col-span-5 flex flex-col">
+          <LivePreviewPanel
+            formTheme={formTheme}
+            formStudentId={formStudentId}
+            formTitle={formTitle}
+            formSummary={formSummary}
+            formSkills={formSkills}
+            formProjects={formProjects}
+            formAchievements={formAchievements}
+            formCertificates={formCertificates}
+            formGithubUrl={formGithubUrl}
+            formLinkedinUrl={formLinkedinUrl}
+            formPortfolioName={formPortfolioName}
+            formTemplateType={formTemplateType}
+            studentNameResolver={getStudentName}
+            formAbout={formAbout}
+            formEmail={formEmail}
+            formPhone={formPhone}
+            formSocialLinks={formSocialLinks}
+          />
+        </div>
+
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="vault-glass p-6 rounded-xl border border-vault-border max-w-md w-full space-y-4 text-left"
+            >
+              <h3 className="text-lg font-black text-red-400 uppercase tracking-wide">Delete Portfolio Layout</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Are you absolutely sure you want to delete this portfolio layout? This action is permanent and cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  className="px-4 py-2 bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 text-xs font-black rounded-lg cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-black rounded-lg cursor-pointer transition-colors"
+                >
+                  Delete Permanently
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Unsaved Changes Confirmation Modal */}
+      <AnimatePresence>
+        {unsavedChangesConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="vault-glass p-6 rounded-xl border border-vault-border max-w-md w-full space-y-4 text-left"
+            >
+              <h3 className="text-lg font-black text-amber-400 uppercase tracking-wide">Unsaved Changes</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                You have unsaved changes in your portfolio editor. Discarding will lose all modifications. Are you sure you want to leave?
+              </p>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setUnsavedChangesConfirmOpen(false)}
+                  className="px-4 py-2 bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 text-xs font-black rounded-lg cursor-pointer transition-colors"
+                >
+                  Keep Editing
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDiscard}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-[#070b14] text-xs font-black rounded-lg cursor-pointer transition-colors"
+                >
+                  Discard Changes
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Toasts */}
       <AnimatePresence>
         {showToast && (
           <motion.div
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 vault-glass border border-emerald-500/25 bg-[#061811]/90 text-emerald-450 p-4 rounded-xl shadow-xl flex items-center gap-3 font-semibold text-xs border-l-4 border-l-vault-accent max-w-sm text-left"
+            className="fixed bottom-6 right-6 z-50 vault-glass border border-emerald-500/25 bg-[#061811]/95 text-emerald-450 p-4 rounded-xl shadow-xl flex items-center gap-3 font-semibold text-xs border-l-4 border-l-vault-accent max-w-sm text-left"
           >
             <div className="h-6 w-6 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
               <Check size={12} className="text-vault-accent" />
             </div>
             <div>
-              <p className="font-extrabold text-slate-800 dark:text-white leading-none">Compile Successful</p>
+              <p className="font-extrabold text-slate-800 dark:text-white leading-none">Studio Success</p>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-semibold leading-relaxed">{toastMessage}</p>
             </div>
           </motion.div>

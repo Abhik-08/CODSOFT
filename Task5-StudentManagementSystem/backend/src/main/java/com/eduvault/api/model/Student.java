@@ -56,18 +56,6 @@ public class Student {
 
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<Grade> grades = new ArrayList<>();
-
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Project> projects = new ArrayList<>();
-
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Certificate> certificates = new ArrayList<>();
-
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<Portfolio> portfolios = new ArrayList<>();
 
     @OneToOne(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -80,4 +68,12 @@ public class Student {
     private Double attendance;
 
     private Boolean placementReady;
+
+    private String firestoreId;
+
+    @Column(length = 65536)
+    private String gradesJson;
+
+    @Column(length = 65536)
+    private String attendanceJson;
 }

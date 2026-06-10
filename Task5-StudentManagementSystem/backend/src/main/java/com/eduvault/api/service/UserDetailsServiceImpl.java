@@ -10,8 +10,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@SuppressWarnings("null")
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
@@ -23,9 +25,35 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty() && username.contains("@")) {
+            userOpt = userRepository.findByEmail(username);
+        }
+        
+        if (userOpt.isEmpty()) {
+            // Auto-provision user if it looks like an email or Firebase login
+            String email = username.contains("@") ? username : username + "@eduvault.com";
+            String actualUsername = username.contains("@") ? username.substring(0, username.indexOf("@")) : username;
+            
+            String role = "ROLE_USER";
+            if (actualUsername.equalsIgnoreCase("admin") || email.startsWith("admin@")) {
+                role = "ROLE_ADMIN";
+            } else if (actualUsername.equalsIgnoreCase("faculty") || email.startsWith("faculty@")) {
+                role = "ROLE_FACULTY";
+            }
+            
+            User newUser = User.builder()
+                    .username(actualUsername)
+                    .email(email)
+                    .password("") // empty password for oauth
+                    .fullName(actualUsername)
+                    .role(role)
+                    .build();
+            userRepository.save(newUser);
+            userOpt = Optional.of(newUser);
+        }
 
+        User user = userOpt.get();
         String role = user.getRole();
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role.startsWith("ROLE_") ? role : "ROLE_" + role);
 

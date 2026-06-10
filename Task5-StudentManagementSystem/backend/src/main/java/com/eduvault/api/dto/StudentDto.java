@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 @Data
 public class StudentDto {
@@ -38,6 +40,9 @@ public class StudentDto {
 
     private String imageUrl;
     private Double gpa;
-    private Double attendance;
+    private Double attendanceRate;
     private Boolean placementReady;
+    private String firestoreId;
+    private List<Map<String, Object>> grades;
+    private List<Map<String, Object>> attendance;
 }

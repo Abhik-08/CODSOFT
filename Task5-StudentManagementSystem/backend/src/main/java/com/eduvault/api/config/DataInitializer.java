@@ -5,12 +5,12 @@ import com.eduvault.api.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -18,20 +18,37 @@ import java.util.List;
 @Slf4j
 public class DataInitializer {
 
+    private static final String ROLE_USER = "ROLE_USER";
+    private static final String STATUS_ACTIVE = "ACTIVE";
+    /**
+     * Property key for the seed password used during data initialisation.
+     * Set {@code app.default-password} in application.properties or the
+     * {@code APP_DEFAULT_PASSWORD} environment variable before running in
+     * any environment that requires real users.
+     */
+    private static final String DEFAULT_PASSWORD_PROP = "app.default-password";
+    private static final String FALLBACK_PASSWORD = "{CONFIGURE_PASSWORD}";
+
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
-    private final CourseRepository courseRepository;
-    private final GradeRepository gradeRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Environment env;
 
     public DataInitializer(UserRepository userRepository, StudentRepository studentRepository,
-                          CourseRepository courseRepository, GradeRepository gradeRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder, Environment env) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
-        this.courseRepository = courseRepository;
-        this.gradeRepository = gradeRepository;
         this.passwordEncoder = passwordEncoder;
+        this.env = env;
+    }
+
+    private String resolveDefaultPassword() {
+        String pw = env.getProperty(DEFAULT_PASSWORD_PROP);
+        if (pw == null || pw.isBlank()) {
+            log.warn("app.default-password is not configured – seed users will have an unusable password placeholder.");
+            return FALLBACK_PASSWORD;
+        }
+        return pw;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -50,59 +67,49 @@ public class DataInitializer {
             initializeStudents();
             log.info("✓ Test students initialized");
         }
-        
-        // Initialize courses only if database is empty
-        if (courseRepository.count() == 0) {
-            initializeCourses();
-            log.info("✓ Test courses initialized");
-        }
-        
-        // Initialize grades only if database is empty
-        if (gradeRepository.count() == 0) {
-            initializeGrades();
-            log.info("✓ Test grades initialized");
-        }
+
         
         log.info("Database initialization complete!");
     }
 
     @SuppressWarnings("null")
     private void initializeUsers() {
+        String encodedPassword = passwordEncoder.encode(resolveDefaultPassword());
         List<User> users = Arrays.asList(
             User.builder()
                 .username("admin")
                 .email("admin@eduvault.com")
-                .password(passwordEncoder.encode("password123"))
+                .password(encodedPassword)
                 .fullName("Administrator")
                 .role("ROLE_ADMIN")
                 .build(),
             User.builder()
                 .username("faculty")
                 .email("faculty@eduvault.com")
-                .password(passwordEncoder.encode("password123"))
+                .password(encodedPassword)
                 .fullName("Dr. Jane Smith")
                 .role("ROLE_FACULTY")
                 .build(),
             User.builder()
                 .username("student")
                 .email("student@eduvault.com")
-                .password(passwordEncoder.encode("password123"))
+                .password(encodedPassword)
                 .fullName("John Student")
-                .role("ROLE_USER")
+                .role(ROLE_USER)
                 .build(),
             User.builder()
                 .username("john_doe")
                 .email("john.doe@student.edu")
-                .password(passwordEncoder.encode("password123"))
+                .password(encodedPassword)
                 .fullName("John Doe")
-                .role("ROLE_USER")
+                .role(ROLE_USER)
                 .build(),
             User.builder()
                 .username("jane_smith")
                 .email("jane.smith@student.edu")
-                .password(passwordEncoder.encode("password123"))
+                .password(encodedPassword)
                 .fullName("Jane Smith")
-                .role("ROLE_USER")
+                .role(ROLE_USER)
                 .build()
         );
         
@@ -120,7 +127,7 @@ public class DataInitializer {
                 .dateOfBirth(LocalDate.of(2002, 5, 15))
                 .department("Computer Science")
                 .semester(4)
-                .status("ACTIVE")
+                .status(STATUS_ACTIVE)
                 .build(),
             Student.builder()
                 .firstName("Jane")
@@ -130,7 +137,7 @@ public class DataInitializer {
                 .dateOfBirth(LocalDate.of(2003, 8, 22))
                 .department("Information Technology")
                 .semester(3)
-                .status("ACTIVE")
+                .status(STATUS_ACTIVE)
                 .build(),
             Student.builder()
                 .firstName("Alice")
@@ -140,7 +147,7 @@ public class DataInitializer {
                 .dateOfBirth(LocalDate.of(2001, 3, 10))
                 .department("Computer Science")
                 .semester(5)
-                .status("ACTIVE")
+                .status(STATUS_ACTIVE)
                 .build(),
             Student.builder()
                 .firstName("Bob")
@@ -150,7 +157,7 @@ public class DataInitializer {
                 .dateOfBirth(LocalDate.of(2002, 12, 5))
                 .department("Data Science")
                 .semester(2)
-                .status("ACTIVE")
+                .status(STATUS_ACTIVE)
                 .build(),
             Student.builder()
                 .firstName("Charlie")
@@ -160,123 +167,10 @@ public class DataInitializer {
                 .dateOfBirth(LocalDate.of(2003, 6, 18))
                 .department("Information Technology")
                 .semester(4)
-                .status("ACTIVE")
+                .status(STATUS_ACTIVE)
                 .build()
         );
         
         studentRepository.saveAll(students);
-    }
-
-    @SuppressWarnings("null")
-    private void initializeCourses() {
-        List<Course> courses = Arrays.asList(
-            Course.builder()
-                .name("Data Structures and Algorithms")
-                .courseCode("CS101")
-                .credits(4)
-                .description("Fundamental data structures and algorithm design patterns")
-                .build(),
-            Course.builder()
-                .name("Web Development Fundamentals")
-                .courseCode("CS102")
-                .credits(3)
-                .description("Introduction to web development with HTML, CSS, and JavaScript")
-                .build(),
-            Course.builder()
-                .name("Database Management Systems")
-                .courseCode("CS103")
-                .credits(4)
-                .description("Relational databases and SQL programming")
-                .build(),
-            Course.builder()
-                .name("Machine Learning Basics")
-                .courseCode("DS101")
-                .credits(4)
-                .description("Introduction to machine learning algorithms and applications")
-                .build(),
-            Course.builder()
-                .name("Cloud Computing Essentials")
-                .courseCode("IT101")
-                .credits(3)
-                .description("Cloud infrastructure and services overview")
-                .build(),
-            Course.builder()
-                .name("Software Engineering Principles")
-                .courseCode("CS104")
-                .credits(3)
-                .description("Software development lifecycle and best practices")
-                .build()
-        );
-        
-        courseRepository.saveAll(courses);
-    }
-
-    @SuppressWarnings("null")
-    private void initializeGrades() {
-        List<Student> students = studentRepository.findAll();
-        List<Course> courses = courseRepository.findAll();
-        
-        if (!students.isEmpty() && !courses.isEmpty()) {
-            List<Grade> grades = Arrays.asList(
-                Grade.builder()
-                    .student(students.get(0))
-                    .course(courses.get(0))
-                    .score(85.5)
-                    .gradeLetter("A")
-                    .semester("Fall 2024")
-                    .dateRecorded(LocalDateTime.now().minusMonths(2))
-                    .build(),
-                Grade.builder()
-                    .student(students.get(0))
-                    .course(courses.get(1))
-                    .score(78.0)
-                    .gradeLetter("B+")
-                    .semester("Fall 2024")
-                    .dateRecorded(LocalDateTime.now().minusMonths(2))
-                    .build(),
-                Grade.builder()
-                    .student(students.get(1))
-                    .course(courses.get(0))
-                    .score(92.0)
-                    .gradeLetter("A+")
-                    .semester("Fall 2024")
-                    .dateRecorded(LocalDateTime.now().minusMonths(2))
-                    .build(),
-                Grade.builder()
-                    .student(students.get(1))
-                    .course(courses.get(2))
-                    .score(88.5)
-                    .gradeLetter("A")
-                    .semester("Fall 2024")
-                    .dateRecorded(LocalDateTime.now().minusMonths(2))
-                    .build(),
-                Grade.builder()
-                    .student(students.get(2))
-                    .course(courses.get(3))
-                    .score(75.0)
-                    .gradeLetter("B")
-                    .semester("Fall 2024")
-                    .dateRecorded(LocalDateTime.now().minusMonths(2))
-                    .build(),
-                Grade.builder()
-                    .student(students.get(3))
-                    .course(courses.get(4))
-                    .score(82.0)
-                    .gradeLetter("A-")
-                    .semester("Fall 2024")
-                    .dateRecorded(LocalDateTime.now().minusMonths(2))
-                    .build(),
-                Grade.builder()
-                    .student(students.get(4))
-                    .course(courses.get(1))
-                    .score(70.0)
-                    .gradeLetter("B")
-                    .semester("Fall 2024")
-                    .dateRecorded(LocalDateTime.now().minusMonths(2))
-                    .build()
-            );
-            
-            gradeRepository.saveAll(grades);
-        }
     }
 }

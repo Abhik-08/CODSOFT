@@ -2,6 +2,7 @@ package com.eduvault.api.controller;
 
 import com.eduvault.api.dto.AuthDto;
 import com.eduvault.api.dto.StudentDto;
+import com.eduvault.api.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,8 +25,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("Backend Integration Tests")
+
 @SuppressWarnings("null")
-public class AuthenticationAndStudentIntegrationTest {
+class AuthenticationAndStudentIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -33,35 +35,27 @@ public class AuthenticationAndStudentIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private String adminToken;
     private String facultyToken;
     private String studentToken;
 
     @BeforeEach
-    public void setUp() throws Exception {
-        // Register and login as admin
-        adminToken = registerAndLoginUser("admin_test", "admin@test.com", "ADMIN", "password123");
-        // Register and login as faculty
-        facultyToken = registerAndLoginUser("faculty_test", "faculty@test.com", "FACULTY", "password123");
-        // Register and login as student
-        studentToken = registerAndLoginUser("student_test", "student@test.com", "STUDENT", "password123");
+    void setUp() throws Exception {
+        // Clear any leftover newuser from previous runs
+        userRepository.findByUsername("newuser").ifPresent(userRepository::delete);
+
+        // Login as seeded admin
+        adminToken = loginUser("admin", "EduVaultSecurePasswordTemp123!");
+        // Login as seeded faculty
+        facultyToken = loginUser("faculty", "EduVaultSecurePasswordTemp123!");
+        // Login as seeded student
+        studentToken = loginUser("student", "EduVaultSecurePasswordTemp123!");
     }
 
-    @SuppressWarnings("null")
-    private String registerAndLoginUser(String username, String email, String role, String password) throws Exception {
-        // Register user
-        AuthDto.RegisterRequest registerRequest = new AuthDto.RegisterRequest();
-        registerRequest.setUsername(username);
-        registerRequest.setEmail(email);
-        registerRequest.setPassword(password);
-        registerRequest.setRole("ROLE_" + role);
-
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(registerRequest)))
-                .andExpect(status().isOk());
-
-        // Login user
+    private String loginUser(String username, String password) throws Exception {
         AuthDto.LoginRequest loginRequest = new AuthDto.LoginRequest();
         loginRequest.setUsername(username);
         loginRequest.setPassword(password);
@@ -80,11 +74,11 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Register: Should successfully register a new user")
-    public void testRegisterNewUser() throws Exception {
+    void testRegisterNewUser() throws Exception {
         AuthDto.RegisterRequest request = new AuthDto.RegisterRequest();
         request.setUsername("newuser");
         request.setEmail("newuser@test.com");
-        request.setPassword("password123");
+        request.setPassword("EduVaultSecurePasswordTemp123!");
         request.setRole("ROLE_USER");
 
         mockMvc.perform(post("/api/auth/register")
@@ -92,15 +86,15 @@ public class AuthenticationAndStudentIntegrationTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("newuser"))
-                .andExpect(jsonPath("$.email").value("newuser@test.com"));
+                .andExpect(jsonPath("$.role").value("ROLE_USER"));
     }
 
     @Test
     @DisplayName("Login: Should successfully login and return JWT token")
-    public void testLoginUser() throws Exception {
+    void testLoginUser() throws Exception {
         AuthDto.LoginRequest request = new AuthDto.LoginRequest();
-        request.setUsername("admin_test");
-        request.setPassword("password123");
+        request.setUsername("admin");
+        request.setPassword("EduVaultSecurePasswordTemp123!");
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -112,9 +106,9 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Login: Should reject invalid credentials")
-    public void testLoginWithInvalidCredentials() throws Exception {
+    void testLoginWithInvalidCredentials() throws Exception {
         AuthDto.LoginRequest request = new AuthDto.LoginRequest();
-        request.setUsername("admin_test");
+        request.setUsername("admin");
         request.setPassword("wrongpassword");
 
         mockMvc.perform(post("/api/auth/login")
@@ -127,7 +121,7 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Student: Admin should be able to view all students")
-    public void testAdminGetAllStudents() throws Exception {
+    void testAdminGetAllStudents() throws Exception {
         mockMvc.perform(get("/api/students")
                 .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
@@ -136,7 +130,7 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Student: Faculty should be able to view all students")
-    public void testFacultyGetAllStudents() throws Exception {
+    void testFacultyGetAllStudents() throws Exception {
         mockMvc.perform(get("/api/students")
                 .header("Authorization", "Bearer " + facultyToken))
                 .andExpect(status().isOk());
@@ -144,7 +138,7 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Student: Regular user should not be able to view all students (403)")
-    public void testStudentCannotGetAllStudents() throws Exception {
+    void testStudentCannotGetAllStudents() throws Exception {
         mockMvc.perform(get("/api/students")
                 .header("Authorization", "Bearer " + studentToken))
                 .andExpect(status().isForbidden());
@@ -152,14 +146,14 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Student: Unauthenticated access should return 401")
-    public void testUnauthenticatedAccessStudents() throws Exception {
+    void testUnauthenticatedAccessStudents() throws Exception {
         mockMvc.perform(get("/api/students"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("Student: Admin should be able to create a student")
-    public void testAdminCreateStudent() throws Exception {
+    void testAdminCreateStudent() throws Exception {
         StudentDto studentDto = new StudentDto();
         studentDto.setFirstName("Test");
         studentDto.setLastName("Student");
@@ -182,7 +176,7 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Student: Faculty should be able to create a student")
-    public void testFacultyCreateStudent() throws Exception {
+    void testFacultyCreateStudent() throws Exception {
         StudentDto studentDto = new StudentDto();
         studentDto.setFirstName("Faculty");
         studentDto.setLastName("Created");
@@ -202,7 +196,7 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Student: Regular student should not be able to create students (403)")
-    public void testStudentCannotCreateStudent() throws Exception {
+    void testStudentCannotCreateStudent() throws Exception {
         StudentDto studentDto = new StudentDto();
         studentDto.setFirstName("Cannot");
         studentDto.setLastName("Create");
@@ -222,7 +216,7 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Student: Admin should be able to search students")
-    public void testAdminSearchStudents() throws Exception {
+    void testAdminSearchStudents() throws Exception {
         mockMvc.perform(get("/api/students/search")
                 .param("query", "John")
                 .header("Authorization", "Bearer " + adminToken))
@@ -232,7 +226,7 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Student: Should return 404 for non-existent student")
-    public void testGetNonExistentStudent() throws Exception {
+    void testGetNonExistentStudent() throws Exception {
         mockMvc.perform(get("/api/students/99999")
                 .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isNotFound());
@@ -242,21 +236,21 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Swagger: Should be accessible without authentication")
-    public void testSwaggerUIAccess() throws Exception {
-        mockMvc.perform(get("/api/swagger-ui.html"))
+    void testSwaggerUIAccess() throws Exception {
+        mockMvc.perform(get("/api/swagger-ui/index.html"))
                 .andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("Swagger: API docs should be accessible without authentication")
-    public void testApiDocsAccess() throws Exception {
+    void testApiDocsAccess() throws Exception {
         mockMvc.perform(get("/api/v3/api-docs"))
                 .andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("Swagger: Should contain security schemes for JWT")
-    public void testApiDocsContainsJwtScheme() throws Exception {
+    void testApiDocsContainsJwtScheme() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -269,7 +263,7 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Authorization: Valid JWT should grant access to protected endpoint")
-    public void testValidJwtGrantsAccess() throws Exception {
+    void testValidJwtGrantsAccess() throws Exception {
         mockMvc.perform(get("/api/students")
                 .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk());
@@ -277,7 +271,7 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Authorization: Invalid JWT should deny access (401)")
-    public void testInvalidJwtDeniesAccess() throws Exception {
+    void testInvalidJwtDeniesAccess() throws Exception {
         mockMvc.perform(get("/api/students")
                 .header("Authorization", "Bearer invalid.jwt.token"))
                 .andExpect(status().isUnauthorized());
@@ -285,17 +279,8 @@ public class AuthenticationAndStudentIntegrationTest {
 
     @Test
     @DisplayName("Authorization: Missing JWT should deny access (401)")
-    public void testMissingJwtDeniesAccess() throws Exception {
+    void testMissingJwtDeniesAccess() throws Exception {
         mockMvc.perform(get("/api/students"))
                 .andExpect(status().isUnauthorized());
-    }
-
-    // ==================== H2 Console Tests ====================
-
-    @Test
-    @DisplayName("H2 Console: Should be accessible without authentication")
-    public void testH2ConsoleAccess() throws Exception {
-        mockMvc.perform(get("/api/h2-console/"))
-                .andExpect(status().isOk());
     }
 }

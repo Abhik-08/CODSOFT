@@ -10,24 +10,26 @@
   --color-vault-emerald: var(--vault-emerald);
   --color-vault-destructive: var(--vault-destructive);
   
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', 'Fira Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Fira Code', 'SFMono-Regular', Consolas, monospace;
 }
 
 @variant dark (&:where(.dark, .dark *));
 
 /* Light Mode Variables */
 :root {
-  --vault-bg: #ffffff;
-  --vault-fg: #0f172a;
+  --vault-bg: #f6f8fb;
+  --vault-fg: #111827;
   --vault-card: #ffffff;
-  --vault-border: #e2e8f0;
-  --vault-accent: #10b981;
-  --vault-cyan: #0ea5e9;
+  --vault-border: #dbe4ef;
+  --vault-accent: #2563eb;
+  --vault-cyan: #0891b2;
   --vault-emerald: #059669;
-  --vault-destructive: #e11d48;
+  --vault-destructive: #dc2626;
   
-  --vault-glass-bg: rgba(255, 255, 255, 0.7);
-  --vault-glass-border: rgba(16, 185, 129, 0.12);
+  --vault-glass-bg: rgba(255, 255, 255, 0.92);
+  --vault-glass-border: rgba(148, 163, 184, 0.28);
+  --vault-soft-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
 
   font-family: var(--font-sans);
   background-color: var(--vault-bg);
@@ -37,17 +39,18 @@
 
 /* Dark Mode Variables */
 :root.dark {
-  --vault-bg: #030712;
+  --vault-bg: #07111f;
   --vault-fg: #f3f4f6;
-  --vault-card: #0b0f19;
-  --vault-border: #1f2937;
-  --vault-accent: #34d399;
-  --vault-cyan: #06b6d4;
+  --vault-card: #0d1726;
+  --vault-border: #243244;
+  --vault-accent: #60a5fa;
+  --vault-cyan: #22d3ee;
   --vault-emerald: #10b981;
   --vault-destructive: #f43f5e;
   
-  --vault-glass-bg: rgba(11, 15, 25, 0.65);
-  --vault-glass-border: rgba(52, 211, 153, 0.08);
+  --vault-glass-bg: rgba(13, 23, 38, 0.84);
+  --vault-glass-border: rgba(148, 163, 184, 0.16);
+  --vault-soft-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
 }
 
 body {
@@ -56,6 +59,8 @@ body {
   background-color: var(--vault-bg);
   color: var(--vault-fg);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
 }
 
 /* Glassmorphism styling utilities */
@@ -64,6 +69,7 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--vault-glass-border);
+  box-shadow: var(--vault-soft-shadow);
 }
 
 .vault-glass-hover {
@@ -73,7 +79,7 @@ body {
 .vault-glass-hover:hover {
   background: var(--vault-glass-bg);
   border-color: var(--vault-accent);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--vault-soft-shadow);
 }
 
 .dark .vault-glass-hover:hover {
@@ -87,6 +93,28 @@ body {
 
 .vault-glow-accent {
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+}
+
+.field-surface {
+  background: color-mix(in srgb, var(--vault-card) 86%, transparent);
+  border: 1px solid var(--vault-border);
+  color: var(--vault-fg);
+}
+
+.field-surface:focus {
+  border-color: var(--vault-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--vault-accent) 14%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Custom Scrollbar */

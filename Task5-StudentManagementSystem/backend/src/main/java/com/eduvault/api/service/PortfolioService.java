@@ -5,8 +5,10 @@ import java.util.List;
 
 public interface PortfolioService {
     List<PortfolioDto> getAllPortfolios();
+    List<PortfolioDto> getPortfoliosByStudentId(Long studentId);
     PortfolioDto getPortfolioById(Long id);
-    PortfolioDto generatePortfolio(Long studentId, PortfolioDto portfolioDto);
+    PortfolioDto createPortfolio(PortfolioDto portfolioDto);
     PortfolioDto updatePortfolio(Long id, PortfolioDto portfolioDto);
     void deletePortfolio(Long id);
+    PortfolioDto duplicatePortfolio(Long id);
 }

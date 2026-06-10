@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthContext } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { useStudents } from '../hooks/useStudents'
 import { motion, AnimatePresence } from 'motion/react'
 import { 
@@ -11,12 +12,15 @@ import {
   Brain, 
   LogOut, 
   ChevronLeft, 
-  ChevronRight
+  ChevronRight,
+  Moon,
+  Sun
 } from 'lucide-react'
 import { EduVaultLogo, EduVaultLogoMark } from '../components/common'
 
 export default function DashboardLayout() {
   const { user, logout } = useAuthContext()
+  const { theme, toggleTheme } = useTheme()
   const { students } = useStudents()
   const navigate = useNavigate()
   const location = useLocation()
@@ -80,7 +84,7 @@ export default function DashboardLayout() {
       <motion.aside 
         animate={{ width: isCollapsed ? 80 : 260 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="h-full border-r border-slate-200 dark:border-vault-border bg-white/80 dark:bg-[#070b13]/85 backdrop-blur-xl flex flex-col justify-between p-4 shrink-0 transition-colors duration-200 relative z-20 shadow-md"
+        className="h-full border-r border-slate-200 dark:border-vault-border bg-white/95 dark:bg-[#0a1422]/90 backdrop-blur-xl flex flex-col justify-between p-4 shrink-0 transition-colors duration-200 relative z-20 shadow-sm"
       >
         <div>
           {/* Header branding & toggle */}
@@ -91,7 +95,7 @@ export default function DashboardLayout() {
                   <EduVaultLogoMark size={48} />
                 </div>
               ) : (
-                <EduVaultLogo showText={true} iconSize={84} textSize="text-2xl font-black" />
+                <EduVaultLogo showText={true} iconSize={62} textSize="text-xl font-black" />
               )}
             </div>
             
@@ -133,15 +137,15 @@ export default function DashboardLayout() {
                       isCollapsed ? 'justify-center p-3' : 'space-x-3.5 px-4 py-3'
                     } ${
                       active
-                        ? 'bg-vault-accent/10 dark:bg-vault-accent/15 text-vault-accent font-extrabold border border-vault-accent/25 shadow-md shadow-[0_0_12px_rgba(52,211,153,0.12)]'
-                        : 'text-slate-450 dark:text-slate-500 hover:text-vault-fg hover:bg-slate-50 dark:hover:bg-white/5 font-bold'
+                        ? 'bg-vault-accent/10 dark:bg-vault-accent/15 text-vault-accent font-extrabold border border-vault-accent/25 shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-vault-fg hover:bg-slate-100/80 dark:hover:bg-white/5 font-bold'
                     }`}
                   >
                     {/* Active Sliding indicator bar */}
                     {active && (
                       <motion.div
                         layoutId="activeIndicator"
-                        className="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-md bg-vault-accent shadow-[0_0_10px_var(--color-vault-accent)]"
+                        className="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-md bg-vault-accent"
                         transition={{ type: "spring", stiffness: 350, damping: 35 }}
                       />
                     )}
@@ -201,20 +205,21 @@ export default function DashboardLayout() {
       <main className="flex-1 flex flex-col overflow-hidden bg-vault-bg">
         
         {/* Command Center Header Ribbon */}
-        <header className="h-18 border-b border-slate-200 dark:border-vault-border bg-white/70 dark:bg-[#070b13]/70 backdrop-blur-md px-6 flex items-center justify-between shrink-0 transition-colors duration-200 z-10">
+        <header className="h-18 border-b border-slate-200 dark:border-vault-border bg-white/85 dark:bg-[#0a1422]/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0 transition-colors duration-200 z-10">
           
           {/* Header title & section locator */}
           <div className="flex items-center space-x-4">
             <div className="text-left">
-              <h1 className="text-sm font-black tracking-tight text-slate-800 dark:text-white uppercase">
+              <h1 className="text-sm font-black tracking-tight text-slate-900 dark:text-white uppercase">
                 {getPageTitle()}
               </h1>
+              <p className="hidden sm:block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Student operations workspace</p>
             </div>
           </div>
 
           {/* Top Analytics Ribbon statistics - Rendered on dashboard path only */}
           {isDashboardPath && (
-            <div className="flex items-center space-x-6">
+            <div className="hidden lg:flex items-center space-x-6">
               <div className="text-right">
                 <span className="text-[8px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-none">Cohort Size</span>
                 <span className="text-xs font-black text-slate-800 dark:text-white font-mono mt-0.5 block">{totalStudents}</span>
@@ -238,10 +243,20 @@ export default function DashboardLayout() {
             </div>
           )}
 
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="ml-3 h-9 w-9 inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:text-vault-accent hover:border-vault-accent/40 transition-colors cursor-pointer"
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
         </header>
 
         {/* Content Canvas */}
-        <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-slate-50/30 dark:bg-transparent">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[linear-gradient(180deg,rgba(37,99,235,0.04),transparent_220px)] dark:bg-[linear-gradient(180deg,rgba(96,165,250,0.06),transparent_240px)]">
           <Outlet />
         </div>
       </main>

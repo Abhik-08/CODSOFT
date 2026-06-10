@@ -12,6 +12,7 @@ import {
 import { db } from '../firebase/firebase'
 import type { User, FirestoreUser } from '../types/auth'
 import type { Student } from '../types/student'
+import type { Portfolio } from '../types/portfolio'
 
 // ─── Collection References ───────────────────────────────────────────
 export const usersCollection = collection(db, 'users')
@@ -177,16 +178,11 @@ export const firestoreService = {
   /**
    * Adds a new portfolio document to Firestore
    */
-  async addPortfolio(portfolio: {
-    studentName: string
-    template: string
-    theme: string
-    deployed: boolean
-    deployUrl?: string
-  }): Promise<string> {
+  async addPortfolio(portfolio: Omit<Portfolio, 'id'>): Promise<string> {
     const docRef = await addDoc(portfoliosCollection, {
       ...portfolio,
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     })
     return docRef.id
   },
@@ -194,8 +190,19 @@ export const firestoreService = {
   /**
    * Updates an existing portfolio document
    */
-  async updatePortfolio(id: string, data: Record<string, unknown>): Promise<void> {
+  async updatePortfolio(id: string, data: Partial<Portfolio>): Promise<void> {
     const portfolioRef = doc(db, 'portfolios', id)
-    await updateDoc(portfolioRef, data)
+    await updateDoc(portfolioRef, {
+      ...data,
+      updatedAt: serverTimestamp()
+    })
+  },
+
+  /**
+   * Deletes an existing portfolio document
+   */
+  async deletePortfolio(id: string): Promise<void> {
+    const portfolioRef = doc(db, 'portfolios', id)
+    await deleteDoc(portfolioRef)
   }
 }

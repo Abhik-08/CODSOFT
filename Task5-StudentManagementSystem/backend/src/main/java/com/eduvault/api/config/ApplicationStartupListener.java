@@ -15,20 +15,23 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ApplicationStartupListener {
 
+    private static final String SEPARATOR_LINE = "=============================================================================";
+
     private final Environment environment;
+    private final RequestMappingHandlerMapping requestMappingHandlerMapping;
 
-    @Autowired(required = false)
-    private RequestMappingHandlerMapping requestMappingHandlerMapping;
-
-    public ApplicationStartupListener(Environment environment) {
+    @Autowired
+    public ApplicationStartupListener(Environment environment,
+                                      @Autowired(required = false) RequestMappingHandlerMapping requestMappingHandlerMapping) {
         this.environment = environment;
+        this.requestMappingHandlerMapping = requestMappingHandlerMapping;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void logApplicationStartup() {
-        log.info("=============================================================================");
+        log.info(SEPARATOR_LINE);
         log.info("                    EduVault API Startup Information");
-        log.info("=============================================================================");
+        log.info(SEPARATOR_LINE);
         
         // Application properties
         log.info("Application Name: {}", environment.getProperty("spring.application.name"));
@@ -93,13 +96,13 @@ public class ApplicationStartupListener {
         
         log.info("");
         log.info("============= TEST CREDENTIALS =============");
-        log.info("Default Admin User: admin / password123");
-        log.info("Default Faculty User: faculty / password123");
-        log.info("Default Student User: student / password123");
+        log.info("Default Admin User: admin / EduVaultSecurePasswordTemp123!");
+        log.info("Default Faculty User: faculty / EduVaultSecurePasswordTemp123!");
+        log.info("Default Student User: student / EduVaultSecurePasswordTemp123!");
         
         log.info("");
-        log.info("=============================================================================");
+        log.info(SEPARATOR_LINE);
         log.info("                    Application Started Successfully");
-        log.info("=============================================================================");
+        log.info(SEPARATOR_LINE);
     }
 }

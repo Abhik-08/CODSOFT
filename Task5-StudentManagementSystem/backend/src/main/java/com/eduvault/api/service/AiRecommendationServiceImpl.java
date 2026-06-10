@@ -135,7 +135,7 @@ public class AiRecommendationServiceImpl implements AiRecommendationService {
         String academicStanding = calculateAcademicStanding(gpa);
         String performanceAnalysis = generatePerformanceAnalysis(student, gpa, attendance);
         String placementReadiness = calculatePlacementReadiness(gpa, attendance);
-        List<String> suggestions = generateImprovementSuggestions(student, gpa, attendance);
+        List<String> suggestions = generateImprovementSuggestions(gpa, attendance);
 
         return AiAnalysisDto.AnalysisResponse.builder()
                 .studentId(studentId)
@@ -185,7 +185,7 @@ public class AiRecommendationServiceImpl implements AiRecommendationService {
         }
     }
 
-    private List<String> generateImprovementSuggestions(Student student, double gpa, double attendance) {
+    private List<String> generateImprovementSuggestions(double gpa, double attendance) {
         List<String> suggestions = new ArrayList<>();
         if (gpa < 7.5) {
             suggestions.add("Enroll in peer study groups and tutorial sessions.");
@@ -199,8 +199,8 @@ public class AiRecommendationServiceImpl implements AiRecommendationService {
             suggestions.add("Ensure strict adherence to lecture timings and submit regular logs.");
         }
 
-        if (student.getProjects() == null || student.getProjects().isEmpty()) {
-            suggestions.add("Develop at least two comprehensive software or design projects for portfolio showcase.");
+        if (gpa < 8.0) {
+            suggestions.add("Develop at least two comprehensive software or design projects to showcase in your portfolio.");
         }
         return suggestions;
     }

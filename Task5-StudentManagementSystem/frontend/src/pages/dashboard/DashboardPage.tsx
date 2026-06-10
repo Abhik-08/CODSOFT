@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useStudents } from '../../hooks/useStudents'
+import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import {
@@ -135,7 +136,7 @@ const SmartInsightTicker = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -15, opacity: 0 }}
             transition={{ duration: 0.35, ease: "easeInOut" }}
-            className="text-xs font-bold text-slate-700 dark:text-slate-350 truncate"
+            className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate"
           >
             {insights[currentIndex]}
           </motion.p>
@@ -146,21 +147,29 @@ const SmartInsightTicker = () => {
 }
 
 export default function DashboardPage() {
-  const { students, loading } = useStudents()
+  const { students, loading, error: studentsError } = useStudents()
+  const { topSkill, lastUpdated, error: statsError } = useDashboardStats()
   const navigate = useNavigate()
+
+  // Format the live last-updated timestamp
+  const lastUpdatedLabel = lastUpdated
+    ? lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : 'Syncing...'
+
+  const combinedError = studentsError || statsError
 
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse text-left">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-2">
-            <div className="h-8 w-64 bg-slate-250 dark:bg-white/5 rounded-lg" />
-            <div className="h-4 w-96 bg-slate-250 dark:bg-white/5 rounded-lg" />
+            <div className="h-8 w-64 bg-slate-200 dark:bg-white/5 rounded-lg" />
+            <div className="h-4 w-96 bg-slate-200 dark:bg-white/5 rounded-lg" />
           </div>
-          <div className="h-6 w-36 bg-slate-250 dark:bg-white/5 rounded-lg" />
+          <div className="h-6 w-36 bg-slate-200 dark:bg-white/5 rounded-lg" />
         </div>
         
-        <div className="h-11 w-full bg-slate-250 dark:bg-white/5 rounded-xl" />
+        <div className="h-11 w-full bg-slate-200 dark:bg-white/5 rounded-xl" />
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {['kpi-sk-1', 'kpi-sk-2', 'kpi-sk-3', 'kpi-sk-4', 'kpi-sk-5', 'kpi-sk-6'].map((key) => (
@@ -231,8 +240,8 @@ export default function DashboardPage() {
     ? Number((attendanceStats.reduce((sum, a) => sum + a, 0) / totalStudents).toFixed(1))
     : 0
 
-  const skills = ["Machine Learning", "Fullstack Development", "Cloud Architecting", "Embedded Systems"]
-  const mostCommonSkill = skills[0]
+  // mostCommonSkill derived live from Firestore portfolio collection via useDashboardStats hook
+  const mostCommonSkill = topSkill
 
   // Order students for Top list
   const topStudents = [...students]
@@ -293,6 +302,14 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+
+      {/* Firestore Error Banner */}
+      {combinedError && (
+        <div className="p-3.5 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs font-bold flex items-center gap-2">
+          <AlertCircle size={15} className="shrink-0" />
+          <span>Firestore sync error: {combinedError} — Showing last known data.</span>
+        </div>
+      )}
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -306,7 +323,7 @@ export default function DashboardPage() {
           <div className="px-4 py-2 bg-vault-emerald/10 border border-vault-emerald/20 text-vault-emerald rounded-xl text-[10px] font-black font-mono shadow-sm">
             SYSTEM ACTIVE: {activeStudents}/{totalStudents} COHORTS LOGGED
           </div>
-          <span className="text-[9px] text-slate-400 font-mono font-medium mt-1.5 block">Last Updated: Just now</span>
+          <span className="text-[9px] text-slate-400 font-mono font-medium mt-1.5 block">Live @ {lastUpdatedLabel}</span>
         </div>
       </div>
 
@@ -500,8 +517,8 @@ export default function DashboardPage() {
               className="vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm hover:border-vault-accent/30 hover:shadow-md transition-all duration-300"
             >
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 text-left">GPA Segment Distribution</h4>
-              <div className="h-56 w-full flex items-center justify-between">
-                <div className="w-[50%] h-full">
+              <div className="h-56 w-full grid grid-cols-2 gap-2 items-center">
+                <div className="h-full min-w-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -517,7 +534,7 @@ export default function DashboardPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="w-[50%] space-y-2.5 text-xs text-left">
+                <div className="space-y-2.5 text-xs text-left">
                   {segmentationData.map((seg) => (
                     <div key={seg.name} className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: seg.fill }} />
@@ -563,7 +580,7 @@ export default function DashboardPage() {
                 <ShieldAlert className="text-vault-accent animate-pulse" size={15} />
                 <span>Actionable Diagnostics Feed & Directives</span>
               </h4>
-              <span className="text-[9px] font-black font-mono bg-vault-accent/10 text-vault-accent px-2 py-0.5 rounded uppercase">2 Warnings Flagged</span>
+              <span className="text-[9px] font-black font-mono bg-vault-accent/10 text-vault-accent px-2 py-0.5 rounded uppercase">{attentionStudents.length} Warning{attentionStudents.length === 1 ? '' : 's'} Flagged</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5">
@@ -702,7 +719,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold truncate text-slate-800 dark:text-white">{student.firstName} {student.lastName}</p>
-                    <p className="text-[10px] text-slate-450 dark:text-slate-400 truncate mt-0.5">{student.department}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{student.department}</p>
                   </div>
                   <span className="text-xs font-mono font-bold bg-vault-accent/10 border border-vault-accent/20 text-vault-accent px-2 py-0.5 rounded">
                     {student.gpa.toFixed(2)}

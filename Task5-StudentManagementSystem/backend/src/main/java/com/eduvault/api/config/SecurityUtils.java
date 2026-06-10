@@ -17,19 +17,11 @@ public class SecurityUtils {
 
     private final StudentRepository studentRepository;
     private final PortfolioRepository portfolioRepository;
-    private final GradeRepository gradeRepository;
-    private final ProjectRepository projectRepository;
-    private final CertificateRepository certificateRepository;
 
     @Autowired
-    public SecurityUtils(StudentRepository studentRepository, PortfolioRepository portfolioRepository,
-                         GradeRepository gradeRepository, ProjectRepository projectRepository,
-                         CertificateRepository certificateRepository) {
+    public SecurityUtils(StudentRepository studentRepository, PortfolioRepository portfolioRepository) {
         this.studentRepository = studentRepository;
         this.portfolioRepository = portfolioRepository;
-        this.gradeRepository = gradeRepository;
-        this.projectRepository = projectRepository;
-        this.certificateRepository = certificateRepository;
     }
 
     public static String getCurrentUsername() {
@@ -89,54 +81,6 @@ public class SecurityUtils {
         return portfolioRepository.findById(portfolioId)
                 .map(portfolio -> {
                     Student student = portfolio.getStudent();
-                    return student != null && (username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()));
-                })
-                .orElse(false);
-    }
-
-    public boolean hasAccessToGrade(Long gradeId) {
-        if (hasRole(ROLE_ADMIN) || hasRole(ROLE_FACULTY)) {
-            return true;
-        }
-        String username = getCurrentUsername();
-        if (username == null) {
-            return false;
-        }
-        return gradeRepository.findById(gradeId)
-                .map(grade -> {
-                    Student student = grade.getStudent();
-                    return student != null && (username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()));
-                })
-                .orElse(false);
-    }
-
-    public boolean hasAccessToProject(Long projectId) {
-        if (hasRole(ROLE_ADMIN) || hasRole(ROLE_FACULTY)) {
-            return true;
-        }
-        String username = getCurrentUsername();
-        if (username == null) {
-            return false;
-        }
-        return projectRepository.findById(projectId)
-                .map(project -> {
-                    Student student = project.getStudent();
-                    return student != null && (username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()));
-                })
-                .orElse(false);
-    }
-
-    public boolean hasAccessToCertificate(Long certificateId) {
-        if (hasRole(ROLE_ADMIN) || hasRole(ROLE_FACULTY)) {
-            return true;
-        }
-        String username = getCurrentUsername();
-        if (username == null) {
-            return false;
-        }
-        return certificateRepository.findById(certificateId)
-                .map(cert -> {
-                    Student student = cert.getStudent();
                     return student != null && (username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()));
                 })
                 .orElse(false);
