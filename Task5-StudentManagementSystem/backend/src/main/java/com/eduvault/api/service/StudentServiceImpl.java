@@ -781,7 +781,14 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public StudentDto updateStudentByFirestoreId(String firestoreId, StudentDto studentDto) {
-        Student student = studentRepository.findByFirestoreId(firestoreId)
+        // Try local H2 first; if empty (e.g. fresh Render deploy), sync from Firestore then retry
+        Optional<Student> studentOpt = studentRepository.findByFirestoreId(firestoreId);
+        if (studentOpt.isEmpty()) {
+            log.info("Student not found locally for firestoreId={}, triggering Firestore sync...", firestoreId);
+            syncWithFirestore();
+            studentOpt = studentRepository.findByFirestoreId(firestoreId);
+        }
+        Student student = studentOpt
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with Firestore ID: " + firestoreId));
         return updateStudent(student.getId(), studentDto);
     }
