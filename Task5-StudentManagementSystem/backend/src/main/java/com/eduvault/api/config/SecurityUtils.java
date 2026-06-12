@@ -67,7 +67,7 @@ public class SecurityUtils {
             return false;
         }
         return studentRepository.findById(studentId)
-                .map(student -> username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()))
+                .map(student -> matchesUser(username, student))
                 .orElse(false);
     }
 
@@ -82,10 +82,9 @@ public class SecurityUtils {
         try {
             Long id = Long.parseLong(studentIdStr);
             return studentRepository.findById(id)
-                    .map(student -> username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()))
+                    .map(student -> matchesUser(username, student))
                     .orElse(false);
         } catch (NumberFormatException e) {
-            // Lookup by firestoreId, enrollment, or email
             Optional<Student> studentOpt = studentRepository.findByFirestoreId(studentIdStr);
             if (studentOpt.isEmpty()) {
                 studentOpt = studentRepository.findByEnrollmentNumber(studentIdStr);
@@ -93,9 +92,19 @@ public class SecurityUtils {
             if (studentOpt.isEmpty()) {
                 studentOpt = studentRepository.findByEmail(studentIdStr);
             }
-            return studentOpt.map(student -> username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()))
+            return studentOpt.map(student -> matchesUser(username, student))
                     .orElse(false);
         }
+    }
+
+    /** Checks if a Spring Security username matches a student's email or enrollment number.
+     *  Handles both full email (from Firebase) and email prefix (stored as username). */
+    private boolean matchesUser(String username, Student student) {
+        String email = student.getEmail();
+        String emailPrefix = email != null && email.contains("@") ? email.substring(0, email.indexOf("@")) : email;
+        return username.equalsIgnoreCase(email)
+                || username.equalsIgnoreCase(emailPrefix)
+                || username.equalsIgnoreCase(student.getEnrollmentNumber());
     }
 
     public boolean hasAccessToPortfolio(Long portfolioId) {

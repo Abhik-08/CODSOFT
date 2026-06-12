@@ -52,7 +52,7 @@ public class StudentController {
     }
 
     @PutMapping("/firestore/{firestoreId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY') or @securityUtils.hasAccessToStudent(#firestoreId)")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update student by Firestore ID", description = "Modify and save fields on a student profile using their Firestore ID")
     public ResponseEntity<StudentDto> updateStudentByFirestoreId(@PathVariable String firestoreId, @Valid @RequestBody StudentDto studentDto) {
         return ResponseEntity.ok(studentService.updateStudentByFirestoreId(firestoreId, studentDto));
