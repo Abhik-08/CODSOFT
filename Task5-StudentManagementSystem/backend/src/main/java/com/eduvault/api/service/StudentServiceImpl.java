@@ -51,15 +51,25 @@ public class StudentServiceImpl implements StudentService {
     private static final String FIELD_GPA = "gpa";
     private static final String FIELD_GRADES = "grades";
     private static final String FIELD_ATTENDANCE = "attendance";
+    private static final String FIELD_PLACEMENT_STATUS = "placementStatus";
+    private static final String FIELD_OFFER_COUNT = "offerCount";
 
     private final StudentRepository studentRepository;
     private final Environment env;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final PlacementIntelligenceService placementIntelligenceService;
+    private final RiskDetectionService riskDetectionService;
 
     @Autowired
-    public StudentServiceImpl(StudentRepository studentRepository, Environment env) {
+    public StudentServiceImpl(
+            StudentRepository studentRepository, 
+            Environment env,
+            @org.springframework.context.annotation.Lazy PlacementIntelligenceService placementIntelligenceService,
+            @org.springframework.context.annotation.Lazy RiskDetectionService riskDetectionService) {
         this.studentRepository = studentRepository;
         this.env = env;
+        this.placementIntelligenceService = placementIntelligenceService;
+        this.riskDetectionService = riskDetectionService;
     }
 
     private boolean isTestProfile() {
@@ -224,6 +234,20 @@ public class StudentServiceImpl implements StudentService {
         return parsed instanceof List ? (List<Object>) parsed : new ArrayList<>();
     }
 
+    private String parseStringField(JsonNode fieldsNode, String fieldName, String defaultValue) {
+        if (!fieldsNode.has(fieldName)) return defaultValue;
+        JsonNode node = fieldsNode.get(fieldName);
+        return node.has(VAL_STRING) ? node.get(VAL_STRING).asText() : defaultValue;
+    }
+
+    private int parseOfferCountField(JsonNode fieldsNode) {
+        if (!fieldsNode.has(FIELD_OFFER_COUNT)) return 0;
+        JsonNode offerNode = fieldsNode.get(FIELD_OFFER_COUNT);
+        if (offerNode.has(VAL_INTEGER)) return Integer.parseInt(offerNode.get(VAL_INTEGER).asText());
+        if (offerNode.has(VAL_DOUBLE)) return (int) offerNode.get(VAL_DOUBLE).asDouble();
+        return 0;
+    }
+
     private Optional<Student> findExistingStudent(String firestoreId, String enrollmentNumber, String email) {
         Optional<Student> found = studentRepository.findByFirestoreId(firestoreId);
         if (found.isEmpty()) found = studentRepository.findByEnrollmentNumber(enrollmentNumber);
@@ -244,9 +268,17 @@ public class StudentServiceImpl implements StudentService {
         ex.setGpa(d.gpa());
         ex.setAttendance(d.attendanceAvg());
         ex.setPlacementReady(d.gpa() >= 8.5);
+        ex.setPlacementStatus(d.placementStatus());
+        ex.setOfferCount(d.offerCount());
         ex.setFirestoreId(d.firestoreId());
         ex.setGradesJson(d.gradesJsonStr());
         ex.setAttendanceJson(d.attJsonStr());
+        ex.setPhone(d.phone());
+        ex.setGithubUrl(d.githubUrl());
+        ex.setLinkedinUrl(d.linkedinUrl());
+        ex.setPortfolioUrl(d.portfolioUrl());
+        ex.setPortfolioTitle(d.portfolioTitle());
+        ex.setPortfolioSummary(d.portfolioSummary());
         studentRepository.save(ex);
     }
 
@@ -258,17 +290,16 @@ public class StudentServiceImpl implements StudentService {
         JsonNode fieldsNode = doc.get(FIELDS);
         if (fieldsNode == null) return;
 
-        String firstName = fieldsNode.has(FIELD_FIRST_NAME) ? fieldsNode.get(FIELD_FIRST_NAME).get(VAL_STRING).asText() : "";
-        String lastName = fieldsNode.has(FIELD_LAST_NAME) ? fieldsNode.get(FIELD_LAST_NAME).get(VAL_STRING).asText() : "";
-        String email = fieldsNode.has(FIELD_EMAIL) ? fieldsNode.get(FIELD_EMAIL).get(VAL_STRING).asText() : "";
-        String enrollmentNumber = fieldsNode.has(FIELD_ENROLLMENT) ? fieldsNode.get(FIELD_ENROLLMENT).get(VAL_STRING).asText() : "";
+        String firstName = parseStringField(fieldsNode, FIELD_FIRST_NAME, "");
+        String lastName = parseStringField(fieldsNode, FIELD_LAST_NAME, "");
+        String email = parseStringField(fieldsNode, FIELD_EMAIL, "");
+        String enrollmentNumber = parseStringField(fieldsNode, FIELD_ENROLLMENT, "");
 
-        String dateOfBirthStr = fieldsNode.has(FIELD_DOB) ? fieldsNode.get(FIELD_DOB).get(VAL_STRING).asText() : "2000-01-01";
-        LocalDate dob = parseDob(dateOfBirthStr);
-        String department = fieldsNode.has(FIELD_DEPT) ? fieldsNode.get(FIELD_DEPT).get(VAL_STRING).asText() : "";
+        LocalDate dob = parseDob(parseStringField(fieldsNode, FIELD_DOB, "2000-01-01"));
+        String department = parseStringField(fieldsNode, FIELD_DEPT, "");
         int semester = parseSemesterField(fieldsNode);
-        String status = fieldsNode.has(FIELD_STATUS) ? fieldsNode.get(FIELD_STATUS).get(VAL_STRING).asText() : "ACTIVE";
-        String imageUrl = fieldsNode.has(FIELD_IMAGE) ? fieldsNode.get(FIELD_IMAGE).get(VAL_STRING).asText() : "";
+        String status = parseStringField(fieldsNode, FIELD_STATUS, "ACTIVE");
+        String imageUrl = parseStringField(fieldsNode, FIELD_IMAGE, "");
         double gpa = parseGpaField(fieldsNode);
 
         List<Object> gradesList = parseListField(fieldsNode, FIELD_GRADES);
@@ -278,10 +309,23 @@ public class StudentServiceImpl implements StudentService {
         String attJsonStr = objectMapper.writeValueAsString(attList);
         double attendanceAvg = calculateAttendanceAverage(attList);
 
+        // Parse placement fields
+        String placementStatus = parseStringField(fieldsNode, FIELD_PLACEMENT_STATUS, "NOT_STARTED");
+        int offerCount = parseOfferCountField(fieldsNode);
+
+        String phone = parseStringField(fieldsNode, "phone", "");
+        String githubUrl = parseStringField(fieldsNode, "githubUrl", "");
+        String linkedinUrl = parseStringField(fieldsNode, "linkedinUrl", "");
+        String portfolioUrl = parseStringField(fieldsNode, "portfolioUrl", "");
+        String portfolioTitle = parseStringField(fieldsNode, "portfolioTitle", "");
+        String portfolioSummary = parseStringField(fieldsNode, "portfolioSummary", "");
+
         FirestoreStudentData data = new FirestoreStudentData(
                 firestoreId, firstName, lastName, email, enrollmentNumber,
                 dob, department, semester, status, imageUrl,
-                gpa, attendanceAvg, gradesJsonStr, attJsonStr);
+                gpa, attendanceAvg, gradesJsonStr, attJsonStr,
+                placementStatus, offerCount, phone, githubUrl, linkedinUrl,
+                portfolioUrl, portfolioTitle, portfolioSummary);
 
         Optional<Student> existingOpt = findExistingStudent(firestoreId, enrollmentNumber, email);
 
@@ -301,9 +345,17 @@ public class StudentServiceImpl implements StudentService {
                     .gpa(gpa)
                     .attendance(attendanceAvg)
                     .placementReady(gpa >= 8.5)
+                    .placementStatus(placementStatus)
+                    .offerCount(offerCount)
                     .firestoreId(firestoreId)
                     .gradesJson(gradesJsonStr)
                     .attendanceJson(attJsonStr)
+                    .phone(phone)
+                    .githubUrl(githubUrl)
+                    .linkedinUrl(linkedinUrl)
+                    .portfolioUrl(portfolioUrl)
+                    .portfolioTitle(portfolioTitle)
+                    .portfolioSummary(portfolioSummary)
                     .build();
             studentRepository.save(nu);
         }
@@ -324,6 +376,12 @@ public class StudentServiceImpl implements StudentService {
             fieldsNode.set(FIELD_STATUS, objectMapper.createObjectNode().put(VAL_STRING, dto.getStatus()));
             fieldsNode.set(FIELD_GPA, objectMapper.createObjectNode().put(VAL_DOUBLE, dto.getGpa() != null ? dto.getGpa() : 8.0));
             fieldsNode.set(FIELD_IMAGE, objectMapper.createObjectNode().put(VAL_STRING, dto.getImageUrl() != null ? dto.getImageUrl() : ""));
+            fieldsNode.set("phone", objectMapper.createObjectNode().put(VAL_STRING, dto.getPhone() != null ? dto.getPhone() : ""));
+            fieldsNode.set("githubUrl", objectMapper.createObjectNode().put(VAL_STRING, dto.getGithubUrl() != null ? dto.getGithubUrl() : ""));
+            fieldsNode.set("linkedinUrl", objectMapper.createObjectNode().put(VAL_STRING, dto.getLinkedinUrl() != null ? dto.getLinkedinUrl() : ""));
+            fieldsNode.set("portfolioUrl", objectMapper.createObjectNode().put(VAL_STRING, dto.getPortfolioUrl() != null ? dto.getPortfolioUrl() : ""));
+            fieldsNode.set("portfolioTitle", objectMapper.createObjectNode().put(VAL_STRING, dto.getPortfolioTitle() != null ? dto.getPortfolioTitle() : ""));
+            fieldsNode.set("portfolioSummary", objectMapper.createObjectNode().put(VAL_STRING, dto.getPortfolioSummary() != null ? dto.getPortfolioSummary() : ""));
 
             if (dto.getGrades() != null) {
                 fieldsNode.set(FIELD_GRADES, convertToFirestoreValue(dto.getGrades(), objectMapper));
@@ -395,17 +453,18 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MSG + id));
 
-        student.setFirstName(studentDto.getFirstName());
-        student.setLastName(studentDto.getLastName());
-        student.setEmail(studentDto.getEmail());
-        student.setEnrollmentNumber(studentDto.getEnrollmentNumber());
-        student.setDateOfBirth(studentDto.getDateOfBirth());
-        student.setDepartment(studentDto.getDepartment());
-        student.setSemester(studentDto.getSemester());
-        student.setStatus(studentDto.getStatus());
-        student.setImageUrl(studentDto.getImageUrl());
-        student.setGpa(studentDto.getGpa());
-        student.setAttendance(studentDto.getAttendanceRate());
+        String changedBy = "System API";
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null) {
+                changedBy = auth.getName();
+            }
+        } catch (Exception e) {
+            // Ignore security context not found
+        }
+
+        updateAndLogFields(student, studentDto, changedBy);
+
         student.setPlacementReady(studentDto.getPlacementReady());
 
         if (studentDto.getGrades() != null) {
@@ -426,28 +485,110 @@ public class StudentServiceImpl implements StudentService {
         Student updatedStudent = studentRepository.save(student);
 
         if (!isTestProfile() && updatedStudent.getFirestoreId() != null) {
-            try {
-                RestTemplate restTemplate = new RestTemplate();
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-
-                String jsonBody = buildFirestoreJson(convertToDto(updatedStudent));
-                HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
-
-                String patchUrl = FIRESTORE_BASE_URL + "/" + updatedStudent.getFirestoreId() +
-                        "?updateMask.fieldPaths=firstName&updateMask.fieldPaths=lastName&updateMask.fieldPaths=email" +
-                        "&updateMask.fieldPaths=enrollmentNumber&updateMask.fieldPaths=dateOfBirth&updateMask.fieldPaths=department" +
-                        "&updateMask.fieldPaths=semester&updateMask.fieldPaths=status&updateMask.fieldPaths=gpa&updateMask.fieldPaths=imageUrl" +
-                        "&updateMask.fieldPaths=grades&updateMask.fieldPaths=attendance";
-
-                headers.set("X-HTTP-Method-Override", "PATCH");
-                restTemplate.exchange(patchUrl, HttpMethod.POST, entity, String.class);
-            } catch (Exception e) {
-                log.error("Failed to update student in Firestore: {}", e.getMessage());
-            }
+            syncToFirestore(updatedStudent);
         }
 
+        triggerRecalculations(updatedStudent.getFirestoreId());
+
         return convertToDto(updatedStudent);
+    }
+
+    private void updateAndLogFields(Student student, StudentDto dto, String changedBy) {
+        String fId = student.getFirestoreId();
+        compareAndLog(fId, "First Name", student.getFirstName(), dto.getFirstName(), changedBy);
+        student.setFirstName(dto.getFirstName());
+
+        compareAndLog(fId, "Last Name", student.getLastName(), dto.getLastName(), changedBy);
+        student.setLastName(dto.getLastName());
+
+        compareAndLog(fId, "Email", student.getEmail(), dto.getEmail(), changedBy);
+        student.setEmail(dto.getEmail());
+
+        compareAndLog(fId, "Enrollment Number", student.getEnrollmentNumber(), dto.getEnrollmentNumber(), changedBy);
+        student.setEnrollmentNumber(dto.getEnrollmentNumber());
+
+        compareAndLog(fId, "Date of Birth", student.getDateOfBirth() != null ? student.getDateOfBirth().toString() : "", dto.getDateOfBirth() != null ? dto.getDateOfBirth().toString() : "", changedBy);
+        student.setDateOfBirth(dto.getDateOfBirth());
+
+        compareAndLog(fId, "Department", student.getDepartment(), dto.getDepartment(), changedBy);
+        student.setDepartment(dto.getDepartment());
+
+        compareAndLog(fId, "Current Semester", student.getSemester() != null ? String.valueOf(student.getSemester()) : "", dto.getSemester() != null ? String.valueOf(dto.getSemester()) : "", changedBy);
+        student.setSemester(dto.getSemester());
+
+        compareAndLog(fId, "Status", student.getStatus(), dto.getStatus(), changedBy);
+        student.setStatus(dto.getStatus());
+
+        compareAndLog(fId, "Image URL", student.getImageUrl(), dto.getImageUrl(), changedBy);
+        student.setImageUrl(dto.getImageUrl());
+
+        compareAndLog(fId, "CGPA", student.getGpa() != null ? String.valueOf(student.getGpa()) : "", dto.getGpa() != null ? String.valueOf(dto.getGpa()) : "", changedBy);
+        student.setGpa(dto.getGpa());
+
+        compareAndLog(fId, "Attendance Rate", student.getAttendance() != null ? String.valueOf(student.getAttendance()) : "", dto.getAttendanceRate() != null ? String.valueOf(dto.getAttendanceRate()) : "", changedBy);
+        student.setAttendance(dto.getAttendanceRate());
+
+        compareAndLog(fId, "Placement Status", student.getPlacementStatus(), dto.getPlacementStatus(), changedBy);
+        student.setPlacementStatus(dto.getPlacementStatus());
+
+        compareAndLog(fId, "Offer Count", student.getOfferCount() != null ? String.valueOf(student.getOfferCount()) : "", dto.getOfferCount() != null ? String.valueOf(dto.getOfferCount()) : "", changedBy);
+        student.setOfferCount(dto.getOfferCount());
+
+        compareAndLog(fId, "Phone", student.getPhone(), dto.getPhone(), changedBy);
+        student.setPhone(dto.getPhone());
+
+        compareAndLog(fId, "GitHub URL", student.getGithubUrl(), dto.getGithubUrl(), changedBy);
+        student.setGithubUrl(dto.getGithubUrl());
+
+        compareAndLog(fId, "LinkedIn URL", student.getLinkedinUrl(), dto.getLinkedinUrl(), changedBy);
+        student.setLinkedinUrl(dto.getLinkedinUrl());
+
+        compareAndLog(fId, "Portfolio URL", student.getPortfolioUrl(), dto.getPortfolioUrl(), changedBy);
+        student.setPortfolioUrl(dto.getPortfolioUrl());
+
+        compareAndLog(fId, "Portfolio Title", student.getPortfolioTitle(), dto.getPortfolioTitle(), changedBy);
+        student.setPortfolioTitle(dto.getPortfolioTitle());
+
+        compareAndLog(fId, "Portfolio Summary", student.getPortfolioSummary(), dto.getPortfolioSummary(), changedBy);
+        student.setPortfolioSummary(dto.getPortfolioSummary());
+    }
+
+    private void syncToFirestore(Student updatedStudent) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            String jsonBody = buildFirestoreJson(convertToDto(updatedStudent));
+            HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
+
+            String patchUrl = FIRESTORE_BASE_URL + "/" + updatedStudent.getFirestoreId() +
+                    "?updateMask.fieldPaths=firstName&updateMask.fieldPaths=lastName&updateMask.fieldPaths=email" +
+                    "&updateMask.fieldPaths=enrollmentNumber&updateMask.fieldPaths=dateOfBirth&updateMask.fieldPaths=department" +
+                    "&updateMask.fieldPaths=semester&updateMask.fieldPaths=status&updateMask.fieldPaths=gpa&updateMask.fieldPaths=imageUrl" +
+                    "&updateMask.fieldPaths=grades&updateMask.fieldPaths=attendance" +
+                    "&updateMask.fieldPaths=phone&updateMask.fieldPaths=githubUrl&updateMask.fieldPaths=linkedinUrl" +
+                    "&updateMask.fieldPaths=portfolioUrl&updateMask.fieldPaths=portfolioTitle&updateMask.fieldPaths=portfolioSummary";
+
+            headers.set("X-HTTP-Method-Override", "PATCH");
+            restTemplate.exchange(patchUrl, HttpMethod.POST, entity, String.class);
+        } catch (Exception e) {
+            log.error("Failed to update student in Firestore: {}", e.getMessage());
+        }
+    }
+
+    private void triggerRecalculations(String firestoreId) {
+        if (firestoreId == null) return;
+        try {
+            placementIntelligenceService.recalculate(firestoreId);
+        } catch (Exception e) {
+            log.warn("Failed to trigger automatic placement recalculation: {}", e.getMessage());
+        }
+        try {
+            riskDetectionService.recalculate(firestoreId);
+        } catch (Exception e) {
+            log.warn("Failed to trigger automatic academic risk recalculation: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -480,6 +621,24 @@ public class StudentServiceImpl implements StudentService {
                 .toList();
     }
 
+    private List<String> deserializeStringList(String json) {
+        if (json == null || json.isBlank()) return new ArrayList<>();
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private List<Integer> deserializeIntegerList(String json) {
+        if (json == null || json.isBlank()) return new ArrayList<>();
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<Integer>>() {});
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
     private StudentDto convertToDto(Student student) {
         StudentDto dto = new StudentDto();
         dto.setId(student.getId());
@@ -495,7 +654,40 @@ public class StudentServiceImpl implements StudentService {
         dto.setGpa(student.getGpa());
         dto.setAttendanceRate(student.getAttendance());
         dto.setPlacementReady(student.getPlacementReady());
+        dto.setPlacementStatus(student.getPlacementStatus());
+        dto.setOfferCount(student.getOfferCount());
         dto.setFirestoreId(student.getFirestoreId());
+        dto.setPhone(student.getPhone());
+        dto.setGithubUrl(student.getGithubUrl());
+        dto.setLinkedinUrl(student.getLinkedinUrl());
+        dto.setPortfolioUrl(student.getPortfolioUrl());
+        dto.setPortfolioTitle(student.getPortfolioTitle());
+        dto.setPortfolioSummary(student.getPortfolioSummary());
+        
+        dto.setPlacementScore(student.getPlacementScore());
+        dto.setPlacementTier(student.getPlacementTier());
+        dto.setConfidenceLevel(student.getConfidenceLevel());
+        dto.setLastCalculatedAt(student.getLastCalculatedAt());
+        
+        dto.setStrengths(deserializeStringList(student.getStrengthsJson()));
+        dto.setWeaknesses(deserializeStringList(student.getWeaknessesJson()));
+        dto.setSkillGaps(deserializeStringList(student.getSkillGapsJson()));
+        dto.setCareerGaps(deserializeStringList(student.getCareerGapsJson()));
+        dto.setProjectGaps(deserializeStringList(student.getProjectGapsJson()));
+        dto.setCertificationGaps(deserializeStringList(student.getCertificationGapsJson()));
+        dto.setRecommendations(deserializeStringList(student.getRecommendationsJson()));
+        dto.setCareerInsights(deserializeStringList(student.getCareerInsightsJson()));
+        dto.setGrowthRoadmap(deserializeStringList(student.getGrowthRoadmapJson()));
+
+        // Map risk fields
+        dto.setRiskScore(student.getRiskScore());
+        dto.setRiskCategory(student.getRiskCategory());
+        dto.setRiskFactors(deserializeStringList(student.getRiskFactorsJson()));
+        dto.setRiskReasons(deserializeStringList(student.getRiskReasonsJson()));
+        dto.setInterventionSuggestions(deserializeStringList(student.getInterventionSuggestionsJson()));
+        dto.setPriorityActions(deserializeStringList(student.getPriorityActionsJson()));
+        dto.setRiskTrend(deserializeIntegerList(student.getRiskTrendJson()));
+        dto.setRiskLastCalculatedAt(student.getRiskLastCalculatedAt());
 
         if (student.getGradesJson() != null && !student.getGradesJson().isEmpty()) {
             try {
@@ -522,6 +714,15 @@ public class StudentServiceImpl implements StudentService {
         return dto;
     }
 
+    private String serializeJson(Object obj) {
+        if (obj == null) return null;
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private Student convertToEntity(StudentDto dto) {
         Student student = Student.builder()
                 .id(dto.getId())
@@ -537,24 +738,85 @@ public class StudentServiceImpl implements StudentService {
                 .gpa(dto.getGpa())
                 .attendance(dto.getAttendanceRate())
                 .placementReady(dto.getPlacementReady())
+                .placementStatus(dto.getPlacementStatus())
+                .offerCount(dto.getOfferCount())
                 .firestoreId(dto.getFirestoreId())
+                .placementScore(dto.getPlacementScore())
+                .placementTier(dto.getPlacementTier())
+                .confidenceLevel(dto.getConfidenceLevel())
+                .lastCalculatedAt(dto.getLastCalculatedAt())
+                .riskScore(dto.getRiskScore())
+                .riskCategory(dto.getRiskCategory())
+                .riskLastCalculatedAt(dto.getRiskLastCalculatedAt())
+                .phone(dto.getPhone())
+                .githubUrl(dto.getGithubUrl())
+                .linkedinUrl(dto.getLinkedinUrl())
+                .portfolioUrl(dto.getPortfolioUrl())
+                .portfolioTitle(dto.getPortfolioTitle())
+                .portfolioSummary(dto.getPortfolioSummary())
                 .build();
 
-        if (dto.getGrades() != null) {
-            try {
-                student.setGradesJson(objectMapper.writeValueAsString(dto.getGrades()));
-            } catch (Exception e) {
-                // Ignore serialization failure
-            }
-        }
-        if (dto.getAttendance() != null) {
-            try {
-                student.setAttendanceJson(objectMapper.writeValueAsString(dto.getAttendance()));
-            } catch (Exception e) {
-                // Ignore serialization failure
-            }
-        }
+        student.setStrengthsJson(serializeJson(dto.getStrengths()));
+        student.setWeaknessesJson(serializeJson(dto.getWeaknesses()));
+        student.setSkillGapsJson(serializeJson(dto.getSkillGaps()));
+        student.setCareerGapsJson(serializeJson(dto.getCareerGaps()));
+        student.setProjectGapsJson(serializeJson(dto.getProjectGaps()));
+        student.setCertificationGapsJson(serializeJson(dto.getCertificationGaps()));
+        student.setRecommendationsJson(serializeJson(dto.getRecommendations()));
+        student.setCareerInsightsJson(serializeJson(dto.getCareerInsights()));
+        student.setGrowthRoadmapJson(serializeJson(dto.getGrowthRoadmap()));
+
+        // Risk fields serialization
+        student.setRiskFactorsJson(serializeJson(dto.getRiskFactors()));
+        student.setRiskReasonsJson(serializeJson(dto.getRiskReasons()));
+        student.setInterventionSuggestionsJson(serializeJson(dto.getInterventionSuggestions()));
+        student.setPriorityActionsJson(serializeJson(dto.getPriorityActions()));
+        student.setRiskTrendJson(serializeJson(dto.getRiskTrend()));
+
+        student.setGradesJson(serializeJson(dto.getGrades()));
+        student.setAttendanceJson(serializeJson(dto.getAttendance()));
 
         return student;
     }
+
+    @Override
+    public StudentDto updateStudentByFirestoreId(String firestoreId, StudentDto studentDto) {
+        Student student = studentRepository.findByFirestoreId(firestoreId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with Firestore ID: " + firestoreId));
+        return updateStudent(student.getId(), studentDto);
+    }
+
+    private void compareAndLog(String fId, String fieldName, String oldVal, String newVal, String changedBy) {
+        String safeOld = oldVal == null ? "" : oldVal.trim();
+        String safeNew = newVal == null ? "" : newVal.trim();
+        if (!safeOld.equalsIgnoreCase(safeNew)) {
+            logChangeHistory(fId, fieldName, safeOld, safeNew, changedBy);
+        }
+    }
+
+    private void logChangeHistory(String fId, String fieldName, String oldVal, String newVal, String changedBy) {
+        if (fId == null || fId.isBlank()) return;
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            ObjectNode root = objectMapper.createObjectNode();
+            ObjectNode fields = objectMapper.createObjectNode();
+            fields.set("fieldChanged", objectMapper.createObjectNode().put(VAL_STRING, fieldName));
+            fields.set("oldValue", objectMapper.createObjectNode().put(VAL_STRING, oldVal != null ? oldVal : ""));
+            fields.set("newValue", objectMapper.createObjectNode().put(VAL_STRING, newVal != null ? newVal : ""));
+            fields.set("changedBy", objectMapper.createObjectNode().put(VAL_STRING, changedBy != null ? changedBy : "System API"));
+            fields.set("changedAt", objectMapper.createObjectNode().put(VAL_STRING, java.time.Instant.now().toString()));
+            fields.set("createdAt", objectMapper.createObjectNode().put(VAL_STRING, java.time.Instant.now().toString()));
+
+            root.set(FIELDS, fields);
+            HttpEntity<String> entity = new HttpEntity<>(root.toString(), headers);
+            String url = FIRESTORE_BASE_URL + "/" + fId + "/changeHistory";
+            restTemplate.postForEntity(url, entity, String.class);
+        } catch (Exception e) {
+            log.error("Failed to log change history to Firestore: {}", e.getMessage());
+        }
+    }
 }
+

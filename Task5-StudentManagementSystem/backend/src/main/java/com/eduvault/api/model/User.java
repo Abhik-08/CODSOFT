@@ -24,9 +24,8 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @NotBlank(message = "Password is required")
     @Column(nullable = false)
-    private String password;
+    private String password; // empty string allowed for Firebase/OAuth users
 
     @Email(message = "Invalid email format")
     @NotBlank(message = "Email is required")

@@ -9,4 +9,5 @@ public interface AnalyticsService {
     Map<String, Object> getAttendanceAnalytics();
     Map<String, Long> getDepartmentAnalytics();
     Map<String, Object> getPlacementAnalytics();
+    Map<String, Object> getPlacementIntelligenceAnalytics();
 }

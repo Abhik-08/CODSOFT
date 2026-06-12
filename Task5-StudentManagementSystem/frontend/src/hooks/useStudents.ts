@@ -30,7 +30,27 @@ export const useStudents = () => {
           attendance: data.attendance || [],
           imageUrl: data.imageUrl || '',
           gpa: Number(data.gpa) || 0,
-          attendanceRate: Number(data.attendanceRate) || 100
+          attendanceRate: Number(data.attendanceRate) || 100,
+          placementStatus: data.placementStatus || 'NOT_STARTED',
+          offerCount: Number(data.offerCount) || 0,
+          placementScore: data.placementScore !== undefined ? Number(data.placementScore) : undefined,
+          placementTier: data.placementTier,
+          strengths: data.strengths,
+          weaknesses: data.weaknesses,
+          skillGaps: data.skillGaps,
+          careerGaps: data.careerGaps,
+          projectGaps: data.projectGaps,
+          certificationGaps: data.certificationGaps,
+          recommendations: data.recommendations,
+          careerInsights: data.careerInsights,
+          growthRoadmap: data.growthRoadmap,
+          confidenceLevel: data.confidenceLevel !== undefined ? Number(data.confidenceLevel) : undefined,
+          lastCalculatedAt: data.lastCalculatedAt,
+          academicReadinessScore: data.academicReadinessScore !== undefined ? Number(data.academicReadinessScore) : undefined,
+          technicalReadinessScore: data.technicalReadinessScore !== undefined ? Number(data.technicalReadinessScore) : undefined,
+          careerReadinessScore: data.careerReadinessScore !== undefined ? Number(data.careerReadinessScore) : undefined,
+          consistencyReadinessScore: data.consistencyReadinessScore !== undefined ? Number(data.consistencyReadinessScore) : undefined,
+          industryReadinessScore: data.industryReadinessScore !== undefined ? Number(data.industryReadinessScore) : undefined
         })
       })
 

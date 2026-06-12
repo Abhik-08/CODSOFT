@@ -27,6 +27,12 @@ export default function StudentsPage() {
   const [editSemester, setEditSemester] = useState('1')
   const [editStatus, setEditStatus] = useState<Student['status']>('ACTIVE')
   const [editGpa, setEditGpa] = useState('8.5')
+  const [editPhone, setEditPhone] = useState('')
+  const [editGithubUrl, setEditGithubUrl] = useState('')
+  const [editLinkedinUrl, setEditLinkedinUrl] = useState('')
+  const [editPortfolioUrl, setEditPortfolioUrl] = useState('')
+  const [editPortfolioTitle, setEditPortfolioTitle] = useState('')
+  const [editPortfolioSummary, setEditPortfolioSummary] = useState('')
   const [isEditSubmitting, setIsEditSubmitting] = useState(false)
   const [editFormError, setEditFormError] = useState<string | null>(null)
 
@@ -40,6 +46,12 @@ export default function StudentsPage() {
   const [semester, setSemester] = useState('1')
   const [status, setStatus] = useState<Student['status']>('ACTIVE')
   const [gpa, setGpa] = useState('8.5')
+  const [phone, setPhone] = useState('')
+  const [githubUrl, setGithubUrl] = useState('')
+  const [linkedinUrl, setLinkedinUrl] = useState('')
+  const [portfolioUrl, setPortfolioUrl] = useState('')
+  const [portfolioTitle, setPortfolioTitle] = useState('')
+  const [portfolioSummary, setPortfolioSummary] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -117,7 +129,13 @@ export default function StudentsPage() {
         semester: Number(semester),
         status,
         gpa: Number(gpa) || 8,
-        imageUrl: ''
+        imageUrl: '',
+        phone,
+        githubUrl,
+        linkedinUrl,
+        portfolioUrl,
+        portfolioTitle,
+        portfolioSummary
       })
       setIsAddModalOpen(false)
       resetForm()
@@ -141,6 +159,12 @@ export default function StudentsPage() {
     setEditSemester(String(student.semester))
     setEditStatus(student.status)
     setEditGpa(String(student.gpa))
+    setEditPhone(student.phone || '')
+    setEditGithubUrl(student.githubUrl || '')
+    setEditLinkedinUrl(student.linkedinUrl || '')
+    setEditPortfolioUrl(student.portfolioUrl || '')
+    setEditPortfolioTitle(student.portfolioTitle || '')
+    setEditPortfolioSummary(student.portfolioSummary || '')
     setEditFormError(null)
     setIsEditModalOpen(true)
   }
@@ -164,7 +188,13 @@ export default function StudentsPage() {
         department: editDepartment,
         semester: Number(editSemester),
         status: editStatus,
-        gpa: Number(editGpa) || editingStudent.gpa
+        gpa: Number(editGpa) || editingStudent.gpa,
+        phone: editPhone,
+        githubUrl: editGithubUrl,
+        linkedinUrl: editLinkedinUrl,
+        portfolioUrl: editPortfolioUrl,
+        portfolioTitle: editPortfolioTitle,
+        portfolioSummary: editPortfolioSummary
       })
       setIsEditModalOpen(false)
       setEditingStudent(null)
@@ -197,6 +227,12 @@ export default function StudentsPage() {
     setSemester('1')
     setStatus('ACTIVE')
     setGpa('8.5')
+    setPhone('')
+    setGithubUrl('')
+    setLinkedinUrl('')
+    setPortfolioUrl('')
+    setPortfolioTitle('')
+    setPortfolioSummary('')
     setFormError(null)
   }
 
@@ -512,6 +548,12 @@ export default function StudentsPage() {
               sem={semester} setSem={setSemester}
               st={status} setSt={setStatus}
               cgpa={gpa} setCgpa={setGpa}
+              phone={phone} setPhone={setPhone}
+              githubUrl={githubUrl} setGithubUrl={setGithubUrl}
+              linkedinUrl={linkedinUrl} setLinkedinUrl={setLinkedinUrl}
+              portfolioUrl={portfolioUrl} setPortfolioUrl={setPortfolioUrl}
+              portfolioTitle={portfolioTitle} setPortfolioTitle={setPortfolioTitle}
+              portfolioSummary={portfolioSummary} setPortfolioSummary={setPortfolioSummary}
               formErr={formError}
               submitting={isSubmitting}
               onCancel={() => setIsAddModalOpen(false)}
@@ -550,6 +592,12 @@ export default function StudentsPage() {
               sem={editSemester} setSem={setEditSemester}
               st={editStatus} setSt={setEditStatus}
               cgpa={editGpa} setCgpa={setEditGpa}
+              phone={editPhone} setPhone={setEditPhone}
+              githubUrl={editGithubUrl} setGithubUrl={setEditGithubUrl}
+              linkedinUrl={editLinkedinUrl} setLinkedinUrl={setEditLinkedinUrl}
+              portfolioUrl={editPortfolioUrl} setPortfolioUrl={setEditPortfolioUrl}
+              portfolioTitle={editPortfolioTitle} setPortfolioTitle={setEditPortfolioTitle}
+              portfolioSummary={editPortfolioSummary} setPortfolioSummary={setEditPortfolioSummary}
               formErr={editFormError}
               submitting={isEditSubmitting}
               onCancel={() => setIsEditModalOpen(false)}

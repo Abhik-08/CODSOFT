@@ -42,7 +42,43 @@ public class StudentDto {
     private Double gpa;
     private Double attendanceRate;
     private Boolean placementReady;
+    private String placementStatus;
+    private Integer offerCount;
     private String firestoreId;
     private List<Map<String, Object>> grades;
     private List<Map<String, Object>> attendance;
+    private Integer placementScore;
+    private String placementTier;
+    private List<String> strengths;
+    private List<String> weaknesses;
+    private List<String> skillGaps;
+    private List<String> careerGaps;
+    private List<String> projectGaps;
+    private List<String> certificationGaps;
+    private List<String> recommendations;
+    private List<String> careerInsights;
+    private List<String> growthRoadmap;
+    private Integer confidenceLevel;
+    private java.time.LocalDateTime lastCalculatedAt;
+    private Integer academicReadinessScore;
+    private Integer technicalReadinessScore;
+    private Integer careerReadinessScore;
+    private Integer consistencyReadinessScore;
+    private Integer industryReadinessScore;
+
+    private Integer riskScore;
+    private String riskCategory;
+    private List<String> riskFactors;
+    private List<String> riskReasons;
+    private List<String> interventionSuggestions;
+    private List<String> priorityActions;
+    private List<Integer> riskTrend;
+    private java.time.LocalDateTime riskLastCalculatedAt;
+
+    private String phone;
+    private String githubUrl;
+    private String linkedinUrl;
+    private String portfolioUrl;
+    private String portfolioTitle;
+    private String portfolioSummary;
 }

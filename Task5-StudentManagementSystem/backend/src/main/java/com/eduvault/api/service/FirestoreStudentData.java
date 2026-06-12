@@ -20,5 +20,13 @@ record FirestoreStudentData(
         double gpa,
         double attendanceAvg,
         String gradesJsonStr,
-        String attJsonStr
+        String attJsonStr,
+        String placementStatus,
+        int offerCount,
+        String phone,
+        String githubUrl,
+        String linkedinUrl,
+        String portfolioUrl,
+        String portfolioTitle,
+        String portfolioSummary
 ) {}

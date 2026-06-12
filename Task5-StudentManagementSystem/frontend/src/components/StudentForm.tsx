@@ -22,6 +22,18 @@ type StudentFormProps = Readonly<{
   setSt: (v: Student['status']) => void;
   cgpa: string;
   setCgpa: (v: string) => void;
+  phone: string;
+  setPhone: (v: string) => void;
+  githubUrl: string;
+  setGithubUrl: (v: string) => void;
+  linkedinUrl: string;
+  setLinkedinUrl: (v: string) => void;
+  portfolioUrl: string;
+  setPortfolioUrl: (v: string) => void;
+  portfolioTitle: string;
+  setPortfolioTitle: (v: string) => void;
+  portfolioSummary: string;
+  setPortfolioSummary: (v: string) => void;
   formErr: string | null;
   submitting: boolean;
   onCancel: () => void;
@@ -58,6 +70,18 @@ export default function StudentForm({
   setSt,
   cgpa,
   setCgpa,
+  phone,
+  setPhone,
+  githubUrl,
+  setGithubUrl,
+  linkedinUrl,
+  setLinkedinUrl,
+  portfolioUrl,
+  setPortfolioUrl,
+  portfolioTitle,
+  setPortfolioTitle,
+  portfolioSummary,
+  setPortfolioSummary,
   formErr,
   submitting,
   onCancel,
@@ -143,6 +167,42 @@ export default function StudentForm({
               <span>{s}</span>
             </label>
           ))}
+        </div>
+      </div>
+
+      {/* Contact, Socials & Portfolio (Optional) */}
+      <div className="border-t border-slate-200 dark:border-white/5 pt-4 space-y-4">
+        <h4 className="text-xs font-black uppercase tracking-wider text-vault-cyan">Contact & Portfolio (Optional)</h4>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label htmlFor={`${idPrefix}phone`} className={labelCls}>Phone Number</label>
+            <input id={`${idPrefix}phone`} type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" className={fieldCls} />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor={`${idPrefix}portfolioTitle`} className={labelCls}>Portfolio Heading</label>
+            <input id={`${idPrefix}portfolioTitle`} type="text" value={portfolioTitle} onChange={e => setPortfolioTitle(e.target.value)} placeholder="e.g. Lead Systems Engineer Portfolio" className={fieldCls} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <label htmlFor={`${idPrefix}githubUrl`} className={labelCls}>GitHub URL</label>
+            <input id={`${idPrefix}githubUrl`} type="url" value={githubUrl} onChange={e => setGithubUrl(e.target.value)} placeholder="https://github.com/..." className={fieldCls} />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor={`${idPrefix}linkedinUrl`} className={labelCls}>LinkedIn URL</label>
+            <input id={`${idPrefix}linkedinUrl`} type="url" value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/..." className={fieldCls} />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor={`${idPrefix}portfolioUrl`} className={labelCls}>Portfolio URL</label>
+            <input id={`${idPrefix}portfolioUrl`} type="url" value={portfolioUrl} onChange={e => setPortfolioUrl(e.target.value)} placeholder="https://..." className={fieldCls} />
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor={`${idPrefix}portfolioSummary`} className={labelCls}>Portfolio Summary</label>
+          <textarea id={`${idPrefix}portfolioSummary`} rows={2} value={portfolioSummary} onChange={e => setPortfolioSummary(e.target.value)} placeholder="Brief summary of professional experience..." className={`${fieldCls} resize-none`} />
         </div>
       </div>
 

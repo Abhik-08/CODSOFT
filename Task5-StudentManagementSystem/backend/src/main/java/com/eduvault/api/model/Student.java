@@ -69,6 +69,10 @@ public class Student {
 
     private Boolean placementReady;
 
+    private String placementStatus; // NOT_STARTED, PREPARING, INTERVIEWING, PLACED
+
+    private Integer offerCount;
+
     private String firestoreId;
 
     @Column(length = 65536)
@@ -76,4 +80,73 @@ public class Student {
 
     @Column(length = 65536)
     private String attendanceJson;
+
+    private Integer placementScore;
+
+    private String placementTier;
+
+    @Column(length = 65536)
+    private String strengthsJson;
+
+    @Column(length = 65536)
+    private String weaknessesJson;
+
+    @Column(length = 65536)
+    private String skillGapsJson;
+
+    @Column(length = 65536)
+    private String careerGapsJson;
+
+    @Column(length = 65536)
+    private String projectGapsJson;
+
+    @Column(length = 65536)
+    private String certificationGapsJson;
+
+    @Column(length = 65536)
+    private String recommendationsJson;
+
+    @Column(length = 65536)
+    private String careerInsightsJson;
+
+    @Column(length = 65536)
+    private String growthRoadmapJson;
+
+    private Integer confidenceLevel;
+
+    private java.time.LocalDateTime lastCalculatedAt;
+
+    private Integer academicReadinessScore;
+    private Integer technicalReadinessScore;
+    private Integer careerReadinessScore;
+    private Integer consistencyReadinessScore;
+    private Integer industryReadinessScore;
+
+    private Integer riskScore;
+    private String riskCategory;
+
+    @Column(length = 65536)
+    private String riskFactorsJson;
+
+    @Column(length = 65536)
+    private String riskReasonsJson;
+
+    @Column(length = 65536)
+    private String interventionSuggestionsJson;
+
+    @Column(length = 65536)
+    private String priorityActionsJson;
+
+    @Column(length = 65536)
+    private String riskTrendJson;
+
+    private java.time.LocalDateTime riskLastCalculatedAt;
+
+    private String phone;
+    private String githubUrl;
+    private String linkedinUrl;
+    private String portfolioUrl;
+    private String portfolioTitle;
+    @Column(length = 65536)
+    private String portfolioSummary;
 }

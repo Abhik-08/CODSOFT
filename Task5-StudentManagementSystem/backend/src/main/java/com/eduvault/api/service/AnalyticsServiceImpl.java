@@ -137,10 +137,136 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 : (double) placementReadyCount / students.size() * 100.0;
         readyPercentage = Math.round(readyPercentage * 100.0) / 100.0;
 
+        // Placement status breakdown
+        long placed = students.stream().filter(s -> "PLACED".equals(s.getPlacementStatus())).count();
+        long interviewing = students.stream().filter(s -> "INTERVIEWING".equals(s.getPlacementStatus())).count();
+        long preparing = students.stream().filter(s -> "PREPARING".equals(s.getPlacementStatus())).count();
+        long notStarted = students.stream().filter(s -> s.getPlacementStatus() == null || "NOT_STARTED".equals(s.getPlacementStatus())).count();
+
         Map<String, Object> analytics = new HashMap<>();
         analytics.put("placementReadyCount", placementReadyCount);
         analytics.put("totalStudents", students.size());
         analytics.put("readinessPercentage", readyPercentage);
+        analytics.put("placed", placed);
+        analytics.put("interviewing", interviewing);
+        analytics.put("preparing", preparing);
+        analytics.put("notStarted", notStarted);
         return analytics;
+    }
+
+    @Override
+    public Map<String, Object> getPlacementIntelligenceAnalytics() {
+        List<Student> students = studentRepository.findAll();
+        List<Student> calculatedStudents = students.stream()
+                .filter(s -> s.getPlacementScore() != null)
+                .toList();
+
+        double averageScore = calculatedStudents.stream()
+                .mapToDouble(Student::getPlacementScore)
+                .average()
+                .orElse(0.0);
+        averageScore = Math.round(averageScore * 10.0) / 10.0;
+
+        long eliteCount = calculatedStudents.stream().filter(s -> s.getPlacementScore() >= 90).count();
+        long highPotentialCount = calculatedStudents.stream().filter(s -> s.getPlacementScore() >= 80 && s.getPlacementScore() < 90).count();
+        long placementReadyCount = calculatedStudents.stream().filter(s -> s.getPlacementScore() >= 60 && s.getPlacementScore() < 80).count();
+        long needingGuidanceCount = calculatedStudents.stream().filter(s -> s.getPlacementScore() < 60).count();
+
+        // Top 5 candidates
+        List<Map<String, Object>> topCandidates = calculatedStudents.stream()
+                .sorted((a, b) -> Integer.compare(b.getPlacementScore(), a.getPlacementScore()))
+                .limit(5)
+                .map(s -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", s.getId().toString());
+                    m.put("firestoreId", s.getFirestoreId());
+                    m.put("name", s.getFirstName() + " " + s.getLastName());
+                    m.put("department", s.getDepartment());
+                    m.put("score", s.getPlacementScore());
+                    m.put("tier", s.getPlacementTier());
+                    return m;
+                })
+                .toList();
+
+        // Department-wise averages
+        Map<String, Map<String, Object>> deptAverages = new HashMap<>();
+        calculatedStudents.stream()
+                .collect(Collectors.groupingBy(Student::getDepartment))
+                .forEach((dept, list) -> {
+                    double avg = list.stream().mapToDouble(Student::getPlacementScore).average().orElse(0.0);
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("averageScore", Math.round(avg * 10.0) / 10.0);
+                    m.put("count", list.size());
+                    deptAverages.put(dept, m);
+                });
+
+        // Semester-wise averages
+        Map<String, Map<String, Object>> semAverages = new HashMap<>();
+        calculatedStudents.stream()
+                .collect(Collectors.groupingBy(Student::getSemester))
+                .forEach((sem, list) -> {
+                    double avg = list.stream().mapToDouble(Student::getPlacementScore).average().orElse(0.0);
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("averageScore", Math.round(avg * 10.0) / 10.0);
+                    m.put("count", list.size());
+                    semAverages.put(String.valueOf(sem), m);
+                });
+
+        // Bins for distribution chart
+        Map<String, Long> scoreDistribution = new HashMap<>();
+        scoreDistribution.put("0-39", calculatedStudents.stream().filter(s -> s.getPlacementScore() < 40).count());
+        scoreDistribution.put("40-59", calculatedStudents.stream().filter(s -> s.getPlacementScore() >= 40 && s.getPlacementScore() < 60).count());
+        scoreDistribution.put("60-79", calculatedStudents.stream().filter(s -> s.getPlacementScore() >= 60 && s.getPlacementScore() < 80).count());
+        scoreDistribution.put("80-89", calculatedStudents.stream().filter(s -> s.getPlacementScore() >= 80 && s.getPlacementScore() < 90).count());
+        scoreDistribution.put("90-100", calculatedStudents.stream().filter(s -> s.getPlacementScore() >= 90).count());
+
+        // Dimension averages
+        double avgAcademic = calculatedStudents.stream()
+                .filter(s -> s.getAcademicReadinessScore() != null)
+                .mapToDouble(Student::getAcademicReadinessScore)
+                .average()
+                .orElse(0.0);
+        double avgTechnical = calculatedStudents.stream()
+                .filter(s -> s.getTechnicalReadinessScore() != null)
+                .mapToDouble(Student::getTechnicalReadinessScore)
+                .average()
+                .orElse(0.0);
+        double avgCareer = calculatedStudents.stream()
+                .filter(s -> s.getCareerReadinessScore() != null)
+                .mapToDouble(Student::getCareerReadinessScore)
+                .average()
+                .orElse(0.0);
+        double avgConsistency = calculatedStudents.stream()
+                .filter(s -> s.getConsistencyReadinessScore() != null)
+                .mapToDouble(Student::getConsistencyReadinessScore)
+                .average()
+                .orElse(0.0);
+        double avgIndustry = calculatedStudents.stream()
+                .filter(s -> s.getIndustryReadinessScore() != null)
+                .mapToDouble(Student::getIndustryReadinessScore)
+                .average()
+                .orElse(0.0);
+
+        Map<String, Object> dimensions = new HashMap<>();
+        dimensions.put("academic", Math.round(avgAcademic * 10.0) / 10.0);
+        dimensions.put("technical", Math.round(avgTechnical * 10.0) / 10.0);
+        dimensions.put("career", Math.round(avgCareer * 10.0) / 10.0);
+        dimensions.put("consistency", Math.round(avgConsistency * 10.0) / 10.0);
+        dimensions.put("industry", Math.round(avgIndustry * 10.0) / 10.0);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("averagePlacementScore", averageScore);
+        result.put("eliteCount", eliteCount);
+        result.put("highPotentialCount", highPotentialCount);
+        result.put("placementReadyCount", placementReadyCount);
+        result.put("needingGuidanceCount", needingGuidanceCount);
+        result.put("topCandidates", topCandidates);
+        result.put("departmentAverages", deptAverages);
+        result.put("semesterAverages", semAverages);
+        result.put("scoreDistribution", scoreDistribution);
+        result.put("dimensionAverages", dimensions);
+        result.put("totalCalculated", calculatedStudents.size());
+
+        return result;
     }
 }

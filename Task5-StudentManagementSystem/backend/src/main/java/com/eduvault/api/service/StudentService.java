@@ -8,6 +8,7 @@ public interface StudentService {
     StudentDto getStudentById(Long id);
     StudentDto createStudent(StudentDto studentDto);
     StudentDto updateStudent(Long id, StudentDto studentDto);
+    StudentDto updateStudentByFirestoreId(String firestoreId, StudentDto studentDto);
     void deleteStudent(Long id);
     List<StudentDto> searchStudents(String query);
 }

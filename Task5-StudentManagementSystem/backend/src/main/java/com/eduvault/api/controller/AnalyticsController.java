@@ -53,4 +53,10 @@ public class AnalyticsController {
     public ResponseEntity<Map<String, Object>> getPlacementAnalytics() {
         return ResponseEntity.ok(analyticsService.getPlacementAnalytics());
     }
+
+    @GetMapping("/placement-intelligence")
+    @Operation(summary = "Get placement intelligence cohort statistics", description = "Fetch overview statistics for average placement scores, tier distributions, and departmental performance comparison")
+    public ResponseEntity<Map<String, Object>> getPlacementIntelligenceAnalytics() {
+        return ResponseEntity.ok(analyticsService.getPlacementIntelligenceAnalytics());
+    }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { onSnapshot, query } from 'firebase/firestore'
+import { onSnapshot, query, where } from 'firebase/firestore'
 import { portfoliosCollection } from '../services/firestoreService'
 import { portfolioService } from '../services/portfolioService'
 import { studentService } from '../services/studentService'
@@ -34,8 +34,20 @@ export const usePortfolios = () => {
 
   // Set up real-time listener for portfolios
   useEffect(() => {
+    if (!user) return
+
+    // If role is STUDENT, wait until currentStudentId is resolved
+    if (user.role === 'STUDENT' && currentStudentId === null) {
+      return
+    }
+
     setLoading(true)
-    const q = query(portfoliosCollection)
+    let q = query(portfoliosCollection)
+    if (user.role === 'STUDENT' && currentStudentId !== null) {
+      // For Windows/H2 database IDs, studentId can be string or number. Let's make sure it matches.
+      q = query(portfoliosCollection, where('studentId', '==', currentStudentId))
+    }
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const list: Portfolio[] = []
       snapshot.forEach((doc) => {
@@ -67,14 +79,37 @@ export const usePortfolios = () => {
       setPortfolios(list)
       setLoading(false)
       setError(null)
-    }, (err) => {
-      console.error('Firestore portfolios subscription error:', err)
-      setError(err.message || 'Failed to sync portfolios from Firestore.')
-      setLoading(false)
+    }, async (err) => {
+      console.warn('Firestore portfolios subscription failed, attempting one-time fetch fallback:', err)
+      try {
+        let list: Portfolio[] = []
+        if (user.role === 'STUDENT' && currentStudentId !== null) {
+          list = await portfolioService.getByStudentId(currentStudentId)
+          if (list.length === 0) {
+            list = await portfolioService.getByStudentId(String(currentStudentId))
+          }
+        } else {
+          try {
+            list = await portfolioService.getAll()
+          } catch {
+            // If admin/faculty cannot get all portfolios due to rules, try by student id context
+            if (currentStudentId !== null) {
+              list = await portfolioService.getByStudentId(currentStudentId)
+            }
+          }
+        }
+        setPortfolios(list)
+        setError(null)
+      } catch (fallbackErr: any) {
+        console.error('Firestore portfolios fallback fetch also failed:', fallbackErr)
+        setError(fallbackErr.message || 'Failed to sync portfolios.')
+      } finally {
+        setLoading(false)
+      }
     })
 
     return () => unsubscribe()
-  }, [])
+  }, [user, currentStudentId])
 
   const addPortfolio = async (portfolio: Omit<Portfolio, 'id'>) => {
     setError(null)

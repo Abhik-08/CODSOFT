@@ -2,6 +2,7 @@ package com.eduvault.api.config;
 
 import com.eduvault.api.model.Student;
 import com.eduvault.api.repository.*;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -68,6 +69,33 @@ public class SecurityUtils {
         return studentRepository.findById(studentId)
                 .map(student -> username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()))
                 .orElse(false);
+    }
+
+    public boolean hasAccessToStudent(String studentIdStr) {
+        if (hasRole(ROLE_ADMIN) || hasRole(ROLE_FACULTY)) {
+            return true;
+        }
+        String username = getCurrentUsername();
+        if (username == null) {
+            return false;
+        }
+        try {
+            Long id = Long.parseLong(studentIdStr);
+            return studentRepository.findById(id)
+                    .map(student -> username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()))
+                    .orElse(false);
+        } catch (NumberFormatException e) {
+            // Lookup by firestoreId, enrollment, or email
+            Optional<Student> studentOpt = studentRepository.findByFirestoreId(studentIdStr);
+            if (studentOpt.isEmpty()) {
+                studentOpt = studentRepository.findByEnrollmentNumber(studentIdStr);
+            }
+            if (studentOpt.isEmpty()) {
+                studentOpt = studentRepository.findByEmail(studentIdStr);
+            }
+            return studentOpt.map(student -> username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()))
+                    .orElse(false);
+        }
     }
 
     public boolean hasAccessToPortfolio(Long portfolioId) {

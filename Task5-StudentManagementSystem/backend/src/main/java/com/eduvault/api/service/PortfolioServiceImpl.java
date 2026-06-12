@@ -63,16 +63,25 @@ public class PortfolioServiceImpl implements PortfolioService {
     private static final String FIELD_PHONE = "phone";
     private static final String FIELD_SOCIAL_LINKS = "socialLinks";
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final PortfolioRepository portfolioRepository;
     private final StudentRepository studentRepository;
     private final Environment env;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final PlacementIntelligenceService placementIntelligenceService;
+    private final RiskDetectionService riskDetectionService;
 
     @Autowired
-    public PortfolioServiceImpl(PortfolioRepository portfolioRepository, StudentRepository studentRepository, Environment env) {
+    public PortfolioServiceImpl(
+            PortfolioRepository portfolioRepository,
+            StudentRepository studentRepository,
+            Environment env,
+            @org.springframework.context.annotation.Lazy PlacementIntelligenceService placementIntelligenceService,
+            @org.springframework.context.annotation.Lazy RiskDetectionService riskDetectionService) {
         this.portfolioRepository = portfolioRepository;
         this.studentRepository = studentRepository;
         this.env = env;
+        this.placementIntelligenceService = placementIntelligenceService;
+        this.riskDetectionService = riskDetectionService;
     }
 
     private boolean isTestProfile() {
@@ -399,6 +408,24 @@ public class PortfolioServiceImpl implements PortfolioService {
             }
         }
 
+        // Trigger placement recalculation
+        try {
+            if (student.getFirestoreId() != null) {
+                placementIntelligenceService.recalculate(student.getFirestoreId());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to trigger placement recalculation on portfolio creation: {}", e.getMessage());
+        }
+
+        // Trigger academic risk recalculation
+        try {
+            if (student.getFirestoreId() != null) {
+                riskDetectionService.recalculate(student.getFirestoreId());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to trigger academic risk recalculation on portfolio creation: {}", e.getMessage());
+        }
+
         return convertToDto(saved);
     }
 
@@ -457,6 +484,24 @@ public class PortfolioServiceImpl implements PortfolioService {
             }
         }
 
+        // Trigger placement recalculation
+        try {
+            if (updated.getStudent() != null && updated.getStudent().getFirestoreId() != null) {
+                placementIntelligenceService.recalculate(updated.getStudent().getFirestoreId());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to trigger placement recalculation on portfolio update: {}", e.getMessage());
+        }
+
+        // Trigger academic risk recalculation
+        try {
+            if (updated.getStudent() != null && updated.getStudent().getFirestoreId() != null) {
+                riskDetectionService.recalculate(updated.getStudent().getFirestoreId());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to trigger academic risk recalculation on portfolio update: {}", e.getMessage());
+        }
+
         return convertToDto(updated);
     }
 
@@ -476,6 +521,24 @@ public class PortfolioServiceImpl implements PortfolioService {
         }
 
         portfolioRepository.delete(portfolio);
+
+        // Trigger placement recalculation
+        try {
+            if (portfolio.getStudent() != null && portfolio.getStudent().getFirestoreId() != null) {
+                placementIntelligenceService.recalculate(portfolio.getStudent().getFirestoreId());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to trigger placement recalculation on portfolio deletion: {}", e.getMessage());
+        }
+
+        // Trigger academic risk recalculation
+        try {
+            if (portfolio.getStudent() != null && portfolio.getStudent().getFirestoreId() != null) {
+                riskDetectionService.recalculate(portfolio.getStudent().getFirestoreId());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to trigger academic risk recalculation on portfolio deletion: {}", e.getMessage());
+        }
     }
 
     @Override
