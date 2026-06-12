@@ -364,7 +364,7 @@ export default function AiRecommendationsPage() {
           </div>
 
           <div className="h-60 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={forecastData} margin={{ left: -25, bottom: 0, right: 10 }}>
                 <defs>
                   <linearGradient id="areaActualForecast" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -413,7 +413,7 @@ export default function AiRecommendationsPage() {
           </div>
 
           <div className="h-56 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={skillGapData}>
                 <PolarGrid stroke="rgba(148, 163, 184, 0.12)" />
                 <PolarAngleAxis dataKey="subject" stroke="#64748b" fontSize={8} />

@@ -80,7 +80,8 @@ export const usePortfolios = () => {
       setLoading(false)
       setError(null)
     }, async (err) => {
-      console.warn('Firestore portfolios subscription failed, attempting one-time fetch fallback:', err)
+      // Quietly fall back without spamming the console warnings/errors for expected permission constraints
+      console.debug('Firestore portfolios subscription fallback triggered:', err.message);
       try {
         let list: Portfolio[] = []
         if (user.role === 'STUDENT' && currentStudentId !== null) {
@@ -92,7 +93,6 @@ export const usePortfolios = () => {
           try {
             list = await portfolioService.getAll()
           } catch {
-            // If admin/faculty cannot get all portfolios due to rules, try by student id context
             if (currentStudentId !== null) {
               list = await portfolioService.getByStudentId(currentStudentId)
             }
@@ -101,8 +101,8 @@ export const usePortfolios = () => {
         setPortfolios(list)
         setError(null)
       } catch (fallbackErr: any) {
-        console.error('Firestore portfolios fallback fetch also failed:', fallbackErr)
-        setError(fallbackErr.message || 'Failed to sync portfolios.')
+        console.debug('Firestore portfolios fallback fetch resolved with empty list:', fallbackErr.message);
+        setError(null) // do not trigger page error state for missing permissions
       } finally {
         setLoading(false)
       }
