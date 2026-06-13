@@ -25,6 +25,7 @@ import java.util.Optional;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(UserDetailsServiceImpl.class);
+    private static final String BEARER_PREFIX = "Bearer ";
     private static final String VAL_STRING = "stringValue";
     private static final String FIELD_EMAIL = "email";
     private static final String FIELD_DISPLAY_NAME = "displayName";
@@ -40,7 +41,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     private String extractUid(String token) {
         try {
-            String rawToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+            String rawToken = token.startsWith(BEARER_PREFIX) ? token.substring(7) : token;
             String[] parts = rawToken.split("\\.");
             if (parts.length != 3) return null;
             
@@ -58,7 +59,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             String url = "https://firestore.googleapis.com/v1/projects/eduvault-ai/databases/(default)/documents/users/" + uid;
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", token.startsWith("Bearer ") ? token : "Bearer " + token);
+            headers.set("Authorization", token.startsWith(BEARER_PREFIX) ? token : BEARER_PREFIX + token);
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
