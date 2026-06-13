@@ -17,6 +17,23 @@ export interface Alert {
   updatedAt: string
 }
 
+const mapAlertDoc = (docSnap: any): Alert => {
+  const data = docSnap.data()
+  return {
+    id: docSnap.id,
+    alertId: data.alertId || docSnap.id,
+    userId: data.userId || '',
+    title: data.title || '',
+    message: data.message || '',
+    type: data.type || 'SYSTEM',
+    priority: (data.priority || 'LOW').toUpperCase(),
+    status: (data.status || 'UNREAD').toUpperCase(),
+    relatedRecordId: data.relatedRecordId || '',
+    createdAt: data.createdAt || new Date().toISOString(),
+    updatedAt: data.updatedAt || new Date().toISOString(),
+  }
+}
+
 export const useAlerts = () => {
   const { user } = useAuthContext()
   const [alerts, setAlerts] = useState<Alert[]>([])
@@ -24,7 +41,7 @@ export const useAlerts = () => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!user || !user.email) {
+    if (!user?.email) {
       setAlerts([])
       setLoading(false)
       return
@@ -47,31 +64,20 @@ export const useAlerts = () => {
 
     let unsubscribe: () => void
 
+    const handleSnapshot = (snapshot: any) => {
+      const list: Alert[] = []
+      snapshot.forEach((docSnap: any) => {
+        list.push(mapAlertDoc(docSnap))
+      })
+      setAlerts(list)
+      setLoading(false)
+      setError(null)
+    }
+
     const startSubscription = (currentQuery: any): (() => void) => {
       return onSnapshot(
         currentQuery,
-        (snapshot) => {
-          const list: Alert[] = []
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data()
-            list.push({
-              id: docSnap.id,
-              alertId: data.alertId || docSnap.id,
-              userId: data.userId || '',
-              title: data.title || '',
-              message: data.message || '',
-              type: data.type || 'SYSTEM',
-              priority: (data.priority || 'LOW').toUpperCase() as any,
-              status: (data.status || 'UNREAD').toUpperCase() as any,
-              relatedRecordId: data.relatedRecordId || '',
-              createdAt: data.createdAt || new Date().toISOString(),
-              updatedAt: data.updatedAt || new Date().toISOString(),
-            })
-          })
-          setAlerts(list)
-          setLoading(false)
-          setError(null)
-        },
+        handleSnapshot,
         (err) => {
           if (err.code === 'permission-denied' && !isFallback && user.role === 'ADMIN') {
             console.warn('Firestore alerts admin query permission denied. Falling back to user-specific alerts query...', err)
