@@ -69,6 +69,8 @@ export const useAlerts = () => {
       snapshot.forEach((docSnap: any) => {
         list.push(mapAlertDoc(docSnap))
       })
+      // Sort client-side by createdAt descending
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       setAlerts(list)
       setLoading(false)
       setError(null)
@@ -84,8 +86,7 @@ export const useAlerts = () => {
             isFallback = true
             const fallbackQuery = query(
               alertsCollection,
-              where('userId', '==', user.email),
-              orderBy('createdAt', 'desc')
+              where('userId', '==', user.email)
             )
             // Re-subscribe using the fallback query
             unsubscribe = startSubscription(fallbackQuery)
