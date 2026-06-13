@@ -32,6 +32,7 @@ export const useAlerts = () => {
 
     setLoading(true)
     const alertsCollection = collection(db, 'alerts')
+    let isFallback = false
     
     // Build query based on role
     let q = query(alertsCollection, orderBy('createdAt', 'desc'))
@@ -44,38 +45,57 @@ export const useAlerts = () => {
       )
     }
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const list: Alert[] = []
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data()
-          list.push({
-            id: docSnap.id,
-            alertId: data.alertId || docSnap.id,
-            userId: data.userId || '',
-            title: data.title || '',
-            message: data.message || '',
-            type: data.type || 'SYSTEM',
-            priority: (data.priority || 'LOW').toUpperCase() as any,
-            status: (data.status || 'UNREAD').toUpperCase() as any,
-            relatedRecordId: data.relatedRecordId || '',
-            createdAt: data.createdAt || new Date().toISOString(),
-            updatedAt: data.updatedAt || new Date().toISOString(),
-          })
-        })
-        setAlerts(list)
-        setLoading(false)
-        setError(null)
-      },
-      (err) => {
-        console.error('Firestore alerts subscription error:', err)
-        setError(err.message || 'Failed to sync alerts.')
-        setLoading(false)
-      }
-    )
+    let unsubscribe: () => void
 
-    return () => unsubscribe()
+    const startSubscription = (currentQuery: any): (() => void) => {
+      return onSnapshot(
+        currentQuery,
+        (snapshot) => {
+          const list: Alert[] = []
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data()
+            list.push({
+              id: docSnap.id,
+              alertId: data.alertId || docSnap.id,
+              userId: data.userId || '',
+              title: data.title || '',
+              message: data.message || '',
+              type: data.type || 'SYSTEM',
+              priority: (data.priority || 'LOW').toUpperCase() as any,
+              status: (data.status || 'UNREAD').toUpperCase() as any,
+              relatedRecordId: data.relatedRecordId || '',
+              createdAt: data.createdAt || new Date().toISOString(),
+              updatedAt: data.updatedAt || new Date().toISOString(),
+            })
+          })
+          setAlerts(list)
+          setLoading(false)
+          setError(null)
+        },
+        (err) => {
+          if (err.code === 'permission-denied' && !isFallback && user.role === 'ADMIN') {
+            console.warn('Firestore alerts admin query permission denied. Falling back to user-specific alerts query...', err)
+            isFallback = true
+            const fallbackQuery = query(
+              alertsCollection,
+              where('userId', '==', user.email),
+              orderBy('createdAt', 'desc')
+            )
+            // Re-subscribe using the fallback query
+            unsubscribe = startSubscription(fallbackQuery)
+          } else {
+            console.error('Firestore alerts subscription error:', err)
+            setError(err.message || 'Failed to sync alerts.')
+            setLoading(false)
+          }
+        }
+      )
+    }
+
+    unsubscribe = startSubscription(q)
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [user])
 
   const markAsRead = async (alertId: string) => {
