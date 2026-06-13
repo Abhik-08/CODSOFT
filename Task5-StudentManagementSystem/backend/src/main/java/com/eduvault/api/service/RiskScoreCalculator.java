@@ -5,14 +5,41 @@ import java.util.*;
 
 public class RiskScoreCalculator {
 
+    private static final String SEMESTER_NUMBER_KEY = "semesterNumber";
+
+    private RiskScoreCalculator() {
+        // Utility class — prevent instantiation
+    }
+
     public static class CalculationResult {
-        public int score;
-        public String category;
-        public int academicRisk;
-        public int placementRisk;
-        public int engagementRisk;
-        public int skillRisk;
-        public int growthRisk;
+        private int score;
+        private String category;
+        private int academicRisk;
+        private int placementRisk;
+        private int engagementRisk;
+        private int skillRisk;
+        private int growthRisk;
+
+        public int getScore() { return score; }
+        public void setScore(int score) { this.score = score; }
+
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
+
+        public int getAcademicRisk() { return academicRisk; }
+        public void setAcademicRisk(int academicRisk) { this.academicRisk = academicRisk; }
+
+        public int getPlacementRisk() { return placementRisk; }
+        public void setPlacementRisk(int placementRisk) { this.placementRisk = placementRisk; }
+
+        public int getEngagementRisk() { return engagementRisk; }
+        public void setEngagementRisk(int engagementRisk) { this.engagementRisk = engagementRisk; }
+
+        public int getSkillRisk() { return skillRisk; }
+        public void setSkillRisk(int skillRisk) { this.skillRisk = skillRisk; }
+
+        public int getGrowthRisk() { return growthRisk; }
+        public void setGrowthRisk(int growthRisk) { this.growthRisk = growthRisk; }
     }
 
     public static CalculationResult calculate(
@@ -25,8 +52,46 @@ public class RiskScoreCalculator {
             List<Map<String, Object>> portfolios) {
 
         CalculationResult res = new CalculationResult();
+        res.setAcademicRisk(computeAcademicRisk(student, semesters));
+        res.setPlacementRisk(computePlacementRisk(student, projects, certificates, skills, portfolios));
+        res.setEngagementRisk(computeEngagementRisk(student, projects, certificates, portfolios));
+        res.setSkillRisk(computeSkillRisk(skills));
+        res.setGrowthRisk(computeGrowthRisk(semesters, achievements));
 
-        // 1. Academic Risk (35%)
+        res.setScore((int) Math.round(
+                (res.getAcademicRisk() * 0.35) +
+                (res.getPlacementRisk() * 0.25) +
+                (res.getEngagementRisk() * 0.15) +
+                (res.getSkillRisk() * 0.15) +
+                (res.getGrowthRisk() * 0.10)
+        ));
+
+        if (res.getScore() >= 75) res.setCategory("Critical Risk");
+        else if (res.getScore() >= 50) res.setCategory("High Risk");
+        else if (res.getScore() >= 25) res.setCategory("Moderate Risk");
+        else res.setCategory("Low Risk");
+
+        return res;
+    }
+
+    // -------------------------------------------------------------------------
+    // 1. Academic Risk (35%)
+    // -------------------------------------------------------------------------
+    private static int computeAcademicRisk(Student student, List<Map<String, Object>> semesters) {
+        double cgpa = resolveCgpa(student, semesters);
+        double cgpaRisk = gradeCgpaRisk(cgpa);
+
+        double attendanceRate = student.getAttendance() != null ? student.getAttendance() : 100.0;
+        double attendanceRisk = gradeAttendanceRisk(attendanceRate);
+
+        double declineRisk = computeDeclineRisk(semesters);
+        double backlogRisk = computeBacklogRisk(student);
+
+        return (int) Math.min(100.0,
+                (cgpaRisk * 0.4) + (attendanceRisk * 0.3) + (declineRisk * 0.15) + (backlogRisk * 0.15));
+    }
+
+    private static double resolveCgpa(Student student, List<Map<String, Object>> semesters) {
         double cgpa = student.getGpa() != null ? student.getGpa() : 0.0;
         if (cgpa == 0.0 && !semesters.isEmpty()) {
             cgpa = semesters.stream()
@@ -34,43 +99,51 @@ public class RiskScoreCalculator {
                     .max()
                     .orElse(0.0);
         }
-        double cgpaRisk = 0.0;
-        if (cgpa < 6.0) cgpaRisk = 100.0;
-        else if (cgpa < 7.0) cgpaRisk = 75.0;
-        else if (cgpa < 8.0) cgpaRisk = 40.0;
-        else if (cgpa < 9.0) cgpaRisk = 15.0;
+        return cgpa;
+    }
 
-        double attendanceRate = student.getAttendance() != null ? student.getAttendance() : 100.0;
-        double attendanceRisk = 0.0;
-        if (attendanceRate < 75.0) attendanceRisk = 100.0;
-        else if (attendanceRate < 80.0) attendanceRisk = 75.0;
-        else if (attendanceRate < 85.0) attendanceRisk = 40.0;
-        else if (attendanceRate < 90.0) attendanceRisk = 15.0;
+    private static double gradeCgpaRisk(double cgpa) {
+        if (cgpa < 6.0) return 100.0;
+        if (cgpa < 7.0) return 75.0;
+        if (cgpa < 8.0) return 40.0;
+        if (cgpa < 9.0) return 15.0;
+        return 0.0;
+    }
 
-        double declineRisk = 0.0;
-        if (semesters.size() >= 2) {
-            List<Map<String, Object>> sortedSems = new ArrayList<>(semesters);
-            sortedSems.sort(Comparator.comparingInt(s -> s.get("semesterNumber") != null ? ((Number) s.get("semesterNumber")).intValue() : 0));
-            double secondLastSgpa = sortedSems.get(sortedSems.size() - 2).get("sgpa") != null ? ((Number) sortedSems.get(sortedSems.size() - 2).get("sgpa")).doubleValue() : 0.0;
-            double lastSgpa = sortedSems.get(sortedSems.size() - 1).get("sgpa") != null ? ((Number) sortedSems.get(sortedSems.size() - 1).get("sgpa")).doubleValue() : 0.0;
-            if (lastSgpa < secondLastSgpa) {
-                declineRisk = 50.0;
-                if (sortedSems.size() >= 3) {
-                    double thirdLastSgpa = sortedSems.get(sortedSems.size() - 3).get("sgpa") != null ? ((Number) sortedSems.get(sortedSems.size() - 3).get("sgpa")).doubleValue() : 0.0;
-                    if (secondLastSgpa < thirdLastSgpa) {
-                        declineRisk = 100.0; // Continuous decline
-                    }
-                }
+    private static double gradeAttendanceRisk(double rate) {
+        if (rate < 75.0) return 100.0;
+        if (rate < 80.0) return 75.0;
+        if (rate < 85.0) return 40.0;
+        if (rate < 90.0) return 15.0;
+        return 0.0;
+    }
+
+    private static double computeDeclineRisk(List<Map<String, Object>> semesters) {
+        if (semesters.size() < 2) return 0.0;
+
+        List<Map<String, Object>> sorted = sortBySemesterNumber(semesters);
+        double secondLastSgpa = getSgpa(sorted.get(sorted.size() - 2));
+        double lastSgpa = getSgpa(sorted.get(sorted.size() - 1));
+
+        if (lastSgpa >= secondLastSgpa) return 0.0;
+
+        if (sorted.size() >= 3) {
+            double thirdLastSgpa = getSgpa(sorted.get(sorted.size() - 3));
+            if (secondLastSgpa < thirdLastSgpa) {
+                return 100.0; // Continuous decline
             }
         }
+        return 50.0;
+    }
 
-        double backlogRisk = 0.0;
-        // Count backlogs from gradesJson if available, looking for "F" grade
+    private static double computeBacklogRisk(Student student) {
         int backlogCount = 0;
         if (student.getGradesJson() != null && !student.getGradesJson().isBlank()) {
             try {
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                List<Map<String, Object>> grades = mapper.readValue(student.getGradesJson(), new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+                List<Map<String, Object>> grades = mapper.readValue(
+                        student.getGradesJson(),
+                        new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
                 for (Map<String, Object> grade : grades) {
                     Object gradeVal = grade.get("grade");
                     if (gradeVal != null && "F".equalsIgnoreCase(gradeVal.toString().trim())) {
@@ -81,46 +154,77 @@ public class RiskScoreCalculator {
                 // Ignore parsing error
             }
         }
-        backlogRisk = Math.min(100.0, backlogCount * 35.0);
+        return Math.min(100.0, backlogCount * 35.0);
+    }
 
-        res.academicRisk = (int) Math.min(100.0, (cgpaRisk * 0.4) + (attendanceRisk * 0.3) + (declineRisk * 0.15) + (backlogRisk * 0.15));
+    // -------------------------------------------------------------------------
+    // 2. Placement Risk (25%)
+    // -------------------------------------------------------------------------
+    private static int computePlacementRisk(
+            Student student,
+            List<Map<String, Object>> projects,
+            List<Map<String, Object>> certificates,
+            List<Map<String, Object>> skills,
+            List<Map<String, Object>> portfolios) {
 
-        // 2. Placement Risk (25%)
         int placementScore = student.getPlacementScore() != null ? student.getPlacementScore() : 50;
         double placementScoreRisk = 100.0 - placementScore;
 
-        double projectsRisk = 100.0;
-        int projCount = projects.size();
-        if (projCount >= 3) projectsRisk = 0.0;
-        else if (projCount == 2) projectsRisk = 30.0;
-        else if (projCount == 1) projectsRisk = 60.0;
+        double projectsRisk = gradeCountRisk(projects.size());
+        double portfolioRisk = gradePortfolioRisk(portfolios);
+        double skillsRisk = gradeSkillsRisk(skills.size());
+        double certsRisk = gradeCountRisk(certificates.size());
 
-        double portfolioRisk = 100.0;
-        boolean hasPublished = false;
+        return (int) Math.min(100.0,
+                (placementScoreRisk * 0.3) + (projectsRisk * 0.2) +
+                (portfolioRisk * 0.2) + (skillsRisk * 0.15) + (certsRisk * 0.15));
+    }
+
+    /**
+     * Grades risk for a simple count: ≥3 → 0%, 2 → 30%, 1 → 60%, 0 → 100%.
+     * Used for both projects and certificates.
+     */
+    private static double gradeCountRisk(int count) {
+        if (count >= 3) return 0.0;
+        if (count == 2) return 30.0;
+        if (count == 1) return 60.0;
+        return 100.0;
+    }
+
+    private static double gradePortfolioRisk(List<Map<String, Object>> portfolios) {
         for (Map<String, Object> port : portfolios) {
-            if ("PUBLISHED".equalsIgnoreCase(String.valueOf(port.get("portfolioStatus"))) || Boolean.TRUE.equals(port.get("published"))) {
-                hasPublished = true;
-                break;
+            if ("PUBLISHED".equalsIgnoreCase(String.valueOf(port.get("portfolioStatus")))
+                    || Boolean.TRUE.equals(port.get("published"))) {
+                return 0.0;
             }
         }
-        if (hasPublished) portfolioRisk = 0.0;
-        else if (!portfolios.isEmpty()) portfolioRisk = 40.0;
+        return portfolios.isEmpty() ? 100.0 : 40.0;
+    }
 
-        double skillsRisk = 100.0;
-        int skillCount = skills.size();
-        if (skillCount >= 8) skillsRisk = 0.0;
-        else if (skillCount >= 5) skillsRisk = 25.0;
-        else if (skillCount >= 3) skillsRisk = 60.0;
+    private static double gradeSkillsRisk(int count) {
+        if (count >= 8) return 0.0;
+        if (count >= 5) return 25.0;
+        if (count >= 3) return 60.0;
+        return 100.0;
+    }
 
-        double certsRisk = 100.0;
-        int certCount = certificates.size();
-        if (certCount >= 3) certsRisk = 0.0;
-        else if (certCount == 2) certsRisk = 30.0;
-        else if (certCount == 1) certsRisk = 60.0;
+    // -------------------------------------------------------------------------
+    // 3. Engagement Risk (15%)
+    // -------------------------------------------------------------------------
+    private static int computeEngagementRisk(
+            Student student,
+            List<Map<String, Object>> projects,
+            List<Map<String, Object>> certificates,
+            List<Map<String, Object>> portfolios) {
 
-        res.placementRisk = (int) Math.min(100.0, (placementScoreRisk * 0.3) + (projectsRisk * 0.2) + (portfolioRisk * 0.2) + (skillsRisk * 0.15) + (certsRisk * 0.15));
+        double profileCompRisk = computeProfileCompletionRisk(student);
+        double recentActivityRisk = (!projects.isEmpty() || !certificates.isEmpty() || !portfolios.isEmpty())
+                ? 0.0 : 100.0;
 
-        // 3. Engagement Risk (15%)
+        return (int) Math.min(100.0, (profileCompRisk * 0.6) + (recentActivityRisk * 0.4));
+    }
+
+    private static double computeProfileCompletionRisk(Student student) {
         int completedFields = 0;
         int totalFields = 7;
         if (student.getFirstName() != null && !student.getFirstName().isBlank()) completedFields++;
@@ -130,90 +234,102 @@ public class RiskScoreCalculator {
         if (student.getImageUrl() != null && !student.getImageUrl().isBlank()) completedFields++;
         if (student.getGpa() != null && student.getGpa() > 0.0) completedFields++;
         if (student.getAttendance() != null && student.getAttendance() > 0.0) completedFields++;
-        double profileCompRisk = 100.0 - (((double) completedFields / totalFields) * 100.0);
+        return 100.0 - (((double) completedFields / totalFields) * 100.0);
+    }
 
-        double recentActivityRisk = 100.0;
-        if (projects.size() > 0 || certificates.size() > 0 || portfolios.size() > 0) {
-            recentActivityRisk = 0.0;
-        }
-
-        res.engagementRisk = (int) Math.min(100.0, (profileCompRisk * 0.6) + (recentActivityRisk * 0.4));
-
-        // 4. Skill Risk (15%)
-        boolean hasDsa = false;
-        boolean hasBackend = false;
-        boolean hasFrontend = false;
-        boolean hasDatabase = false;
-        for (Map<String, Object> s : skills) {
-            String sname = s.get("name") != null ? s.get("name").toString().toLowerCase().trim() : "";
-            if (sname.contains("dsa") || sname.contains("algorithm") || sname.contains("structure")) hasDsa = true;
-            if (sname.contains("java") || sname.contains("python") || sname.contains("backend") || sname.contains("spring") || sname.contains("node")) hasBackend = true;
-            if (sname.contains("react") || sname.contains("frontend") || sname.contains("html") || sname.contains("css") || sname.contains("javascript")) hasFrontend = true;
-            if (sname.contains("sql") || sname.contains("db") || sname.contains("database") || sname.contains("mongo") || sname.contains("postgres")) hasDatabase = true;
-        }
+    // -------------------------------------------------------------------------
+    // 4. Skill Risk (15%)
+    // -------------------------------------------------------------------------
+    private static int computeSkillRisk(List<Map<String, Object>> skills) {
+        boolean[] categories = classifySkillCategories(skills);
+        boolean hasDsa      = categories[0];
+        boolean hasBackend  = categories[1];
+        boolean hasFrontend = categories[2];
+        boolean hasDatabase = categories[3];
 
         double missingCoreRisk = 0.0;
-        if (!hasDsa) missingCoreRisk += 25.0;
-        if (!hasBackend) missingCoreRisk += 25.0;
+        if (!hasDsa)      missingCoreRisk += 25.0;
+        if (!hasBackend)  missingCoreRisk += 25.0;
         if (!hasFrontend) missingCoreRisk += 25.0;
         if (!hasDatabase) missingCoreRisk += 25.0;
 
-        double diversityRisk = 100.0;
-        int categoryCount = 0;
-        if (hasDsa) categoryCount++;
-        if (hasBackend) categoryCount++;
-        if (hasFrontend) categoryCount++;
-        if (hasDatabase) categoryCount++;
-        if (categoryCount >= 3) diversityRisk = 0.0;
-        else if (categoryCount == 2) diversityRisk = 40.0;
-        else if (categoryCount == 1) diversityRisk = 75.0;
+        int categoryCount = (hasDsa ? 1 : 0) + (hasBackend ? 1 : 0) + (hasFrontend ? 1 : 0) + (hasDatabase ? 1 : 0);
+        double diversityRisk = gradeDiversityRisk(categoryCount);
 
         double depthRisk = 100.0;
         if (skills.size() >= 6) depthRisk = 0.0;
         else if (skills.size() >= 3) depthRisk = 40.0;
 
-        res.skillRisk = (int) Math.min(100.0, (missingCoreRisk * 0.4) + (diversityRisk * 0.3) + (depthRisk * 0.3));
+        return (int) Math.min(100.0, (missingCoreRisk * 0.4) + (diversityRisk * 0.3) + (depthRisk * 0.3));
+    }
 
-        // 5. Growth Risk (10%)
-        double trendRisk = 50.0;
-        if (semesters.size() >= 2) {
-            List<Map<String, Object>> sortedSems = new ArrayList<>(semesters);
-            sortedSems.sort(Comparator.comparingInt(s -> s.get("semesterNumber") != null ? ((Number) s.get("semesterNumber")).intValue() : 0));
-            double firstSgpa = sortedSems.get(0).get("sgpa") != null ? ((Number) sortedSems.get(0).get("sgpa")).doubleValue() : 0.0;
-            double lastSgpa = sortedSems.get(sortedSems.size() - 1).get("sgpa") != null ? ((Number) sortedSems.get(sortedSems.size() - 1).get("sgpa")).doubleValue() : 0.0;
-            if (lastSgpa > firstSgpa) {
-                trendRisk = 0.0;
-            } else if (lastSgpa < firstSgpa) {
-                trendRisk = 100.0;
-            }
-        }
+    /** Returns [hasDsa, hasBackend, hasFrontend, hasDatabase] */
+    private static boolean[] classifySkillCategories(List<Map<String, Object>> skills) {
+        boolean hasDsa = false;
+        boolean hasBackend = false;
+        boolean hasFrontend = false;
+        boolean hasDatabase = false;
 
-        double consistencyRisk = 100.0;
-        if (semesters.size() > 0) {
-            consistencyRisk = 0.0;
+        for (Map<String, Object> s : skills) {
+            String sname = s.get("name") != null ? s.get("name").toString().toLowerCase().trim() : "";
+            if (sname.contains("dsa") || sname.contains("algorithm") || sname.contains("structure")) hasDsa = true;
+            if (sname.contains("java") || sname.contains("python") || sname.contains("backend")
+                    || sname.contains("spring") || sname.contains("node")) hasBackend = true;
+            if (sname.contains("react") || sname.contains("frontend") || sname.contains("html")
+                    || sname.contains("css") || sname.contains("javascript")) hasFrontend = true;
+            if (sname.contains("sql") || sname.contains("db") || sname.contains("database")
+                    || sname.contains("mongo") || sname.contains("postgres")) hasDatabase = true;
         }
+        return new boolean[]{ hasDsa, hasBackend, hasFrontend, hasDatabase };
+    }
+
+    private static double gradeDiversityRisk(int categoryCount) {
+        if (categoryCount >= 3) return 0.0;
+        if (categoryCount == 2) return 40.0;
+        if (categoryCount == 1) return 75.0;
+        return 100.0;
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. Growth Risk (10%)
+    // -------------------------------------------------------------------------
+    private static int computeGrowthRisk(
+            List<Map<String, Object>> semesters,
+            List<Map<String, Object>> achievements) {
+
+        double trendRisk = computeTrendRisk(semesters);
+        double consistencyRisk = semesters.isEmpty() ? 100.0 : 0.0;
 
         double achievementRisk = 100.0;
         if (achievements.size() >= 2) achievementRisk = 0.0;
         else if (achievements.size() == 1) achievementRisk = 40.0;
 
-        res.growthRisk = (int) Math.min(100.0, (trendRisk * 0.4) + (consistencyRisk * 0.3) + (achievementRisk * 0.3));
+        return (int) Math.min(100.0, (trendRisk * 0.4) + (consistencyRisk * 0.3) + (achievementRisk * 0.3));
+    }
 
-        // Aggregate Risk Score (0 - 100)
-        res.score = (int) Math.round(
-                (res.academicRisk * 0.35) +
-                (res.placementRisk * 0.25) +
-                (res.engagementRisk * 0.15) +
-                (res.skillRisk * 0.15) +
-                (res.growthRisk * 0.10)
-        );
+    private static double computeTrendRisk(List<Map<String, Object>> semesters) {
+        if (semesters.size() < 2) return 50.0;
 
-        // Map Category
-        if (res.score >= 75) res.category = "Critical Risk";
-        else if (res.score >= 50) res.category = "High Risk";
-        else if (res.score >= 25) res.category = "Moderate Risk";
-        else res.category = "Low Risk";
+        List<Map<String, Object>> sorted = sortBySemesterNumber(semesters);
+        double firstSgpa = getSgpa(sorted.get(0));
+        double lastSgpa = getSgpa(sorted.get(sorted.size() - 1));
 
-        return res;
+        if (lastSgpa > firstSgpa) return 0.0;
+        if (lastSgpa < firstSgpa) return 100.0;
+        return 50.0;
+    }
+
+    // -------------------------------------------------------------------------
+    // Shared helpers
+    // -------------------------------------------------------------------------
+    private static List<Map<String, Object>> sortBySemesterNumber(List<Map<String, Object>> semesters) {
+        List<Map<String, Object>> sorted = new ArrayList<>(semesters);
+        sorted.sort(Comparator.comparingInt(s ->
+                s.get(SEMESTER_NUMBER_KEY) != null ? ((Number) s.get(SEMESTER_NUMBER_KEY)).intValue() : 0));
+        return sorted;
+    }
+
+    private static double getSgpa(Map<String, Object> semester) {
+        return semester.get("sgpa") != null ? ((Number) semester.get("sgpa")).doubleValue() : 0.0;
     }
 }

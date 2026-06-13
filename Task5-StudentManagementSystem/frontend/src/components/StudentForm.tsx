@@ -34,6 +34,14 @@ type StudentFormProps = Readonly<{
   setPortfolioTitle: (v: string) => void;
   portfolioSummary: string;
   setPortfolioSummary: (v: string) => void;
+  attendanceRate?: string;
+  setAttendanceRate?: (v: string) => void;
+  placementStatus?: Student['placementStatus'];
+  setPlacementStatus?: (v: Student['placementStatus']) => void;
+  offerCount?: string;
+  setOfferCount?: (v: string) => void;
+  imageUrl?: string;
+  setImageUrl?: (v: string) => void;
   formErr: string | null;
   submitting: boolean;
   onCancel: () => void;
@@ -82,6 +90,14 @@ export default function StudentForm({
   setPortfolioTitle,
   portfolioSummary,
   setPortfolioSummary,
+  attendanceRate = '100',
+  setAttendanceRate,
+  placementStatus = 'NOT_STARTED',
+  setPlacementStatus,
+  offerCount = '0',
+  setOfferCount,
+  imageUrl = '',
+  setImageUrl,
   formErr,
   submitting,
   onCancel,
@@ -169,6 +185,36 @@ export default function StudentForm({
           ))}
         </div>
       </div>
+
+      {/* Performance & Placement metrics (Only on Edit) */}
+      {isEdit && (
+        <div className="border-t border-slate-200 dark:border-white/5 pt-4 space-y-4 animate-fadeIn">
+          <h4 className="text-xs font-black uppercase tracking-wider text-vault-cyan">Academic & Placement Metrics</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <label htmlFor={`${idPrefix}attendanceRate`} className={labelCls}>Attendance Rate (%)</label>
+              <input id={`${idPrefix}attendanceRate`} type="number" min="0" max="100" value={attendanceRate} onChange={e => setAttendanceRate?.(e.target.value)} placeholder="100" className={fieldCls} />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor={`${idPrefix}placementStatus`} className={labelCls}>Placement Status</label>
+              <select id={`${idPrefix}placementStatus`} value={placementStatus} onChange={e => setPlacementStatus?.(e.target.value as any)} className={selectCls}>
+                <option value="NOT_STARTED">Not Started</option>
+                <option value="PREPARING">Preparing</option>
+                <option value="INTERVIEWING">Interviewing</option>
+                <option value="PLACED">Placed</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor={`${idPrefix}offerCount`} className={labelCls}>Job Offers Count</label>
+              <input id={`${idPrefix}offerCount`} type="number" min="0" value={offerCount} onChange={e => setOfferCount?.(e.target.value)} placeholder="0" className={fieldCls} />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label htmlFor={`${idPrefix}imageUrl`} className={labelCls}>Avatar Image URL</label>
+            <input id={`${idPrefix}imageUrl`} type="url" value={imageUrl} onChange={e => setImageUrl?.(e.target.value)} placeholder="https://images.unsplash.com/..." className={fieldCls} />
+          </div>
+        </div>
+      )}
 
       {/* Contact, Socials & Portfolio (Optional) */}
       <div className="border-t border-slate-200 dark:border-white/5 pt-4 space-y-4">

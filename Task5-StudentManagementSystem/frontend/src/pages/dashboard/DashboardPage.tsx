@@ -232,6 +232,9 @@ export default function DashboardPage() {
 
   // Calculate attendance dynamically from student records
   const attendanceStats = students.map(s => {
+    if (s.attendanceRate !== undefined && s.attendanceRate !== null) {
+      return s.attendanceRate
+    }
     if (!s.attendance || s.attendance.length === 0) return 100 // no records = assume 100%
     const presentCount = s.attendance.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length
     return (presentCount / s.attendance.length) * 100
@@ -470,7 +473,7 @@ export default function DashboardPage() {
             >
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 text-left">CGPA Trend Profile</h4>
               <div className="h-56 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={220} minWidth={0}>
                   <AreaChart data={gpaChartData} margin={{ left: -25, bottom: 0, right: 10 }}>
                     <defs>
                       <linearGradient id="areaGpaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -495,7 +498,7 @@ export default function DashboardPage() {
             >
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 text-left">Department Size</h4>
               <div className="h-56 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={220} minWidth={0}>
                   <BarChart data={deptChartData} margin={{ left: -25, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.12)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -519,7 +522,7 @@ export default function DashboardPage() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 text-left">GPA Segment Distribution</h4>
               <div className="h-56 w-full grid grid-cols-2 gap-2 items-center">
                 <div className="h-full min-w-0">
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <ResponsiveContainer width="100%" height={220} minWidth={0}>
                     <PieChart>
                       <Pie
                         data={segmentationData}
@@ -553,7 +556,7 @@ export default function DashboardPage() {
             >
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 text-left">GPA Semester Progression</h4>
               <div className="h-56 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={220} minWidth={0}>
                   <LineChart data={semesterData} margin={{ left: -25, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.12)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />

@@ -109,8 +109,11 @@ export default function StudentDetailPage() {
     }
   }
 
+  const [imageError, setImageError] = useState(false)
+
   useEffect(() => {
     fetchStudentDetails()
+    setImageError(false)
   }, [id])
 
   const handleAddGradeSubmit = async (e: React.SyntheticEvent) => {
@@ -491,8 +494,17 @@ export default function StudentDetailPage() {
       <div className="vault-glass rounded-2xl border border-vault-border overflow-hidden">
         <div className="p-6 lg:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border-b border-slate-200 dark:border-white/5 bg-white/55 dark:bg-white/[0.02]">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="h-16 w-16 rounded-2xl bg-vault-accent/10 border border-vault-accent/25 flex items-center justify-center font-black text-vault-accent text-xl shrink-0">
-              {studentInitials}
+            <div className="h-16 w-16 rounded-2xl bg-vault-accent/10 border border-vault-accent/25 overflow-hidden flex items-center justify-center font-black text-vault-accent text-xl shrink-0">
+              {student?.imageUrl && !imageError ? (
+                <img
+                  src={student.imageUrl.startsWith('localstorage://') ? (localStorage.getItem(`avatar_student_${student.id}`) || '') : student.imageUrl}
+                  alt={`${student.firstName} ${student.lastName}`}
+                  className="h-full w-full object-cover"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <span>{studentInitials}</span>
+              )}
             </div>
             <div className="min-w-0">
               <span className="text-[10px] font-mono px-2 py-1 bg-slate-100 dark:bg-white/5 text-vault-cyan rounded-lg border border-slate-200 dark:border-white/10">

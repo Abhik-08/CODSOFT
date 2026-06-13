@@ -1,10 +1,5 @@
 import {
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
   collection,
-  serverTimestamp,
   onSnapshot,
   query,
   orderBy,
@@ -22,6 +17,8 @@ import type {
   HistoryRecord
 } from '../types/student'
 
+import { apiClient } from './apiClient'
+
 // ── Subcollection reference helpers ─────────────────────────────────
 
 function subcol(studentId: string, name: string) {
@@ -35,12 +32,8 @@ async function addSubDoc<T extends Record<string, unknown>>(
   subcollection: string,
   data: T
 ): Promise<string> {
-  const colRef = subcol(studentId, subcollection)
-  const docRef = await addDoc(colRef, {
-    ...data,
-    createdAt: serverTimestamp()
-  })
-  return docRef.id
+  const response = await apiClient.post(`/students/${studentId}/${subcollection}`, data)
+  return response.data.id
 }
 
 async function updateSubDoc<T extends Record<string, unknown>>(
@@ -49,8 +42,7 @@ async function updateSubDoc<T extends Record<string, unknown>>(
   docId: string,
   data: T
 ): Promise<void> {
-  const docRef = doc(db, 'students', studentId, subcollection, docId)
-  await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() })
+  await apiClient.put(`/students/${studentId}/${subcollection}/${docId}`, data)
 }
 
 async function deleteSubDoc(
@@ -58,8 +50,7 @@ async function deleteSubDoc(
   subcollection: string,
   docId: string
 ): Promise<void> {
-  const docRef = doc(db, 'students', studentId, subcollection, docId)
-  await deleteDoc(docRef)
+  await apiClient.delete(`/students/${studentId}/${subcollection}/${docId}`)
 }
 
 function subscribeToSubcollection<T>(
@@ -216,11 +207,9 @@ export const skillService = {
 
 export const placementService = {
   async updateStatus(studentId: string, status: PlacementStatus, offerCount: number) {
-    const docRef = doc(db, 'students', studentId)
-    await updateDoc(docRef, {
+    await apiClient.put(`/students/${studentId}/placement`, {
       placementStatus: status,
-      offerCount,
-      updatedAt: serverTimestamp()
+      offerCount
     })
   }
 }

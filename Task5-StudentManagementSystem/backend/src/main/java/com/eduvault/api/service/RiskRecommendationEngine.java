@@ -1,11 +1,14 @@
 package com.eduvault.api.service;
 
-import com.eduvault.api.model.Student;
 import java.util.*;
 
 public class RiskRecommendationEngine {
 
-    public static List<String> generateInterventions(Student student, double cgpa, double attendance, int projCount) {
+    private RiskRecommendationEngine() {
+        // Utility class — prevent instantiation
+    }
+
+    public static List<String> generateInterventions(double cgpa, double attendance, int projCount) {
         List<String> list = new ArrayList<>();
         if (attendance < 80.0) {
             list.add("Improve attendance consistency");
@@ -28,7 +31,7 @@ public class RiskRecommendationEngine {
         return list;
     }
 
-    public static List<String> generatePriorityActions(Student student, double cgpa, double attendance, int projCount, int skillCount) {
+    public static List<String> generatePriorityActions(double cgpa, int projCount, int skillCount) {
         List<String> list = new ArrayList<>();
         if (skillCount < 4) {
             list.add("Solve 50+ DSA problems on LeetCode or HackerRank");
@@ -51,7 +54,7 @@ public class RiskRecommendationEngine {
         return list;
     }
 
-    public static List<String> generateAcademicRecommendations(Student student, double cgpa, double attendance) {
+    public static List<String> generateAcademicRecommendations(double cgpa, double attendance) {
         List<String> list = new ArrayList<>();
         if (cgpa < 7.5) {
             list.add("Implement strict study schedules of 3 hours daily");

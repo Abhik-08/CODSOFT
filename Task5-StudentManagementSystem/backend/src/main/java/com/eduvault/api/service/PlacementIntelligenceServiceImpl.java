@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.eduvault.api.config.SecurityUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,6 +31,7 @@ public class PlacementIntelligenceServiceImpl implements PlacementIntelligenceSe
     private final AcademicProfileService academicProfileService;
     private final PortfolioService portfolioService;
     private final Environment env;
+    private final StudentService studentService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
@@ -37,11 +39,13 @@ public class PlacementIntelligenceServiceImpl implements PlacementIntelligenceSe
             StudentRepository studentRepository,
             AcademicProfileService academicProfileService,
             PortfolioService portfolioService,
-            Environment env) {
+            Environment env,
+            @org.springframework.context.annotation.Lazy StudentService studentService) {
         this.studentRepository = studentRepository;
         this.academicProfileService = academicProfileService;
         this.portfolioService = portfolioService;
         this.env = env;
+        this.studentService = studentService;
     }
 
     private boolean isTestProfile() {
@@ -68,6 +72,16 @@ public class PlacementIntelligenceServiceImpl implements PlacementIntelligenceSe
         Optional<Student> studentOpt = studentRepository.findByFirestoreId(studentIdStr);
         if (studentOpt.isPresent()) {
             return studentOpt.get();
+        }
+
+        try {
+            studentService.syncStudentByFirestoreId(studentIdStr);
+            studentOpt = studentRepository.findByFirestoreId(studentIdStr);
+            if (studentOpt.isPresent()) {
+                return studentOpt.get();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to dynamically sync student {} in PlacementIntelligenceService: {}", studentIdStr, e.getMessage());
         }
 
         studentOpt = studentRepository.findByEnrollmentNumber(studentIdStr);
@@ -199,7 +213,7 @@ public class PlacementIntelligenceServiceImpl implements PlacementIntelligenceSe
 
     private void updateFirestorePlacementIntelligence(Student student) {
         try {
-            RestTemplate restTemplate = new RestTemplate();
+            RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 

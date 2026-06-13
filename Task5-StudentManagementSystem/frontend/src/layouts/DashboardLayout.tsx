@@ -17,6 +17,7 @@ import {
   Sun
 } from 'lucide-react'
 import { EduVaultLogo, EduVaultLogoMark } from '../components/common'
+import { UserProfileSettingsModal } from '../components/dashboard'
 
 export default function DashboardLayout() {
   const { user, logout } = useAuthContext()
@@ -25,6 +26,7 @@ export default function DashboardLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   const getPageTitle = () => {
     switch (location.pathname) {
@@ -169,12 +171,26 @@ export default function DashboardLayout() {
 
         {/* Floating User Profile Card & Sign Out button */}
         <div className="pt-6 border-t border-slate-200/50 dark:border-white/5">
-          <motion.div 
+          <motion.button 
             layout
-            className="flex items-center space-x-3 p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden"
+            onClick={() => setShowSettingsModal(true)}
+            className="w-full flex items-center space-x-3 p-2 rounded-xl bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden text-left cursor-pointer transition-colors"
+            title="Open Profile Settings"
           >
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-vault-accent to-vault-cyan flex items-center justify-center font-black text-white text-sm shrink-0">
-              {user?.displayName?.[0] || 'U'}
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-vault-accent to-vault-cyan overflow-hidden flex items-center justify-center font-black text-white text-sm shrink-0">
+              {user?.photoURL ? (
+                <img
+                  src={user.photoURL.startsWith('localstorage://') ? (localStorage.getItem(`avatar_user_${user.uid}`) || '') : user.photoURL}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="%232563eb" opacity="0.15"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="12" fill="%232563eb">${user?.displayName?.[0] || 'U'}</text></svg>`;
+                  }}
+                />
+              ) : (
+                <span>{user?.displayName?.[0] || 'U'}</span>
+              )}
             </div>
             {!isCollapsed && (
               <motion.div 
@@ -186,7 +202,7 @@ export default function DashboardLayout() {
                 <span className="text-[9px] text-vault-cyan font-bold font-mono tracking-wide uppercase mt-0.5 block">{user?.role || 'Intelligence Lead'}</span>
               </motion.div>
             )}
-          </motion.div>
+          </motion.button>
           
           <button
             onClick={handleLogout}
@@ -253,6 +269,28 @@ export default function DashboardLayout() {
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
+          {/* Navbar profile icon button */}
+          <button
+            type="button"
+            onClick={() => setShowSettingsModal(true)}
+            className="ml-3 h-9 w-9 overflow-hidden inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:border-vault-accent/40 transition-colors cursor-pointer"
+            title="Profile Settings"
+          >
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL.startsWith('localstorage://') ? (localStorage.getItem(`avatar_user_${user.uid}`) || '') : user.photoURL}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="%232563eb" opacity="0.15"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="12" fill="%232563eb">${user?.displayName?.[0] || 'U'}</text></svg>`;
+                }}
+              />
+            ) : (
+              <span className="font-black text-xs">{user?.displayName?.[0] || 'U'}</span>
+            )}
+          </button>
+
         </header>
 
         {/* Content Canvas */}
@@ -260,6 +298,11 @@ export default function DashboardLayout() {
           <Outlet />
         </div>
       </main>
+
+      {/* User Profile Settings Modal */}
+      {showSettingsModal && (
+        <UserProfileSettingsModal onClose={() => setShowSettingsModal(false)} />
+      )}
     </div>
   )
 }

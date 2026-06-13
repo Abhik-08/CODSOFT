@@ -336,7 +336,7 @@ export default function AnalyticsPage() {
               <TrendingUp size={16} className="text-vault-accent" />
             </div>
             <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <ResponsiveContainer width="100%" height={250} minWidth={0}>
                 <AreaChart data={cgpaTrendData} margin={{ left: -25, bottom: 0, right: 10 }}>
                   <defs>
                     <linearGradient id="areaTrendGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -367,7 +367,7 @@ export default function AnalyticsPage() {
               <Building2 size={16} className="text-vault-cyan" />
             </div>
             <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <ResponsiveContainer width="100%" height={250} minWidth={0}>
                 <BarChart data={departmentData} margin={{ left: -20, bottom: 0, right: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                   <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -395,7 +395,7 @@ export default function AnalyticsPage() {
               <Calendar size={16} className="text-vault-cyan" />
             </div>
             <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <ResponsiveContainer width="100%" height={250} minWidth={0}>
                 <LineChart data={attendanceChartData} margin={{ left: -20, bottom: 0, right: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                   <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -421,7 +421,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="h-64 w-full flex flex-col sm:flex-row items-center justify-around">
               <div className="w-[50%] h-[80%] min-h-[160px]">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={200} minWidth={0}>
                   <PieChart>
                     <Pie
                       data={placementData}
@@ -478,7 +478,7 @@ export default function AnalyticsPage() {
                 <Target size={14} className="text-vault-accent" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <BarChart data={distributionBins} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -504,7 +504,7 @@ export default function AnalyticsPage() {
                 <Building2 size={14} className="text-vault-cyan" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <BarChart data={deptAverageScoreData} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -532,7 +532,7 @@ export default function AnalyticsPage() {
               </h4>
               <div className="h-64 w-full flex flex-col sm:flex-row items-center justify-around">
                 <div className="w-[50%] h-[80%] min-h-[160px]">
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <ResponsiveContainer width="100%" height={200} minWidth={0}>
                     <PieChart>
                       <Pie
                         data={tierDistributionData}
@@ -571,7 +571,7 @@ export default function AnalyticsPage() {
                 <CheckCircle2 size={14} className="text-vault-cyan" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <BarChart data={deptAverageScoreData} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -598,7 +598,7 @@ export default function AnalyticsPage() {
                 <Award size={14} className="text-vault-accent" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <BarChart data={deptAverageScoreData} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -625,7 +625,7 @@ export default function AnalyticsPage() {
                 <TrendingUp size={14} className="text-vault-cyan" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <BarChart data={deptAverageScoreData} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -652,7 +652,7 @@ export default function AnalyticsPage() {
                 <CheckCircle2 size={14} className="text-emerald-500" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <BarChart data={deptAverageScoreData} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -697,7 +697,7 @@ export default function AnalyticsPage() {
                 <AlertTriangle size={14} className="text-red-500" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <BarChart data={riskDistributionData} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -723,7 +723,7 @@ export default function AnalyticsPage() {
                 <Building2 size={14} className="text-orange-500" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <BarChart data={deptRiskData} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -750,7 +750,7 @@ export default function AnalyticsPage() {
                 <Calendar size={14} className="text-yellow-550" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <AreaChart data={semRiskData} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <defs>
                       <linearGradient id="areaRiskGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -778,7 +778,7 @@ export default function AnalyticsPage() {
                 <TrendingUp size={14} className="text-red-500" />
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <LineChart data={riskTrendAnalysisData} margin={{ left: -20, bottom: 0, right: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
                     <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -801,7 +801,7 @@ export default function AnalyticsPage() {
               </h4>
               <div className="h-64 w-full flex flex-col sm:flex-row items-center justify-around">
                 <div className="w-[50%] h-[80%] min-h-[160px]">
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <ResponsiveContainer width="100%" height={200} minWidth={0}>
                     <PieChart>
                       <Pie
                         data={riskCategoryBreakdownData}

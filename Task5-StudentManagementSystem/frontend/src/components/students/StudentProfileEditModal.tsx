@@ -3,6 +3,7 @@ import { motion } from 'motion/react'
 import { X, User, GraduationCap, Link2, Check, AlertCircle } from 'lucide-react'
 import type { Student } from '../../types/student'
 import { useAuthContext } from '../../context/AuthContext'
+import { AvatarUpload } from '../common'
 
 interface Props {
   readonly student: Student
@@ -70,7 +71,7 @@ export default function StudentProfileEditModal({ student, onClose, onSave }: Pr
 
   const handleCancel = () => {
     if (isDirty) {
-      const confirmDiscard = window.confirm(
+      const confirmDiscard = globalThis.confirm(
         'You have unsaved changes. Are you sure you want to discard them?'
       )
       if (!confirmDiscard) return
@@ -87,7 +88,7 @@ export default function StudentProfileEditModal({ student, onClose, onSave }: Pr
       return
     }
 
-    const confirmSave = window.confirm('Are you sure you want to save these profile modifications?')
+    const confirmSave = globalThis.confirm('Are you sure you want to save these profile modifications?')
     if (!confirmSave) return
 
     setLoading(true)
@@ -246,14 +247,12 @@ export default function StudentProfileEditModal({ student, onClose, onSave }: Pr
               </div>
 
               <div>
-                <label htmlFor="imageUrl" className={labelCls}>Avatar Image URL</label>
-                <input
-                  id="imageUrl"
-                  type="url"
+                <span className={labelCls}>Student Avatar</span>
+                <AvatarUpload
                   value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className={inputCls}
-                  placeholder="https://..."
+                  onChange={setImageUrl}
+                  placeholderInitials={`${firstName[0] || ''}${lastName[0] || ''}`}
+                  storageKey={`avatar_student_${student.id}`}
                 />
               </div>
             </div>

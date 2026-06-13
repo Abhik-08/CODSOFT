@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.eduvault.api.config.SecurityUtils;
 
 import java.util.*;
 import java.util.Objects;
@@ -33,7 +34,7 @@ public class AcademicProfileServiceImpl implements AcademicProfileService {
     private static final String SUB_ACHIEVEMENTS = "achievements";
     private static final String SUB_SKILLS = "skills";
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // ── Generic helpers ─────────────────────────────────────────────

@@ -8,6 +8,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.client.RestTemplate;
+
+import com.eduvault.api.service.StudentService;
 
 @Component
 @SuppressWarnings("null")
@@ -18,11 +25,17 @@ public class SecurityUtils {
 
     private final StudentRepository studentRepository;
     private final PortfolioRepository portfolioRepository;
+    private StudentService studentService;
 
     @Autowired
     public SecurityUtils(StudentRepository studentRepository, PortfolioRepository portfolioRepository) {
         this.studentRepository = studentRepository;
         this.portfolioRepository = portfolioRepository;
+    }
+
+    @Autowired
+    public void setStudentService(@org.springframework.context.annotation.Lazy StudentService studentService) {
+        this.studentService = studentService;
     }
 
     public static String getCurrentUsername() {
@@ -87,6 +100,14 @@ public class SecurityUtils {
         } catch (NumberFormatException e) {
             Optional<Student> studentOpt = studentRepository.findByFirestoreId(studentIdStr);
             if (studentOpt.isEmpty()) {
+                try {
+                    studentService.syncStudentByFirestoreId(studentIdStr);
+                    studentOpt = studentRepository.findByFirestoreId(studentIdStr);
+                } catch (Exception ex) {
+                    // Ignore sync failures during access check
+                }
+            }
+            if (studentOpt.isEmpty()) {
                 studentOpt = studentRepository.findByEnrollmentNumber(studentIdStr);
             }
             if (studentOpt.isEmpty()) {
@@ -121,5 +142,33 @@ public class SecurityUtils {
                     return student != null && (username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()));
                 })
                 .orElse(false);
+    }
+
+    public static String getCurrentBearerToken() {
+        try {
+            RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+            if (attributes instanceof ServletRequestAttributes servletRequestAttributes) {
+                HttpServletRequest request = servletRequestAttributes.getRequest();
+                String authHeader = request.getHeader("Authorization");
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    return authHeader;
+                }
+            }
+        } catch (Exception e) {
+            // Request context not available (e.g. startup, background threads)
+        }
+        return null;
+    }
+
+    public static RestTemplate getAuthenticatedRestTemplate() {
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.getInterceptors().add((request, body, execution) -> {
+            String token = getCurrentBearerToken();
+            if (token != null) {
+                request.getHeaders().set("Authorization", token);
+            }
+            return execution.execute(request, body);
+        });
+        return restTemplate;
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.eduvault.api.config.SecurityUtils;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -159,7 +160,7 @@ public class StudentServiceImpl implements StudentService {
     private synchronized void syncWithFirestore() {
         if (isTestProfile()) return;
         try {
-            RestTemplate restTemplate = new RestTemplate();
+            RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
             String response = restTemplate.getForObject(FIRESTORE_BASE_URL, String.class);
             if (response == null) return;
 
@@ -364,42 +365,50 @@ public class StudentServiceImpl implements StudentService {
     private String buildFirestoreJson(StudentDto dto) {
         try {
             ObjectNode root = objectMapper.createObjectNode();
-            ObjectNode fieldsNode = objectMapper.createObjectNode();
-
-            fieldsNode.set(FIELD_FIRST_NAME, objectMapper.createObjectNode().put(VAL_STRING, dto.getFirstName()));
-            fieldsNode.set(FIELD_LAST_NAME, objectMapper.createObjectNode().put(VAL_STRING, dto.getLastName()));
-            fieldsNode.set(FIELD_EMAIL, objectMapper.createObjectNode().put(VAL_STRING, dto.getEmail()));
-            fieldsNode.set(FIELD_ENROLLMENT, objectMapper.createObjectNode().put(VAL_STRING, dto.getEnrollmentNumber()));
-            fieldsNode.set(FIELD_DOB, objectMapper.createObjectNode().put(VAL_STRING, dto.getDateOfBirth().toString()));
-            fieldsNode.set(FIELD_DEPT, objectMapper.createObjectNode().put(VAL_STRING, dto.getDepartment()));
-            fieldsNode.set(FIELD_SEMESTER, objectMapper.createObjectNode().put(VAL_INTEGER, String.valueOf(dto.getSemester())));
-            fieldsNode.set(FIELD_STATUS, objectMapper.createObjectNode().put(VAL_STRING, dto.getStatus()));
-            fieldsNode.set(FIELD_GPA, objectMapper.createObjectNode().put(VAL_DOUBLE, dto.getGpa() != null ? dto.getGpa() : 8.0));
-            fieldsNode.set(FIELD_IMAGE, objectMapper.createObjectNode().put(VAL_STRING, dto.getImageUrl() != null ? dto.getImageUrl() : ""));
-            fieldsNode.set("phone", objectMapper.createObjectNode().put(VAL_STRING, dto.getPhone() != null ? dto.getPhone() : ""));
-            fieldsNode.set("githubUrl", objectMapper.createObjectNode().put(VAL_STRING, dto.getGithubUrl() != null ? dto.getGithubUrl() : ""));
-            fieldsNode.set("linkedinUrl", objectMapper.createObjectNode().put(VAL_STRING, dto.getLinkedinUrl() != null ? dto.getLinkedinUrl() : ""));
-            fieldsNode.set("portfolioUrl", objectMapper.createObjectNode().put(VAL_STRING, dto.getPortfolioUrl() != null ? dto.getPortfolioUrl() : ""));
-            fieldsNode.set("portfolioTitle", objectMapper.createObjectNode().put(VAL_STRING, dto.getPortfolioTitle() != null ? dto.getPortfolioTitle() : ""));
-            fieldsNode.set("portfolioSummary", objectMapper.createObjectNode().put(VAL_STRING, dto.getPortfolioSummary() != null ? dto.getPortfolioSummary() : ""));
-
-            if (dto.getGrades() != null) {
-                fieldsNode.set(FIELD_GRADES, convertToFirestoreValue(dto.getGrades(), objectMapper));
-            } else {
-                fieldsNode.set(FIELD_GRADES, objectMapper.createObjectNode().set(VAL_ARRAY, objectMapper.createObjectNode().set(VALUES, objectMapper.createArrayNode())));
-            }
-
-            if (dto.getAttendance() != null) {
-                fieldsNode.set(FIELD_ATTENDANCE, convertToFirestoreValue(dto.getAttendance(), objectMapper));
-            } else {
-                fieldsNode.set(FIELD_ATTENDANCE, objectMapper.createObjectNode().set(VAL_ARRAY, objectMapper.createObjectNode().set(VALUES, objectMapper.createArrayNode())));
-            }
-
+            ObjectNode fieldsNode = buildFieldsNode(dto);
             root.set(FIELDS, fieldsNode);
             return objectMapper.writeValueAsString(root);
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to serialize Firestore payload", e);
         }
+    }
+
+    private ObjectNode buildFieldsNode(StudentDto dto) {
+        ObjectNode fieldsNode = objectMapper.createObjectNode();
+
+        fieldsNode.set(FIELD_FIRST_NAME, objectMapper.createObjectNode().put(VAL_STRING, dto.getFirstName()));
+        fieldsNode.set(FIELD_LAST_NAME, objectMapper.createObjectNode().put(VAL_STRING, dto.getLastName()));
+        fieldsNode.set(FIELD_EMAIL, objectMapper.createObjectNode().put(VAL_STRING, dto.getEmail()));
+        fieldsNode.set(FIELD_ENROLLMENT, objectMapper.createObjectNode().put(VAL_STRING, dto.getEnrollmentNumber()));
+        fieldsNode.set(FIELD_DOB, objectMapper.createObjectNode().put(VAL_STRING, dto.getDateOfBirth().toString()));
+        fieldsNode.set(FIELD_DEPT, objectMapper.createObjectNode().put(VAL_STRING, dto.getDepartment()));
+        fieldsNode.set(FIELD_SEMESTER, objectMapper.createObjectNode().put(VAL_INTEGER, String.valueOf(dto.getSemester())));
+        fieldsNode.set(FIELD_STATUS, objectMapper.createObjectNode().put(VAL_STRING, dto.getStatus()));
+        fieldsNode.set(FIELD_GPA, objectMapper.createObjectNode().put(VAL_DOUBLE, dto.getGpa() != null ? dto.getGpa() : 8.0));
+        fieldsNode.set(FIELD_IMAGE, objectMapper.createObjectNode().put(VAL_STRING, dto.getImageUrl() != null ? dto.getImageUrl() : ""));
+        fieldsNode.set("phone", objectMapper.createObjectNode().put(VAL_STRING, dto.getPhone() != null ? dto.getPhone() : ""));
+        fieldsNode.set("githubUrl", objectMapper.createObjectNode().put(VAL_STRING, dto.getGithubUrl() != null ? dto.getGithubUrl() : ""));
+        fieldsNode.set("linkedinUrl", objectMapper.createObjectNode().put(VAL_STRING, dto.getLinkedinUrl() != null ? dto.getLinkedinUrl() : ""));
+        fieldsNode.set("portfolioUrl", objectMapper.createObjectNode().put(VAL_STRING, dto.getPortfolioUrl() != null ? dto.getPortfolioUrl() : ""));
+        fieldsNode.set("portfolioTitle", objectMapper.createObjectNode().put(VAL_STRING, dto.getPortfolioTitle() != null ? dto.getPortfolioTitle() : ""));
+        fieldsNode.set("portfolioSummary", objectMapper.createObjectNode().put(VAL_STRING, dto.getPortfolioSummary() != null ? dto.getPortfolioSummary() : ""));
+        fieldsNode.set("attendanceRate", objectMapper.createObjectNode().put(VAL_DOUBLE, dto.getAttendanceRate() != null ? dto.getAttendanceRate() : 100.0));
+        fieldsNode.set(FIELD_PLACEMENT_STATUS, objectMapper.createObjectNode().put(VAL_STRING, dto.getPlacementStatus() != null ? dto.getPlacementStatus() : "PENDING"));
+        fieldsNode.set(FIELD_OFFER_COUNT, objectMapper.createObjectNode().put(VAL_INTEGER, String.valueOf(dto.getOfferCount() != null ? dto.getOfferCount() : 0)));
+
+        if (dto.getGrades() != null) {
+            fieldsNode.set(FIELD_GRADES, convertToFirestoreValue(dto.getGrades(), objectMapper));
+        } else {
+            fieldsNode.set(FIELD_GRADES, objectMapper.createObjectNode().set(VAL_ARRAY, objectMapper.createObjectNode().set(VALUES, objectMapper.createArrayNode())));
+        }
+
+        if (dto.getAttendance() != null) {
+            fieldsNode.set(FIELD_ATTENDANCE, convertToFirestoreValue(dto.getAttendance(), objectMapper));
+        } else {
+            fieldsNode.set(FIELD_ATTENDANCE, objectMapper.createObjectNode().set(VAL_ARRAY, objectMapper.createObjectNode().set(VALUES, objectMapper.createArrayNode())));
+        }
+
+        return fieldsNode;
     }
 
     @Override
@@ -425,7 +434,7 @@ public class StudentServiceImpl implements StudentService {
 
         if (!isTestProfile()) {
             try {
-                RestTemplate restTemplate = new RestTemplate();
+                RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -555,7 +564,7 @@ public class StudentServiceImpl implements StudentService {
 
     private void syncToFirestore(Student updatedStudent) {
         try {
-            RestTemplate restTemplate = new RestTemplate();
+            RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -568,7 +577,8 @@ public class StudentServiceImpl implements StudentService {
                     "&updateMask.fieldPaths=semester&updateMask.fieldPaths=status&updateMask.fieldPaths=gpa&updateMask.fieldPaths=imageUrl" +
                     "&updateMask.fieldPaths=grades&updateMask.fieldPaths=attendance" +
                     "&updateMask.fieldPaths=phone&updateMask.fieldPaths=githubUrl&updateMask.fieldPaths=linkedinUrl" +
-                    "&updateMask.fieldPaths=portfolioUrl&updateMask.fieldPaths=portfolioTitle&updateMask.fieldPaths=portfolioSummary";
+                    "&updateMask.fieldPaths=portfolioUrl&updateMask.fieldPaths=portfolioTitle&updateMask.fieldPaths=portfolioSummary" +
+                    "&updateMask.fieldPaths=attendanceRate&updateMask.fieldPaths=placementStatus&updateMask.fieldPaths=offerCount";
 
             headers.set("X-HTTP-Method-Override", "PATCH");
             restTemplate.exchange(patchUrl, HttpMethod.POST, entity, String.class);
@@ -598,7 +608,7 @@ public class StudentServiceImpl implements StudentService {
 
         if (!isTestProfile() && student.getFirestoreId() != null) {
             try {
-                RestTemplate restTemplate = new RestTemplate();
+                RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
                 String deleteUrl = FIRESTORE_BASE_URL + "/" + student.getFirestoreId();
                 restTemplate.delete(deleteUrl);
             } catch (Exception e) {
@@ -784,13 +794,83 @@ public class StudentServiceImpl implements StudentService {
         // Try local H2 first; if empty (e.g. fresh Render deploy), sync from Firestore then retry
         Optional<Student> studentOpt = studentRepository.findByFirestoreId(firestoreId);
         if (studentOpt.isEmpty()) {
-            log.info("Student not found locally for firestoreId={}, triggering Firestore sync...", firestoreId);
-            syncWithFirestore();
+            log.info("Student not found locally for firestoreId={}, triggering Firestore sync for this student...", firestoreId);
+            syncStudentByFirestoreId(firestoreId);
             studentOpt = studentRepository.findByFirestoreId(firestoreId);
         }
-        Student student = studentOpt
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with Firestore ID: " + firestoreId));
+        
+        // If STILL empty (e.g. sync failed due to Firestore REST permission constraints/403/404),
+        // we auto-provision the student in H2 using the payload DTO sent by the client.
+        if (studentOpt.isEmpty()) {
+            studentOpt = Optional.of(autoProvisionStudent(firestoreId, studentDto));
+        }
+        
+        Student student = studentOpt.get();
         return updateStudent(student.getId(), studentDto);
+    }
+
+    private Student autoProvisionStudent(String firestoreId, StudentDto studentDto) {
+        log.info("Student not found locally after sync for firestoreId={}, auto-provisioning from incoming payload...", firestoreId);
+        // Search H2 first by enrollment number or email to avoid duplicate key conflicts
+        Optional<Student> fallbackOpt = studentRepository.findByEnrollmentNumber(studentDto.getEnrollmentNumber());
+        if (fallbackOpt.isEmpty() && studentDto.getEmail() != null) {
+            fallbackOpt = studentRepository.findByEmail(studentDto.getEmail());
+        }
+        
+        Student student;
+        if (fallbackOpt.isPresent()) {
+            student = fallbackOpt.get();
+            student.setFirestoreId(firestoreId);
+            log.info("Linked existing local student ID={} to firestoreId={}", student.getId(), firestoreId);
+        } else {
+            student = convertToEntity(studentDto);
+            student.setFirestoreId(firestoreId);
+            log.info("Creating new local student for firestoreId={} and enrollmentNumber={}", firestoreId, studentDto.getEnrollmentNumber());
+        }
+        
+        // Populate grades/attendance JSON from the DTO payload
+        if (studentDto.getGrades() != null) {
+            try {
+                student.setGradesJson(objectMapper.writeValueAsString(studentDto.getGrades()));
+            } catch (Exception e) {
+                log.warn("Failed to serialize grades during auto-provisioning: {}", e.getMessage());
+            }
+        }
+        if (studentDto.getAttendance() != null) {
+            try {
+                student.setAttendanceJson(objectMapper.writeValueAsString(studentDto.getAttendance()));
+            } catch (Exception e) {
+                log.warn("Failed to serialize attendance during auto-provisioning: {}", e.getMessage());
+            }
+        }
+        
+        return studentRepository.save(student);
+    }
+
+    @Override
+    public StudentDto syncStudentByFirestoreId(String firestoreId) {
+        if (isTestProfile()) return null;
+        try {
+            log.info("Triggering single student Firestore sync for firestoreId={}", firestoreId);
+            RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
+            String url = FIRESTORE_BASE_URL + "/" + firestoreId;
+            String response = restTemplate.getForObject(url, String.class);
+            if (response == null) {
+                log.warn("Null response received during Firestore single sync for firestoreId={}", firestoreId);
+                return null;
+            }
+
+            JsonNode doc = objectMapper.readTree(response);
+            Set<String> fetchedIds = new HashSet<>();
+            processFirestoreDocument(doc, fetchedIds);
+            Optional<Student> studentOpt = studentRepository.findByFirestoreId(firestoreId);
+            if (studentOpt.isPresent()) {
+                return convertToDto(studentOpt.get());
+            }
+        } catch (Exception e) {
+            log.error("Single student Firestore Sync failed for id={}: {}", firestoreId, e.getMessage());
+        }
+        return null;
     }
 
     private void compareAndLog(String fId, String fieldName, String oldVal, String newVal, String changedBy) {
@@ -804,7 +884,7 @@ public class StudentServiceImpl implements StudentService {
     private void logChangeHistory(String fId, String fieldName, String oldVal, String newVal, String changedBy) {
         if (fId == null || fId.isBlank()) return;
         try {
-            RestTemplate restTemplate = new RestTemplate();
+            RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 

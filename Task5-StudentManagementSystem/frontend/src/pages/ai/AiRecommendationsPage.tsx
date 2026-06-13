@@ -1,21 +1,18 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { motion } from 'motion/react'
 import {
   Brain,
   AlertTriangle,
   Send,
   TrendingUp,
-  Activity,
-  Award,
-  Calendar,
-  X,
-  Zap,
-  UserCheck,
   Layers,
   ShieldAlert,
-  Sliders,
-  Check,
-  Database
+  UserCheck,
+  Database,
+  X,
+  MessageSquare,
+  Sparkles,
+  AlertCircle
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -42,34 +39,47 @@ interface AtRiskStudent extends Student {
   factor: string
 }
 
+interface ChatMessage {
+  id: string
+  sender: 'ai' | 'user'
+  text: string
+  timestamp: Date
+  isError?: boolean
+}
+
 export default function AiRecommendationsPage() {
   const { students, loading } = useStudents()
   const [advisoryModalStudent, setAdvisoryModalStudent] = useState<AtRiskStudent | null>(null)
   const [advisoryNotes, setAdvisoryNotes] = useState('')
   const [advisorySentStatus, setAdvisorySentStatus] = useState(false)
 
-  // Gemini API Configuration Sandbox State
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('eduvault_gemini_key') || '')
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
-  const [tempApiKey, setTempApiKey] = useState('')
-  const [apiConnectionStatus, setApiConnectionStatus] = useState<'SANDBOX' | 'LIVE'>(
-    localStorage.getItem('eduvault_gemini_key') ? 'LIVE' : 'SANDBOX'
-  )
-
-  // Mock Copilot State
-  const [messages, setMessages] = useState([
-    { id: '1', sender: 'ai', text: 'Welcome to the Academic Intelligence Center. Ask me anything about student performance, cohort risk levels, or CGPA distributions.' }
-  ])
+  // Chat UI states
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [chatError, setChatError] = useState<string | null>(null)
+  
   const chatEndRef = useRef<HTMLDivElement>(null)
+
+  const getMessageStyle = (m: ChatMessage) => {
+    const base = 'p-2.5 rounded-xl max-w-[85%] text-xs leading-normal font-semibold shadow-sm'
+    if (m.sender === 'user') {
+      return `${base} bg-vault-cyan text-white rounded-tr-none`
+    }
+    if (m.isError) {
+      return `${base} bg-red-500/10 border border-red-500/20 text-red-500 rounded-tl-none`
+    }
+    return `${base} bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-700 dark:text-slate-250 rounded-tl-none`
+  }
 
   // Auto-scroll chat to bottom
   const scrollToBottom = () => {
-    setTimeout(() => {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, 50)
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, isTyping])
 
   // Calculate dynamic risk lists
   const atRiskStudents = useMemo(() => {
@@ -119,17 +129,6 @@ export default function AiRecommendationsPage() {
     })
   }, [students])
 
-  // Placement stats
-  const totalStudents = students?.length || 0
-  const placementReadyCount = students?.filter(s => s.gpa >= 8.5).length || 0
-  const placementRate = totalStudents > 0 ? Math.round((placementReadyCount / totalStudents) * 100) : 0
-
-  // Risk Score metrics
-  const averageRiskScore = useMemo(() => {
-    if (totalStudents === 0) return 0
-    return Math.round((atRiskStudents.length / totalStudents) * 100)
-  }, [atRiskStudents, totalStudents])
-
   // Forecast data prep
   const forecastData = [
     { name: 'Sem 1', actual: 8.55, forecast: 8.55 },
@@ -152,30 +151,48 @@ export default function AiRecommendationsPage() {
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return
-    const userMsg = { id: Date.now().toString(), sender: 'user', text: inputValue }
+    setChatError(null)
+
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: inputValue,
+      timestamp: new Date()
+    }
+    
     setMessages(prev => [...prev, userMsg])
+    const promptText = inputValue
     setInputValue('')
     setIsTyping(true)
-    scrollToBottom()
 
+    // Simulate future Gemini stream / integration structure
     setTimeout(() => {
-      let replyText = `I've analyzed the student database queries. The general registry records indicate standard attendance ratios at 94.2% and an average CGPA benchmark of ${avgGpa}.`
-      const lowerInput = inputValue.toLowerCase()
+      try {
+        let replyText = 'I am scanning the academic registry. Currently, overall attendance is stable at 94.2% and GPA benchmarks hover near 8.1.'
+        const lowerInput = promptText.toLowerCase()
 
-      if (lowerInput.includes('risk') || lowerInput.includes('warning') || lowerInput.includes('at risk')) {
-        replyText = `There are currently ${atRiskStudents.length} students flagged in the risk registry (CGPA < 8.0 or Attendance < 85%). Mechanical engineering represents the highest risk segment with standard averages.`
-      } else if (lowerInput.includes('gpa') || lowerInput.includes('cgpa') || lowerInput.includes('grade')) {
-        replyText = `The current cohort average CGPA is ${avgGpa}. Computer Science has the highest CGPA averages, while Mechanical Engineering requires immediate tutorial counseling.`
-      } else if (lowerInput.includes('attendance') || lowerInput.includes('absent')) {
-        replyText = "Cohort attendance sits at 94.2% average. Mechanical Engineering department has drifted to 88.5% average attendance, requiring advisory reviews."
-      } else if (lowerInput.includes('placement') || lowerInput.includes('ready') || lowerInput.includes('job')) {
-        replyText = `Placement readiness is predicted at ${placementRate}% for the graduating batch. Key drivers include portfolio validation and specific industry-sync badges.`
+        if (lowerInput.includes('risk') || lowerInput.includes('warning') || lowerInput.includes('at risk')) {
+          replyText = `There are currently ${atRiskStudents.length} students flagged in the risk registry (CGPA < 8.0 or Attendance < 85%). Computer Science maintains standard averages.`
+        } else if (lowerInput.includes('gpa') || lowerInput.includes('cgpa') || lowerInput.includes('grade')) {
+          replyText = 'The cohort average GPA is 8.1. Data Science and Computer Science departments lead the averages.'
+        } else if (lowerInput.includes('attendance') || lowerInput.includes('absent')) {
+          replyText = 'The overall cohort attendance stands at a robust 94%. Special intervention triggers are active for student records with attendance rates below 85%.'
+        }
+
+        const aiMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai',
+          text: replyText,
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, aiMsg])
+      } catch (err: any) {
+        console.error('Failed to parse prompt or query registry:', err)
+        setChatError('Failed to generate response. Please try again.')
+      } finally {
+        setIsTyping(false)
       }
-
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), sender: 'ai', text: replyText }])
-      setIsTyping(false)
-      scrollToBottom()
-    }, 1200)
+    }, 1000)
   }
 
   // Handle advisory modal
@@ -194,25 +211,10 @@ export default function AiRecommendationsPage() {
     }, 1000)
   }
 
-  const handleSaveApiKey = (e: React.SyntheticEvent) => {
-    e.preventDefault()
-    if (tempApiKey.trim()) {
-      localStorage.setItem('eduvault_gemini_key', tempApiKey)
-      setApiKey(tempApiKey)
-      setApiConnectionStatus('LIVE')
-      setIsConfigModalOpen(false)
-    }
+  const clearChat = () => {
+    setMessages([])
+    setChatError(null)
   }
-
-  const handleResetApiKey = () => {
-    localStorage.removeItem('eduvault_gemini_key')
-    setApiKey('')
-    setApiConnectionStatus('SANDBOX')
-  }
-
-  const avgGpa = totalStudents > 0 
-    ? (students.reduce((sum, s) => sum + s.gpa, 0) / totalStudents).toFixed(2)
-    : "0.00"
 
   // Custom premium Recharts Tooltip styling
   const customTooltipStyle = {
@@ -221,7 +223,7 @@ export default function AiRecommendationsPage() {
       borderColor: 'rgba(255, 255, 255, 0.08)',
       borderRadius: '12px',
       backdropFilter: 'blur(8px)',
-      color: '#fff',
+      color: '#map',
       fontSize: '11px',
       fontWeight: 'bold',
       boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)'
@@ -237,14 +239,9 @@ export default function AiRecommendationsPage() {
           <div className="h-8 w-64 bg-slate-200 dark:bg-white/5 rounded-lg" />
           <div className="h-4 w-96 bg-slate-200 dark:bg-white/5 rounded-lg" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {['skel-1', 'skel-2', 'skel-3', 'skel-4'].map((key) => (
-            <div key={key} className="h-28 bg-slate-200 dark:bg-white/5 rounded-2xl border border-slate-200/50 dark:border-white/5" />
-          ))}
-        </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 h-[300px] bg-slate-200 dark:bg-white/5 rounded-2xl border border-slate-200/50 dark:border-white/5" />
-          <div className="lg:col-span-4 h-[300px] bg-slate-200 dark:bg-white/5 rounded-2xl border border-slate-200/50 dark:border-white/5" />
+          <div className="lg:col-span-7 h-[300px] bg-slate-200 dark:bg-white/5 rounded-2xl border border-slate-200/50 dark:border-white/5" />
+          <div className="lg:col-span-5 h-[300px] bg-slate-200 dark:bg-white/5 rounded-2xl border border-slate-200/50 dark:border-white/5" />
         </div>
       </div>
     )
@@ -263,88 +260,9 @@ export default function AiRecommendationsPage() {
           <p className="text-slate-400 mt-1 text-sm font-medium">Predictive forecasts, cohort risk detection, and automated student advisories.</p>
         </div>
         <div className="flex items-center gap-2 px-3.5 py-2 bg-vault-accent/10 border border-vault-accent/20 rounded-xl text-[10px] font-bold text-vault-accent font-mono uppercase tracking-wider shadow-sm">
-          <Zap size={12} className="animate-pulse" />
+          <Sparkles size={12} className="animate-pulse" />
           <span>AI Insights Engine</span>
         </div>
-      </div>
-
-      {/* Stats and Indicators Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        
-        {/* KPI 1: Risk Meter */}
-        <div className="vault-glass p-4 rounded-2xl border border-slate-200 dark:border-white/5 flex items-center gap-4 shadow-sm relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-r from-vault-accent/5 to-vault-accent/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          
-          <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
-            <svg className="w-full h-full transform -rotate-90">
-              <circle cx="28" cy="28" r="22" stroke="rgba(148,163,184,0.12)" strokeWidth="4.5" fill="transparent" />
-              <motion.circle
-                cx="28"
-                cy="28"
-                r="22"
-                stroke={averageRiskScore > 15 ? 'var(--color-vault-accent)' : 'var(--color-vault-cyan)'}
-                strokeWidth="4.5"
-                fill="transparent"
-                strokeDasharray="138.2"
-                initial={{ strokeDashoffset: 138.2 }}
-                animate={{ strokeDashoffset: 138.2 * (1 - averageRiskScore / 100) }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-              />
-            </svg>
-            <span className="absolute text-[11px] font-black font-mono">{averageRiskScore}%</span>
-          </div>
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Student Risk Index</span>
-            <p className="text-sm font-extrabold text-slate-800 dark:text-white mt-0.5">
-              {averageRiskScore > 15 ? 'Elevated Drift Risk' : 'Optimal Cohort'}
-            </p>
-            <span className="text-[9.5px] text-slate-400 font-semibold">Scan registry boundaries</span>
-          </div>
-        </div>
-
-        {/* KPI 2: Placement Predictor */}
-        <div className="vault-glass p-4 rounded-2xl border border-slate-200 dark:border-white/5 flex items-center gap-4 shadow-sm relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-r from-vault-cyan/5 to-vault-cyan/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          <div className="p-3 bg-vault-cyan/15 text-vault-cyan rounded-xl">
-            <Award size={20} />
-          </div>
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Placement Predictor</span>
-            <h4 className="text-base font-extrabold text-slate-800 dark:text-white">{placementRate}% Predictability</h4>
-            <span className="text-[9px] font-bold text-emerald-500 flex items-center gap-0.5 mt-0.5">
-              <TrendingUp size={10} /> +2.4% vs benchmark
-            </span>
-          </div>
-        </div>
-
-        {/* KPI 3: Attendance Forecast */}
-        <div className="vault-glass p-4 rounded-2xl border border-slate-200 dark:border-white/5 flex items-center gap-4 shadow-sm relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-r from-vault-emerald/5 to-vault-emerald/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          <div className="p-3 bg-vault-emerald/15 text-vault-emerald rounded-xl">
-            <Calendar size={20} />
-          </div>
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Attendance Forecast</span>
-            <h4 className="text-base font-extrabold text-slate-800 dark:text-white">94.8% Projected</h4>
-            <span className="text-[9.5px] text-slate-400 font-semibold">CSE stable; Mech alert drift</span>
-          </div>
-        </div>
-
-        {/* KPI 4: Registry Growth Trend */}
-        <div className="vault-glass p-4 rounded-2xl border border-slate-200 dark:border-white/5 flex items-center gap-4 shadow-sm relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-r from-vault-accent/5 to-vault-accent/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          <div className="p-3 bg-vault-accent/15 text-vault-accent rounded-xl">
-            <Activity size={20} />
-          </div>
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Registry Growth Trend</span>
-            <h4 className="text-base font-extrabold text-slate-800 dark:text-white">Cohort Expansion</h4>
-            <span className="text-[9px] font-bold text-emerald-500 flex items-center gap-0.5 mt-0.5">
-              <TrendingUp size={10} /> +4.2% engineering drift
-            </span>
-          </div>
-        </div>
-
       </div>
 
       {/* Main Grid: Forecasts and Skill Gap */}
@@ -364,7 +282,7 @@ export default function AiRecommendationsPage() {
           </div>
 
           <div className="h-60 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            <ResponsiveContainer width="100%" height={230} minWidth={0}>
               <AreaChart data={forecastData} margin={{ left: -25, bottom: 0, right: 10 }}>
                 <defs>
                   <linearGradient id="areaActualForecast" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -413,7 +331,7 @@ export default function AiRecommendationsPage() {
           </div>
 
           <div className="h-56 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            <ResponsiveContainer width="100%" height={220} minWidth={0}>
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={skillGapData}>
                 <PolarGrid stroke="rgba(148, 163, 184, 0.12)" />
                 <PolarAngleAxis dataKey="subject" stroke="#64748b" fontSize={8} />
@@ -429,11 +347,11 @@ export default function AiRecommendationsPage() {
 
       </div>
 
-      {/* Bottom Row: At-Risk student registry & Copilot with Gemini Sandbox settings */}
+      {/* Bottom Row: At-Risk student registry & Copilot */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* At-Risk Student Registry Table (7 columns) */}
-        <div className="lg:col-span-7 vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-md text-left flex flex-col justify-between h-[480px]">
+        {/* Academic Risk Registry Table (7 columns) */}
+        <div className="lg:col-span-7 vault-glass p-5 rounded-2xl border border-slate-200/60 dark:border-white/5 shadow-md text-left flex flex-col justify-between h-[480px]">
           <div className="space-y-1">
             <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
               <ShieldAlert className="text-red-500 animate-pulse" size={15} />
@@ -496,59 +414,57 @@ export default function AiRecommendationsPage() {
           </div>
         </div>
 
-        {/* AI Copilot Panel with Gemini Sandbox settings (5 columns) */}
-        <div className="lg:col-span-5 vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-md text-left flex flex-col h-[480px] justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
+        {/* AI Copilot Panel (5 columns) */}
+        <div className="lg:col-span-5 vault-glass p-5 rounded-2xl border border-slate-200/60 dark:border-white/5 shadow-md text-left flex flex-col h-[480px] justify-between">
+          <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-white/5 pb-3.5">
+            <div className="space-y-0.5">
               <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
-                <Brain size={15} className="text-vault-accent" />
-                <span>EduVault Copilot</span>
+                <Brain size={15} className="text-vault-accent animate-pulse" />
+                <span>AI Academic Copilot</span>
               </h3>
-              
-              <button
-                onClick={() => {
-                  setTempApiKey(apiKey)
-                  setIsConfigModalOpen(true)
-                }}
-                className="p-1 rounded bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-250 dark:border-white/10 text-slate-400 hover:text-vault-fg transition-all cursor-pointer"
-                title="Configure Gemini API Settings"
+              <p className="text-[10px] text-slate-400 font-semibold">Real-time educational registry assistant</p>
+            </div>
+            {messages.length > 0 && (
+              <button 
+                onClick={clearChat}
+                className="px-2.5 py-1 text-[10px] font-black bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-250 dark:border-white/10 text-slate-400 hover:text-red-400 rounded-lg transition-colors cursor-pointer"
               >
-                <Sliders size={12} />
+                Clear
               </button>
-            </div>
-            
-            {/* Gemini Sandbox status bar */}
-            <div className="flex items-center justify-between bg-slate-50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-lg p-2 mt-1.5 text-[9px] font-bold font-mono">
-              <span className="text-slate-400">Gemini: {apiConnectionStatus === 'LIVE' ? 'LIVE KEY DEPLOYED' : 'SANDBOX SIMULATOR'}</span>
-              <span className="text-slate-400">Rate: 75 t/s • Latency: 180ms</span>
-              <span className={`w-1.5 h-1.5 rounded-full ${apiConnectionStatus === 'LIVE' ? 'bg-emerald-500' : 'bg-vault-cyan'} animate-pulse`} />
-            </div>
+            )}
           </div>
 
           {/* Dialog Container */}
-          <div className="flex-1 bg-slate-50/50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 rounded-xl p-4 overflow-y-auto my-3 space-y-3.5 pr-2">
-            {messages.map((m) => (
-              <div 
-                key={m.id} 
-                className={`flex gap-2 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {m.sender === 'ai' && (
-                  <div className="h-6.5 w-6.5 rounded-full bg-vault-accent/15 border border-vault-accent/30 text-vault-accent flex items-center justify-center shrink-0">
-                    <Brain size={11} />
-                  </div>
-                )}
-                <div className={`p-2.5 rounded-xl max-w-[85%] text-xs leading-normal font-semibold ${
-                  m.sender === 'user' 
-                    ? 'bg-vault-cyan text-white rounded-tr-none shadow-sm' 
-                    : 'bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-700 dark:text-slate-250 rounded-tl-none shadow-sm'
-                }`}>
-                  {m.text}
-                </div>
+          <div className="flex-1 bg-slate-50/50 dark:bg-white/[0.01] border border-slate-200/50 dark:border-white/5 rounded-xl p-4 overflow-y-auto my-3 space-y-4 pr-2 flex flex-col">
+            {messages.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-450 dark:text-slate-400 select-none">
+                <MessageSquare className="text-vault-accent/40 mb-3" size={32} />
+                <p className="font-extrabold text-slate-750 dark:text-white text-xs">AI Academic Copilot</p>
+                <p className="text-[10.5px] leading-relaxed mt-2 font-semibold text-slate-400 dark:text-slate-500 max-w-[240px]">
+                  Ask questions about students, placement readiness, academic risk, skills, certifications, projects, and portfolio development.
+                </p>
               </div>
-            ))}
+            ) : (
+              messages.map((m) => (
+                <div 
+                  key={m.id} 
+                  className={`flex gap-2 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  {m.sender === 'ai' && (
+                    <div className="h-6.5 w-6.5 rounded-lg bg-vault-accent/15 border border-vault-accent/30 text-vault-accent flex items-center justify-center shrink-0">
+                      <Brain size={11} />
+                    </div>
+                  )}
+                  <div className={getMessageStyle(m)}>
+                    {m.text}
+                  </div>
+                </div>
+              ))
+            )}
+
             {isTyping && (
-              <div className="flex gap-2 justify-start">
-                <div className="h-6.5 w-6.5 rounded-full bg-vault-accent/15 border border-vault-accent/30 text-vault-accent flex items-center justify-center shrink-0 animate-pulse">
+              <div className="flex gap-2 justify-start animate-fadeIn">
+                <div className="h-6.5 w-6.5 rounded-lg bg-vault-accent/15 border border-vault-accent/30 text-vault-accent flex items-center justify-center shrink-0">
                   <Brain size={11} />
                 </div>
                 <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-400 rounded-tl-none shadow-sm flex items-center gap-1.5">
@@ -558,6 +474,14 @@ export default function AiRecommendationsPage() {
                 </div>
               </div>
             )}
+
+            {chatError && (
+              <div className="flex items-center gap-2 p-2.5 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl animate-fadeIn">
+                <AlertCircle size={14} className="shrink-0" />
+                <span className="font-semibold">{chatError}</span>
+              </div>
+            )}
+            
             <div ref={chatEndRef} />
           </div>
 
@@ -568,12 +492,13 @@ export default function AiRecommendationsPage() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Ask Copilot (e.g. 'Who is at risk?')..."
-              className="flex-1 bg-transparent border-0 text-xs px-2.5 py-1.5 text-slate-850 dark:text-white placeholder-slate-400 focus:outline-none font-bold"
+              placeholder="Ask Academic Copilot..."
+              className="flex-1 bg-transparent border-0 text-xs px-2.5 py-1.5 text-slate-850 dark:text-white placeholder-slate-450 focus:outline-none font-bold"
             />
             <button
               onClick={handleSendMessage}
-              className="p-2 bg-vault-accent hover:opacity-95 text-white rounded-lg transition-all active:scale-95 cursor-pointer flex items-center justify-center shrink-0"
+              disabled={!inputValue.trim()}
+              className="p-2 bg-vault-accent hover:opacity-95 text-white rounded-lg transition-all active:scale-95 cursor-pointer flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Submit message"
             >
               <Send size={12} />
@@ -649,76 +574,6 @@ export default function AiRecommendationsPage() {
                     </>
                   )}
                 </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Gemini Sandbox Key Configuration Modal */}
-      {isConfigModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-full max-w-sm bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-6 text-left relative"
-          >
-            <button
-              onClick={() => setIsConfigModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-vault-fg transition-colors cursor-pointer"
-              aria-label="Close dialog"
-            >
-              <X size={16} />
-            </button>
-
-            <h4 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <Sliders className="text-vault-accent" size={18} />
-              <span>Configure Gemini API Key</span>
-            </h4>
-            <p className="text-[10px] text-slate-400 font-semibold mt-1">Configure your Gemini API settings to transition out of sandbox testing mode.</p>
-
-            <form onSubmit={handleSaveApiKey} className="mt-4 space-y-4 font-semibold text-xs">
-              <div className="space-y-1.5">
-                <label htmlFor="tempApiKey" className="block text-[10px] font-bold uppercase tracking-wider text-slate-405 dark:text-slate-400">Gemini API Key (saved locally)</label>
-                <input
-                  id="tempApiKey"
-                  type="password"
-                  value={tempApiKey}
-                  onChange={(e) => setTempApiKey(e.target.value)}
-                  placeholder="AIzaSy..."
-                  className="w-full font-mono text-xs px-3 py-2.5 border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 rounded-xl focus:outline-none focus:border-vault-accent transition-colors"
-                />
-              </div>
-
-              <div className="flex gap-2 justify-between items-center pt-2">
-                {apiKey ? (
-                  <button
-                    type="button"
-                    onClick={handleResetApiKey}
-                    className="text-red-500 hover:underline text-[10px] font-bold cursor-pointer"
-                  >
-                    Reset Active Key
-                  </button>
-                ) : (
-                  <span />
-                )}
-                
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsConfigModalOpen(false)}
-                    className="px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-gradient-to-r from-vault-accent to-vault-cyan text-white rounded-xl text-xs font-bold shadow-md shadow-vault-accent/15 cursor-pointer flex items-center gap-1 hover:opacity-95 transition-opacity"
-                  >
-                    <Check size={12} />
-                    <span>Apply Key</span>
-                  </button>
-                </div>
               </div>
             </form>
           </motion.div>

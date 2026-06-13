@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
-import { auth } from '../firebase/firebase'
+import { auth, db } from '../firebase/firebase'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { authService } from '../services/authService'
 import { firestoreService } from '../services/firestoreService'
 import type { User } from '../types/auth'
@@ -13,6 +14,7 @@ interface AuthContextType {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUserProfile: (displayName: string, photoURL: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -132,6 +134,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const updateUserProfile = async (displayName: string, photoURL: string) => {
+    if (!user) return
+    try {
+      const userDocRef = doc(db, 'users', user.uid)
+      await setDoc(userDocRef, {
+        name: displayName,
+        photoURL: photoURL,
+        lastLogin: serverTimestamp()
+      }, { merge: true })
+
+      setUser(prev => prev ? {
+        ...prev,
+        displayName: displayName,
+        photoURL: photoURL
+      } : null)
+    } catch (err) {
+      console.error('Failed to update user profile in context:', err)
+      throw err
+    }
+  }
+
   const contextValue = useMemo(() => ({
     user,
     loading,
@@ -139,7 +162,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     registerWithEmail,
     loginWithEmail,
     resetPassword,
-    logout
+    logout,
+    updateUserProfile
   }), [user, loading])
 
   return (

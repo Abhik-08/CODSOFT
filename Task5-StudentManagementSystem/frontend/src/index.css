@@ -135,3 +135,121 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--vault-accent);
 }
+
+/* ══════════════════════════════════════════════
+   Global Text Selection & Cursor Behavior
+   ══════════════════════════════════════════════ */
+
+/* ── Disable text selection globally ── */
+*,
+*::before,
+*::after {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* ── Re-enable selection for editable / readable elements ── */
+input,
+textarea,
+[contenteditable="true"],
+code,
+pre,
+.selectable,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* ── Cursor: pointer for interactive elements ── */
+button,
+a,
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+select,
+option,
+label[for],
+summary,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[role="menuitemcheckbox"],
+[role="menuitemradio"],
+[role="option"],
+[role="switch"],
+[role="link"],
+[role="treeitem"],
+[role="checkbox"],
+[role="radio"],
+[tabindex]:not([tabindex="-1"]),
+.cursor-pointer,
+.clickable {
+  cursor: pointer !important;
+}
+
+/* ── Cursor: text for editable fields ── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+textarea,
+[contenteditable="true"] {
+  cursor: text !important;
+}
+
+/* ── Cursor: default for static / non-interactive content ── */
+h1, h2, h3, h4, h5, h6,
+p,
+span:not([role]):not([tabindex]):not(.clickable),
+label:not([for]),
+legend,
+figcaption,
+blockquote,
+th,
+td,
+dd,
+dt,
+li:not([role]):not([tabindex]):not(.clickable),
+.badge,
+.tag,
+.chip,
+.stat,
+.metric,
+.kpi {
+  cursor: default;
+}
+
+/* ── Cursor: grab for draggable elements ── */
+[draggable="true"] {
+  cursor: grab;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* ── Cursor: not-allowed for disabled elements ── */
+[disabled],
+[aria-disabled="true"],
+.disabled {
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}

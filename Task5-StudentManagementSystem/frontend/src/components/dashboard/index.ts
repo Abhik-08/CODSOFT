@@ -3,3 +3,4 @@ export const Sidebar = () => null;
 export const Header = () => null;
 export const MetricCard = () => null;
 export const StudentTable = () => null;
+export { default as UserProfileSettingsModal } from './UserProfileSettingsModal'

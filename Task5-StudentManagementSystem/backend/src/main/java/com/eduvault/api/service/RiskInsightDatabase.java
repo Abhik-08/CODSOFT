@@ -5,7 +5,11 @@ import java.util.List;
 
 public class RiskInsightDatabase {
 
-    public static final List<String> RISK_REASONS = Arrays.asList(
+    private RiskInsightDatabase() {
+        // Utility class — prevent instantiation
+    }
+
+    protected static final List<String> RISK_REASONS = Arrays.asList(
         "Academic decline detected across recent semesters",
         "Attendance trend below expected threshold",
         "Limited project experience",
@@ -40,7 +44,7 @@ public class RiskInsightDatabase {
         "Zero mock placement test attempts or preparation logs"
     );
 
-    public static final List<String> INTERVENTION_SUGGESTIONS = Arrays.asList(
+    protected static final List<String> INTERVENTION_SUGGESTIONS = Arrays.asList(
         "Improve attendance consistency",
         "Complete one industry project",
         "Add cloud certification",
@@ -75,7 +79,7 @@ public class RiskInsightDatabase {
         "Participate in mock tech test sessions weekly"
     );
 
-    public static final List<String> IMPROVEMENT_ACTIONS = Arrays.asList(
+    protected static final List<String> IMPROVEMENT_ACTIONS = Arrays.asList(
         "Solve 50+ DSA problems on LeetCode or HackerRank",
         "Create 1 industry-ready project with documentation",
         "Configure GitHub actions CI/CD on active repository",
@@ -110,7 +114,7 @@ public class RiskInsightDatabase {
         "Register and participate in Google Hash Code challenges"
     );
 
-    public static final List<String> ACADEMIC_RECOMMENDATIONS = Arrays.asList(
+    protected static final List<String> ACADEMIC_RECOMMENDATIONS = Arrays.asList(
         "Implement strict study schedules of 3 hours daily",
         "Review SGPA monitoring logs weekly with class teacher",
         "Attend professor office hours for subject doubts",

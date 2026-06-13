@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.eduvault.api.config.SecurityUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -69,6 +70,7 @@ public class PortfolioServiceImpl implements PortfolioService {
     private final Environment env;
     private final PlacementIntelligenceService placementIntelligenceService;
     private final RiskDetectionService riskDetectionService;
+    private final StudentService studentService;
 
     @Autowired
     public PortfolioServiceImpl(
@@ -76,12 +78,14 @@ public class PortfolioServiceImpl implements PortfolioService {
             StudentRepository studentRepository,
             Environment env,
             @org.springframework.context.annotation.Lazy PlacementIntelligenceService placementIntelligenceService,
-            @org.springframework.context.annotation.Lazy RiskDetectionService riskDetectionService) {
+            @org.springframework.context.annotation.Lazy RiskDetectionService riskDetectionService,
+            @org.springframework.context.annotation.Lazy StudentService studentService) {
         this.portfolioRepository = portfolioRepository;
         this.studentRepository = studentRepository;
         this.env = env;
         this.placementIntelligenceService = placementIntelligenceService;
         this.riskDetectionService = riskDetectionService;
+        this.studentService = studentService;
     }
 
     private boolean isTestProfile() {
@@ -171,7 +175,7 @@ public class PortfolioServiceImpl implements PortfolioService {
     private synchronized void syncWithFirestore() {
         if (isTestProfile()) return;
         try {
-            RestTemplate restTemplate = new RestTemplate();
+            RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
             String response = restTemplate.getForObject(FIRESTORE_BASE_URL, String.class);
             if (response == null) return;
 
@@ -222,12 +226,25 @@ public class PortfolioServiceImpl implements PortfolioService {
             return studentId != null ? studentRepository.findById(studentId) : Optional.empty();
         }
         if (studentIdNode.has(VAL_STRING)) {
-            String studentFirestoreId = studentIdNode.get(VAL_STRING).asText();
-            if (studentFirestoreId != null && !studentFirestoreId.isEmpty()) {
-                return studentRepository.findByFirestoreId(studentFirestoreId);
-            }
+            return resolveStudentByFirestoreIdStr(studentIdNode.get(VAL_STRING).asText());
         }
         return Optional.empty();
+    }
+
+    private Optional<Student> resolveStudentByFirestoreIdStr(String studentFirestoreId) {
+        if (studentFirestoreId == null || studentFirestoreId.isEmpty()) {
+            return Optional.empty();
+        }
+        Optional<Student> studentOpt = studentRepository.findByFirestoreId(studentFirestoreId);
+        if (studentOpt.isEmpty()) {
+            try {
+                studentService.syncStudentByFirestoreId(studentFirestoreId);
+                studentOpt = studentRepository.findByFirestoreId(studentFirestoreId);
+            } catch (Exception e) {
+                log.warn("Failed to dynamically sync student {} on portfolio resolve: {}", studentFirestoreId, e.getMessage());
+            }
+        }
+        return studentOpt;
     }
 
     /** Parses the socialLinks Firestore map field into a {@code Map<String,String>}. */
@@ -387,7 +404,7 @@ public class PortfolioServiceImpl implements PortfolioService {
 
         if (!isTestProfile()) {
             try {
-                RestTemplate restTemplate = new RestTemplate();
+                RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -463,7 +480,7 @@ public class PortfolioServiceImpl implements PortfolioService {
 
         if (!isTestProfile() && updated.getFirestoreId() != null) {
             try {
-                RestTemplate restTemplate = new RestTemplate();
+                RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -512,7 +529,7 @@ public class PortfolioServiceImpl implements PortfolioService {
 
         if (!isTestProfile() && portfolio.getFirestoreId() != null) {
             try {
-                RestTemplate restTemplate = new RestTemplate();
+                RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
                 String deleteUrl = FIRESTORE_BASE_URL + "/" + portfolio.getFirestoreId();
                 restTemplate.delete(deleteUrl);
             } catch (Exception e) {

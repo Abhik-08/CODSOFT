@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.eduvault.api.config.SecurityUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -29,6 +30,7 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
     private final AcademicProfileService academicProfileService;
     private final PortfolioService portfolioService;
     private final Environment env;
+    private final StudentService studentService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
@@ -36,11 +38,13 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
             StudentRepository studentRepository,
             AcademicProfileService academicProfileService,
             PortfolioService portfolioService,
-            Environment env) {
+            Environment env,
+            @org.springframework.context.annotation.Lazy StudentService studentService) {
         this.studentRepository = studentRepository;
         this.academicProfileService = academicProfileService;
         this.portfolioService = portfolioService;
         this.env = env;
+        this.studentService = studentService;
     }
 
     private boolean isTestProfile() {
@@ -67,6 +71,16 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
         Optional<Student> studentOpt = studentRepository.findByFirestoreId(studentIdStr);
         if (studentOpt.isPresent()) {
             return studentOpt.get();
+        }
+
+        try {
+            studentService.syncStudentByFirestoreId(studentIdStr);
+            studentOpt = studentRepository.findByFirestoreId(studentIdStr);
+            if (studentOpt.isPresent()) {
+                return studentOpt.get();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to dynamically sync student {} in RiskDetectionService: {}", studentIdStr, e.getMessage());
         }
 
         studentOpt = studentRepository.findByEnrollmentNumber(studentIdStr);
@@ -168,21 +182,21 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
         double cgpa = student.getGpa() != null ? student.getGpa() : 0.0;
         double attendance = student.getAttendance() != null ? student.getAttendance() : 100.0;
         List<String> interventions = RiskRecommendationEngine.generateInterventions(
-                student, cgpa, attendance, projects.size()
+                cgpa, attendance, projects.size()
         );
         List<String> priorityActions = RiskRecommendationEngine.generatePriorityActions(
-                student, cgpa, attendance, projects.size(), skills.size()
+                cgpa, projects.size(), skills.size()
         );
         List<String> academicRecommendations = RiskRecommendationEngine.generateAcademicRecommendations(
-                student, cgpa, attendance
+                cgpa, attendance
         );
 
         // Handle risk trend
-        List<Integer> trend = getUpdatedTrend(student, calc.score);
+        List<Integer> trend = getUpdatedTrend(student, calc.getScore());
 
         // Update Student
-        student.setRiskScore(calc.score);
-        student.setRiskCategory(calc.category);
+        student.setRiskScore(calc.getScore());
+        student.setRiskCategory(calc.getCategory());
         student.setRiskLastCalculatedAt(LocalDateTime.now());
 
         try {
@@ -214,15 +228,15 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
             List<String> priorityActions,
             List<Integer> trend) {
         try {
-            RestTemplate restTemplate = new RestTemplate();
+            RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             ObjectNode root = objectMapper.createObjectNode();
             ObjectNode fields = objectMapper.createObjectNode();
 
-            fields.set("riskScore", objectMapper.createObjectNode().put(INTEGER_VALUE_KEY, String.valueOf(calc.score)));
-            fields.set("riskCategory", objectMapper.createObjectNode().put(STRING_VALUE_KEY, calc.category));
+            fields.set("riskScore", objectMapper.createObjectNode().put(INTEGER_VALUE_KEY, String.valueOf(calc.getScore())));
+            fields.set("riskCategory", objectMapper.createObjectNode().put(STRING_VALUE_KEY, calc.getCategory()));
             fields.set("lastCalculatedAt", objectMapper.createObjectNode().put(STRING_VALUE_KEY, student.getRiskLastCalculatedAt().toString()));
 
             setFirestoreArrayField(fields, "riskFactors", factors);

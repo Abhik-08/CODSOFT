@@ -27,6 +27,10 @@ export default function StudentsPage() {
   const [editSemester, setEditSemester] = useState('1')
   const [editStatus, setEditStatus] = useState<Student['status']>('ACTIVE')
   const [editGpa, setEditGpa] = useState('8.5')
+  const [editAttendanceRate, setEditAttendanceRate] = useState('100')
+  const [editPlacementStatus, setEditPlacementStatus] = useState<Student['placementStatus']>('NOT_STARTED')
+  const [editOfferCount, setEditOfferCount] = useState('0')
+  const [editImageUrl, setEditImageUrl] = useState('')
   const [editPhone, setEditPhone] = useState('')
   const [editGithubUrl, setEditGithubUrl] = useState('')
   const [editLinkedinUrl, setEditLinkedinUrl] = useState('')
@@ -159,6 +163,10 @@ export default function StudentsPage() {
     setEditSemester(String(student.semester))
     setEditStatus(student.status)
     setEditGpa(String(student.gpa))
+    setEditAttendanceRate(String(student.attendanceRate ?? 100))
+    setEditPlacementStatus(student.placementStatus || 'NOT_STARTED')
+    setEditOfferCount(String(student.offerCount ?? 0))
+    setEditImageUrl(student.imageUrl || '')
     setEditPhone(student.phone || '')
     setEditGithubUrl(student.githubUrl || '')
     setEditLinkedinUrl(student.linkedinUrl || '')
@@ -189,6 +197,10 @@ export default function StudentsPage() {
         semester: Number(editSemester),
         status: editStatus,
         gpa: Number(editGpa) || editingStudent.gpa,
+        attendanceRate: Number(editAttendanceRate) || 100,
+        placementStatus: editPlacementStatus,
+        offerCount: Number(editOfferCount) || 0,
+        imageUrl: editImageUrl,
         phone: editPhone,
         githubUrl: editGithubUrl,
         linkedinUrl: editLinkedinUrl,
@@ -326,8 +338,20 @@ export default function StudentsPage() {
                     />
                   </td>
                   <td className="p-4 flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-vault-accent/15 border border-vault-accent/30 flex items-center justify-center font-black text-vault-accent text-xs shrink-0">
-                      {student.firstName[0]}{student.lastName[0]}
+                    <div className="h-9 w-9 rounded-xl bg-vault-accent/15 border border-vault-accent/30 overflow-hidden flex items-center justify-center font-black text-vault-accent text-xs shrink-0">
+                      {student.imageUrl ? (
+                        <img
+                          src={student.imageUrl.startsWith('localstorage://') ? (localStorage.getItem(`avatar_student_${student.id}`) || '') : student.imageUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="%232563eb" opacity="0.15"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="12" fill="%232563eb">${student.firstName[0] || ''}${student.lastName[0] || ''}</text></svg>`;
+                          }}
+                        />
+                      ) : (
+                        <span>{student.firstName[0]}{student.lastName[0]}</span>
+                      )}
                     </div>
                     <div className="text-left">
                       <p className="font-extrabold text-slate-800 dark:text-white leading-none">{student.firstName} {student.lastName}</p>
@@ -592,6 +616,10 @@ export default function StudentsPage() {
               sem={editSemester} setSem={setEditSemester}
               st={editStatus} setSt={setEditStatus}
               cgpa={editGpa} setCgpa={setEditGpa}
+              attendanceRate={editAttendanceRate} setAttendanceRate={setEditAttendanceRate}
+              placementStatus={editPlacementStatus} setPlacementStatus={setEditPlacementStatus}
+              offerCount={editOfferCount} setOfferCount={setEditOfferCount}
+              imageUrl={editImageUrl} setImageUrl={setEditImageUrl}
               phone={editPhone} setPhone={setEditPhone}
               githubUrl={editGithubUrl} setGithubUrl={setEditGithubUrl}
               linkedinUrl={editLinkedinUrl} setLinkedinUrl={setEditLinkedinUrl}

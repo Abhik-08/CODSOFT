@@ -5,4 +5,5 @@ export const Card = () => null;
 export const Modal = () => null;
 export const Loader = () => null;
 export * from './EduVaultLogo'
+export { default as AvatarUpload } from './AvatarUpload'
 
