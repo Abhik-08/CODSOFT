@@ -36,11 +36,12 @@ public class AiFallbackHandler {
     }
 
     private String callGemini(String model, String systemInstruction, String prompt) {
-        if (geminiApiKey == null || geminiApiKey.isBlank()) {
+        String apiKey = geminiApiKey;
+        if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException("Gemini API key is not configured in backend environment");
         }
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + geminiApiKey;
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -58,17 +59,18 @@ public class AiFallbackHandler {
         );
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
         if (response.getStatusCode() == HttpStatus.OK) {
             return response.getBody();
         } else {
-            throw new RuntimeException("Gemini API returned status code " + response.getStatusCode());
+            throw new org.springframework.web.client.RestClientException("Gemini API returned status code " + response.getStatusCode());
         }
     }
 
     private String callGroq(String model, String systemInstruction, String prompt) {
-        if (groqApiKey == null || groqApiKey.isBlank()) {
+        String apiKey = groqApiKey;
+        if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException("Groq API key is not configured in backend environment");
         }
 
@@ -76,7 +78,7 @@ public class AiFallbackHandler {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(groqApiKey);
+        headers.setBearerAuth(apiKey);
 
         Map<String, Object> requestBody = Map.of(
             "model", model,
@@ -87,12 +89,12 @@ public class AiFallbackHandler {
         );
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
         if (response.getStatusCode() == HttpStatus.OK) {
             return response.getBody();
         } else {
-            throw new RuntimeException("Groq API returned status code " + response.getStatusCode());
+            throw new org.springframework.web.client.RestClientException("Groq API returned status code " + response.getStatusCode());
         }
     }
 }
