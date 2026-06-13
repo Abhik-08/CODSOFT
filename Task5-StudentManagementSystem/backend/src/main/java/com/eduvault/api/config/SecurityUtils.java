@@ -25,12 +25,14 @@ public class SecurityUtils {
 
     private final StudentRepository studentRepository;
     private final PortfolioRepository portfolioRepository;
+    private final AdvisoryRepository advisoryRepository;
     private StudentService studentService;
 
     @Autowired
-    public SecurityUtils(StudentRepository studentRepository, PortfolioRepository portfolioRepository) {
+    public SecurityUtils(StudentRepository studentRepository, PortfolioRepository portfolioRepository, AdvisoryRepository advisoryRepository) {
         this.studentRepository = studentRepository;
         this.portfolioRepository = portfolioRepository;
+        this.advisoryRepository = advisoryRepository;
     }
 
     @Autowired
@@ -140,6 +142,22 @@ public class SecurityUtils {
                 .map(portfolio -> {
                     Student student = portfolio.getStudent();
                     return student != null && (username.equalsIgnoreCase(student.getEmail()) || username.equalsIgnoreCase(student.getEnrollmentNumber()));
+                })
+                .orElse(false);
+    }
+
+    public boolean isSelfUserAdvisory(Long advisoryId) {
+        if (hasRole(ROLE_ADMIN) || hasRole(ROLE_FACULTY)) {
+            return true;
+        }
+        String username = getCurrentUsername();
+        if (username == null) {
+            return false;
+        }
+        return advisoryRepository.findById(advisoryId)
+                .map(advisory -> {
+                    Optional<Student> student = studentRepository.findById(advisory.getStudentId());
+                    return student.map(s -> matchesUser(username, s)).orElse(false);
                 })
                 .orElse(false);
     }

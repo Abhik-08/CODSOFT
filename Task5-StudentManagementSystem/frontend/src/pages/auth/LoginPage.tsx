@@ -24,7 +24,7 @@ export default function LoginPage() {
       await loginWithGoogle()
       navigate('/dashboard')
     } catch (err: any) {
-      setError(err.message || 'Failed to authenticate with Google')
+      setError(err.message || 'Failed to authenticate with Google.')
     } finally {
       setLoading(false)
     }
@@ -71,22 +71,22 @@ export default function LoginPage() {
 
   return (
     <div className="space-y-6 text-left">
-      {/* Reusable premium logo */}
+      {/* Logo */}
       {!isForgotPassword && (
         <div className="flex justify-center lg:justify-start">
           <EduVaultLogo showText={true} iconSize={58} textSize="text-2xl" />
         </div>
       )}
 
-      {/* Dynamic Header based on Login vs Forgot Password state */}
+      {/* Header */}
       <div className="text-center lg:text-left space-y-1 pt-2">
         <h3 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white transition-all">
           {isForgotPassword ? 'Reset Access' : 'Sign In'}
         </h3>
-        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-          {isForgotPassword 
-            ? 'Enter your institutional email to reset access' 
-            : 'Access the Student Intelligence Console'}
+        <p className="text-xs font-semibold text-slate-450 dark:text-slate-500">
+          {isForgotPassword
+            ? 'Enter your institutional email to reset access'
+            : 'Access EduVault Academic Intelligence Platform'}
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* Social Google Authentication Section */}
+      {/* Google Login */}
       {!isForgotPassword && (
         <div className="space-y-4">
           <button
@@ -122,7 +122,7 @@ export default function LoginPage() {
             <span>Continue with Google</span>
           </button>
 
-          {/* Separator line */}
+          {/* Separator */}
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-dashed border-slate-200 dark:border-white/10"></div>
             <span className="flex-shrink mx-4 text-slate-400 dark:text-slate-500 text-[9px] font-black uppercase tracking-wider">or sign in with email</span>
@@ -131,11 +131,11 @@ export default function LoginPage() {
         </div>
       )}
 
-      <form 
-        onSubmit={isForgotPassword ? handleForgotPasswordSubmit : handleEmailLogin} 
+      <form
+        onSubmit={isForgotPassword ? handleForgotPasswordSubmit : handleEmailLogin}
         className="space-y-4"
       >
-        {/* Email Address Input */}
+        {/* Email */}
         <div className="space-y-1.5">
           <label htmlFor="email" className="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wide">
             Email
@@ -147,13 +147,13 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="operator@institution.edu"
+              placeholder="you@institution.edu"
               className="w-full bg-transparent px-4 py-2.5 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-semibold"
             />
           </div>
         </div>
 
-        {/* Password Input */}
+        {/* Password */}
         {!isForgotPassword && (
           <div className="space-y-1.5">
             <label htmlFor="password" className="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wide">
@@ -180,7 +180,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Remember me & Forgot password row */}
+        {/* Remember me & Forgot password */}
         {!isForgotPassword && (
           <div className="flex justify-between items-center text-xs font-bold pt-1">
             <label className="flex items-center gap-2 text-slate-450 dark:text-slate-500 cursor-pointer select-none">
@@ -202,7 +202,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Submit Actions */}
+        {/* Submit */}
         <div className="pt-2">
           <button
             type="submit"
@@ -220,7 +220,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* Forgot Password back navigation */}
+        {/* Back to sign in */}
         {isForgotPassword && (
           <button
             type="button"
@@ -236,7 +236,7 @@ export default function LoginPage() {
         <div className="text-xs text-center font-semibold text-slate-450 dark:text-slate-500 pt-2">
           Not Registered Yet?{' '}
           <Link to="/register" className="text-vault-accent hover:underline font-extrabold">
-            Create Staff Account
+            Create Account
           </Link>
         </div>
       )}

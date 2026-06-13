@@ -16,6 +16,18 @@ export default function CgpaTrendChart({ semesters }: Props) {
     Attendance: sem.attendance
   }))
 
+  const latestRecord = sorted.at(-1)
+  const firstRecord = sorted.at(0)
+
+  let growthText = '—'
+  let growthColorClass = 'text-slate-400'
+
+  if (sorted.length >= 2 && latestRecord !== undefined && firstRecord !== undefined) {
+    const diff = latestRecord.cgpa - firstRecord.cgpa
+    growthText = (diff >= 0 ? '+' : '') + diff.toFixed(2)
+    growthColorClass = diff >= 0 ? 'text-emerald-500' : 'text-red-500'
+  }
+
   if (chartData.length === 0) {
     return (
       <div className="space-y-4">
@@ -76,7 +88,7 @@ export default function CgpaTrendChart({ semesters }: Props) {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-slate-200 dark:border-white/5 bg-white/75 dark:bg-white/[0.03] p-3 text-center">
           <p className="text-[9px] font-bold text-slate-500 uppercase">Latest CGPA</p>
-          <p className="text-lg font-black text-vault-accent font-mono">{sorted[sorted.length - 1]?.cgpa.toFixed(2) || '—'}</p>
+          <p className="text-lg font-black text-vault-accent font-mono">{latestRecord?.cgpa.toFixed(2) || '—'}</p>
         </div>
         <div className="rounded-xl border border-slate-200 dark:border-white/5 bg-white/75 dark:bg-white/[0.03] p-3 text-center">
           <p className="text-[9px] font-bold text-slate-500 uppercase">Best SGPA</p>
@@ -84,10 +96,8 @@ export default function CgpaTrendChart({ semesters }: Props) {
         </div>
         <div className="rounded-xl border border-slate-200 dark:border-white/5 bg-white/75 dark:bg-white/[0.03] p-3 text-center">
           <p className="text-[9px] font-bold text-slate-500 uppercase">Growth</p>
-          <p className={`text-lg font-black font-mono ${sorted.length >= 2 ? (sorted[sorted.length - 1].cgpa >= sorted[0].cgpa ? 'text-emerald-500' : 'text-red-500') : 'text-slate-400'}`}>
-            {sorted.length >= 2
-              ? `${sorted[sorted.length - 1].cgpa >= sorted[0].cgpa ? '+' : ''}${(sorted[sorted.length - 1].cgpa - sorted[0].cgpa).toFixed(2)}`
-              : '—'}
+          <p className={`text-lg font-black font-mono ${growthColorClass}`}>
+            {growthText}
           </p>
         </div>
       </div>

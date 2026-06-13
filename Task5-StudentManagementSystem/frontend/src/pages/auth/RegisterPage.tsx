@@ -52,10 +52,10 @@ export default function RegisterPage() {
 
       {/* Header */}
       <div className="text-center lg:text-left space-y-1">
-        <h3 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white transition-all">
-          Create administrator account
+        <h3 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white transition-all">
+          Create Administrator Account
         </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs font-semibold text-slate-450 dark:text-slate-500">
           Register new dashboard privileges for class management
         </p>
       </div>
@@ -70,11 +70,11 @@ export default function RegisterPage() {
 
       <form onSubmit={handleRegister} className="space-y-4">
         {/* Name input */}
-        <div className="space-y-1">
-          <label htmlFor="name" className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+        <div className="space-y-1.5">
+          <label htmlFor="name" className="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wide">
             Full Name
           </label>
-          <div className="relative flex items-center rounded-lg border border-slate-200 dark:border-white/10 focus-within:border-[#781f5a] focus-within:ring-2 focus-within:ring-[#781f5a]/10 bg-white dark:bg-[#151419] transition-all shadow-sm">
+          <div className="relative flex items-center rounded-xl border border-slate-200 dark:border-white/10 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 bg-white dark:bg-[#151419] transition-all shadow-sm">
             <input
               id="name"
               type="text"
@@ -82,17 +82,17 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Professor John Doe"
-              className="w-full bg-transparent px-3 py-2 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
+              className="w-full bg-transparent px-4 py-2.5 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-semibold"
             />
           </div>
         </div>
 
         {/* Email input */}
-        <div className="space-y-1">
-          <label htmlFor="email" className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wide">
             Institutional Email
           </label>
-          <div className="relative flex items-center rounded-lg border border-slate-200 dark:border-white/10 focus-within:border-[#781f5a] focus-within:ring-2 focus-within:ring-[#781f5a]/10 bg-white dark:bg-[#151419] transition-all shadow-sm">
+          <div className="relative flex items-center rounded-xl border border-slate-200 dark:border-white/10 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 bg-white dark:bg-[#151419] transition-all shadow-sm">
             <input
               id="email"
               type="email"
@@ -100,17 +100,17 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@university.edu"
-              className="w-full bg-transparent px-3 py-2 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
+              className="w-full bg-transparent px-4 py-2.5 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-semibold"
             />
           </div>
         </div>
 
         {/* Password input */}
-        <div className="space-y-1">
-          <label htmlFor="password" className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wide">
             Password
           </label>
-          <div className="relative flex items-center rounded-lg border border-slate-200 dark:border-white/10 focus-within:border-[#781f5a] focus-within:ring-2 focus-within:ring-[#781f5a]/10 bg-white dark:bg-[#151419] transition-all shadow-sm pr-10">
+          <div className="relative flex items-center rounded-xl border border-slate-200 dark:border-white/10 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 bg-white dark:bg-[#151419] transition-all shadow-sm pr-10">
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -118,12 +118,12 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="•••••••••••••"
-              className="w-full bg-transparent px-3 py-2 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
+              className="w-full bg-transparent px-4 py-2.5 text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none font-semibold"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 text-slate-400 hover:text-[#781f5a] dark:hover:text-[#eaacd2] transition-colors focus:outline-none flex items-center justify-center"
+              className="absolute right-3 text-slate-400 hover:text-vault-accent transition-colors focus:outline-none flex items-center justify-center"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -135,7 +135,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#781f5a] hover:bg-[#8e296c] dark:bg-[#eaacd2] dark:hover:bg-[#f3c1de] dark:text-[#3d122c] disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            className="w-full bg-gradient-to-r from-vault-accent to-vault-cyan hover:opacity-95 disabled:opacity-50 text-white font-black text-xs py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-vault-accent/10"
           >
             {loading ? (
               <span className="w-5 h-5 border-2 border-white/35 border-t-white rounded-full animate-spin" />
@@ -149,9 +149,9 @@ export default function RegisterPage() {
         </div>
       </form>
 
-      <div className="text-xs text-center text-slate-500 pt-2">
+      <div className="text-xs text-center font-semibold text-slate-450 dark:text-slate-500 pt-2">
         Already have an account?{' '}
-        <Link to="/login" className="text-[#781f5a] dark:text-[#eaacd2] hover:underline font-bold">
+        <Link to="/login" className="text-vault-accent hover:underline font-extrabold">
           Sign In
         </Link>
       </div>

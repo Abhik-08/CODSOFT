@@ -307,38 +307,38 @@ export default function StudentsPage() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-xs font-semibold">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-white/5 bg-slate-100/70 dark:bg-white/[0.03] text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[10px]">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px]">
                 <th className="p-4 pl-6 w-10">
                   <input
                     type="checkbox"
-                    className="rounded border-slate-300 dark:border-white/10 text-vault-accent focus:ring-vault-accent accent-vault-accent cursor-pointer h-3.5 w-3.5"
+                    className="rounded border-slate-300 dark:border-slate-700 text-vault-accent focus:ring-vault-accent accent-vault-accent cursor-pointer h-3.5 w-3.5"
                     onChange={handleSelectAll}
                     checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0}
                   />
                 </th>
-                <th className="p-4">Student Info</th>
-                <th className="p-4">Enrollment No.</th>
-                <th className="p-4">Department</th>
-                <th className="p-4 text-center">Sem</th>
-                <th className="p-4 text-center">CGPA</th>
-                <th className="p-4">Last Activity</th>
-                <th className="p-4 text-center">Status</th>
-                <th className="p-4 text-center pr-6">Actions</th>
+                <th className="p-4 font-bold">Student</th>
+                <th className="p-4 font-bold">Enrollment No.</th>
+                <th className="p-4 font-bold">Department</th>
+                <th className="p-4 text-center font-bold">Sem</th>
+                <th className="p-4 text-center font-bold">CGPA</th>
+                <th className="p-4 font-bold">Last Activity</th>
+                <th className="p-4 text-center font-bold">Status</th>
+                <th className="p-4 text-center pr-6 font-bold">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
               {filteredStudents.map((student) => (
-                <tr key={student.id} className="hover:bg-blue-50/50 dark:hover:bg-white/[0.03] transition-colors group">
+                <tr key={student.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-900/30 transition-colors duration-150 group">
                   <td className="p-4 pl-6">
                     <input
                       type="checkbox"
-                      className="rounded border-slate-300 dark:border-white/10 text-vault-accent focus:ring-vault-accent accent-vault-accent cursor-pointer h-3.5 w-3.5"
+                      className="rounded border-slate-300 dark:border-slate-800 text-vault-accent focus:ring-vault-accent accent-vault-accent cursor-pointer h-3.5 w-3.5"
                       checked={selectedIds.includes(student.id)}
                       onChange={() => handleSelectRow(student.id)}
                     />
                   </td>
                   <td className="p-4 flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-vault-accent/15 border border-vault-accent/30 overflow-hidden flex items-center justify-center font-black text-vault-accent text-xs shrink-0">
+                    <div className="h-9 w-9 rounded-md bg-vault-accent/10 border border-vault-accent/20 overflow-hidden flex items-center justify-center font-bold text-vault-accent text-xs shrink-0">
                       {student.imageUrl ? (
                         <img
                           src={student.imageUrl.startsWith('localstorage://') ? (localStorage.getItem(`avatar_student_${student.id}`) || '') : student.imageUrl}
@@ -354,23 +354,23 @@ export default function StudentsPage() {
                       )}
                     </div>
                     <div className="text-left">
-                      <p className="font-extrabold text-slate-800 dark:text-white leading-none">{student.firstName} {student.lastName}</p>
-                      <p className="text-[10px] text-slate-400 mt-1 font-semibold">{student.email}</p>
+                      <p className="font-extrabold text-slate-805 dark:text-slate-200 leading-none">{student.firstName} {student.lastName}</p>
+                      <p className="text-[10px] text-slate-450 dark:text-slate-500 mt-1 font-semibold">{student.email}</p>
                     </div>
                   </td>
-                  <td className="p-4 font-mono text-slate-600 dark:text-slate-400">{student.enrollmentNumber}</td>
-                  <td className="p-4 text-slate-600 dark:text-slate-400">{student.department}</td>
-                  <td className="p-4 text-center text-slate-800 dark:text-slate-300 font-mono">{student.semester}</td>
+                  <td className="p-4 font-mono text-slate-600 dark:text-slate-400 font-medium">{student.enrollmentNumber}</td>
+                  <td className="p-4 text-slate-600 dark:text-slate-400 font-medium">{student.department}</td>
+                  <td className="p-4 text-center text-slate-700 dark:text-slate-300 font-mono font-medium">{student.semester}</td>
                   <td className="p-4 text-center font-mono">
-                    <span className="font-black text-vault-accent bg-vault-accent/10 px-2 py-0.5 rounded border border-vault-accent/20">
+                    <span className="font-bold text-vault-accent bg-vault-accent/10 px-2 py-0.5 rounded border border-vault-accent/20">
                       {student.gpa.toFixed(2)}
                     </span>
                   </td>
-                  <td className="p-4 text-slate-500 font-medium font-mono text-[10px]">
+                  <td className="p-4 text-slate-500 font-semibold font-mono text-[10px]">
                     {getLastActivity(student.id)}
                   </td>
                   <td className="p-4 text-center">
-                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg ${getStatusStyle(student.status)}`}>
+                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${getStatusStyle(student.status)}`}>
                       {student.status}
                     </span>
                   </td>
@@ -378,21 +378,21 @@ export default function StudentsPage() {
                     <div className="flex items-center justify-center gap-1.5">
                       <button
                         onClick={() => navigate(`/dashboard/students/${student.id}`)}
-                        className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 text-slate-400 hover:text-vault-fg transition-all cursor-pointer"
+                        className="p-1.5 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
                         title="View Full Profile"
                       >
                         <Eye size={13} />
                       </button>
                       <button
                         onClick={() => openEditModal(student)}
-                        className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-vault-accent/10 text-slate-400 hover:text-vault-accent hover:border-vault-accent/20 transition-all cursor-pointer"
+                        className="p-1.5 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 hover:text-vault-accent transition-colors cursor-pointer"
                         title="Edit Student Profile"
                       >
                         <Pencil size={13} />
                       </button>
                       <button
                         onClick={() => handleDeleteStudent(student.id)}
-                        className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-red-500/10 text-slate-400 hover:text-red-500 hover:border-red-500/20 transition-all cursor-pointer"
+                        className="p-1.5 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
                         title="Remove Student Record"
                       >
                         <Trash2 size={13} />
@@ -493,11 +493,11 @@ export default function StudentsPage() {
       )}
 
       {/* Registry Panel */}
-      <div className="vault-glass rounded-2xl overflow-hidden border border-slate-200 dark:border-white/5 flex flex-col">
+      <div className="bg-white dark:bg-slate-950 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col">
 
         {/* Search & Filter */}
-        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-slate-50/80 dark:bg-white/[0.02]">
-          <div className="relative flex items-center w-full max-w-md rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus-within:bg-white dark:focus-within:bg-[#070b14]/50 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 transition-all duration-200 shadow-sm hover:border-slate-300 dark:hover:border-white/20">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-slate-50/80 dark:bg-slate-900/10">
+          <div className="relative flex items-center w-full max-w-md rounded-xl bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800 focus-within:bg-white dark:focus-within:bg-slate-950 focus-within:border-vault-accent focus-within:ring-4 focus-within:ring-vault-accent/10 transition-all duration-200 shadow-sm hover:border-slate-350 dark:hover:border-slate-700">
             <Search size={16} className="absolute left-3.5 text-slate-400 dark:text-slate-500" />
             <input
               type="text"

@@ -1,17 +1,27 @@
-export interface Recommendation {
-  id: string;
-  studentId: string;
-  type: 'ACADEMIC_RISK' | 'EXCELLENCE' | 'ATTENDANCE_WARNING' | 'CAREER_PATH';
-  title: string;
-  description: string;
-  confidence: number; // 0 to 1
-  suggestedAction: string;
-  createdAt: string;
+export interface ChatMessage {
+  id: string
+  sender: 'ai' | 'user'
+  text: string
+  timestamp: Date
+  isError?: boolean
+  providerName?: string
+  modelName?: string
 }
 
-export interface ChatMessage {
-  id: string;
-  sender: 'user' | 'assistant';
-  text: string;
-  timestamp: string;
+export interface AIProvider {
+  readonly name: string
+  readonly rawProviderName: string
+  readonly modelName: string
+  generateStream(
+    prompt: string,
+    systemInstruction: string,
+    onChunk: (chunk: string, providerName: string, modelName: string) => void
+  ): Promise<string>
 }
+
+export interface AIProviderConfig {
+  apiKey: string
+  primaryModel: string
+  fallbackModel: string
+}
+

@@ -32,6 +32,7 @@ public class PlacementIntelligenceServiceImpl implements PlacementIntelligenceSe
     private final PortfolioService portfolioService;
     private final Environment env;
     private final StudentService studentService;
+    private final NotificationGenerator notificationGenerator;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
@@ -40,12 +41,14 @@ public class PlacementIntelligenceServiceImpl implements PlacementIntelligenceSe
             AcademicProfileService academicProfileService,
             PortfolioService portfolioService,
             Environment env,
-            @org.springframework.context.annotation.Lazy StudentService studentService) {
+            @org.springframework.context.annotation.Lazy StudentService studentService,
+            NotificationGenerator notificationGenerator) {
         this.studentRepository = studentRepository;
         this.academicProfileService = academicProfileService;
         this.portfolioService = portfolioService;
         this.env = env;
         this.studentService = studentService;
+        this.notificationGenerator = notificationGenerator;
     }
 
     private boolean isTestProfile() {
@@ -168,6 +171,9 @@ public class PlacementIntelligenceServiceImpl implements PlacementIntelligenceSe
         List<String> insights = PlacementInsightGenerator.generateCareerInsights(calc.score);
         List<String> roadmap = PlacementRecommendationEngine.generateGrowthRoadmap(student);
 
+        Integer oldPlacementScore = student.getPlacementScore();
+        String oldTier = student.getPlacementTier();
+
         // Update student entity
         student.setPlacementScore(calc.score);
         student.setPlacementTier(calc.tier);
@@ -178,6 +184,49 @@ public class PlacementIntelligenceServiceImpl implements PlacementIntelligenceSe
         student.setCareerReadinessScore(calc.careerScore);
         student.setConsistencyReadinessScore(calc.consistencyScore);
         student.setIndustryReadinessScore(calc.industryScore);
+
+        // Raise notifications for placement updates
+        if (oldPlacementScore != null && calc.score < oldPlacementScore) {
+            notificationGenerator.createNotification(
+                    student.getEmail(),
+                    "Placement Alert: Score Declined",
+                    String.format("Your Placement Readiness Score has declined from %d to %d.", oldPlacementScore, calc.score),
+                    "PLACEMENT",
+                    "HIGH",
+                    "/placement"
+            );
+        } else if (oldPlacementScore != null && calc.score > oldPlacementScore) {
+            notificationGenerator.createNotification(
+                    student.getEmail(),
+                    "Placement Alert: Score Improved",
+                    String.format("Great job! Your Placement Readiness Score improved from %d to %d.", oldPlacementScore, calc.score),
+                    "PLACEMENT",
+                    "LOW",
+                    "/placement"
+            );
+        }
+
+        if (calc.tier != null && !calc.tier.equals(oldTier)) {
+            if ("High Potential".equalsIgnoreCase(calc.tier)) {
+                notificationGenerator.createNotification(
+                        student.getEmail(),
+                        "Placement Achievement: High Potential Tier",
+                        "Congratulations! You have reached the 'High Potential' placement tier.",
+                        "ACHIEVEMENT",
+                        "MEDIUM",
+                        "/placement"
+                );
+            } else if ("Placement Ready".equalsIgnoreCase(calc.tier)) {
+                notificationGenerator.createNotification(
+                        student.getEmail(),
+                        "Placement Milestone: Placement Ready",
+                        "Awesome news! You are now classified as 'Placement Ready'. Keep it up!",
+                        "ACHIEVEMENT",
+                        "HIGH",
+                        "/placement"
+                );
+            }
+        }
 
         try {
             student.setStrengthsJson(objectMapper.writeValueAsString(strengths));

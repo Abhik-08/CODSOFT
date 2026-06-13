@@ -71,6 +71,7 @@ public class PortfolioServiceImpl implements PortfolioService {
     private final PlacementIntelligenceService placementIntelligenceService;
     private final RiskDetectionService riskDetectionService;
     private final StudentService studentService;
+    private final NotificationGenerator notificationGenerator;
 
     @Autowired
     public PortfolioServiceImpl(
@@ -79,13 +80,15 @@ public class PortfolioServiceImpl implements PortfolioService {
             Environment env,
             @org.springframework.context.annotation.Lazy PlacementIntelligenceService placementIntelligenceService,
             @org.springframework.context.annotation.Lazy RiskDetectionService riskDetectionService,
-            @org.springframework.context.annotation.Lazy StudentService studentService) {
+            @org.springframework.context.annotation.Lazy StudentService studentService,
+            NotificationGenerator notificationGenerator) {
         this.portfolioRepository = portfolioRepository;
         this.studentRepository = studentRepository;
         this.env = env;
         this.placementIntelligenceService = placementIntelligenceService;
         this.riskDetectionService = riskDetectionService;
         this.studentService = studentService;
+        this.notificationGenerator = notificationGenerator;
     }
 
     private boolean isTestProfile() {
@@ -442,6 +445,7 @@ public class PortfolioServiceImpl implements PortfolioService {
         } catch (Exception e) {
             log.warn("Failed to trigger academic risk recalculation on portfolio creation: {}", e.getMessage());
         }
+        triggerPortfolioNotifications(null, saved, student);
 
         return convertToDto(saved);
     }
@@ -451,6 +455,7 @@ public class PortfolioServiceImpl implements PortfolioService {
         Portfolio portfolio = portfolioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MSG + id));
 
+        String oldStatus = portfolio.getPortfolioStatus();
         portfolio.setPortfolioName(portfolioDto.getPortfolioName());
         portfolio.setTemplateType(portfolioDto.getTemplateType());
         portfolio.setTitle(portfolioDto.getTitle());
@@ -518,6 +523,7 @@ public class PortfolioServiceImpl implements PortfolioService {
         } catch (Exception e) {
             log.warn("Failed to trigger academic risk recalculation on portfolio update: {}", e.getMessage());
         }
+        triggerPortfolioNotifications(oldStatus, updated, updated.getStudent());
 
         return convertToDto(updated);
     }
@@ -663,5 +669,37 @@ public class PortfolioServiceImpl implements PortfolioService {
         }
 
         return portfolio;
+    }
+
+    private void triggerPortfolioNotifications(String oldStatus, Portfolio saved, Student student) {
+        try {
+            String newStatus = saved.getPortfolioStatus();
+            String recordId = saved.getFirestoreId() != null ? saved.getFirestoreId() : String.valueOf(saved.getId());
+            if (!Objects.equals(oldStatus, newStatus)) {
+                if ("PUBLISHED".equalsIgnoreCase(newStatus)) {
+                    notificationGenerator.createNotification(
+                        student.getEmail(),
+                        "Portfolio Completion Achieved",
+                        "Your portfolio \"" + saved.getPortfolioName() + "\" completion milestone has been achieved and is now published.",
+                        "PORTFOLIO",
+                        "HIGH",
+                        "/dashboard/portfolio",
+                        recordId
+                    );
+                } else if ("READY_FOR_REVIEW".equalsIgnoreCase(newStatus)) {
+                    notificationGenerator.createNotification(
+                        student.getEmail(),
+                        "Portfolio Ready For Review",
+                        "Your portfolio \"" + saved.getPortfolioName() + "\" is ready for review by faculty.",
+                        "PORTFOLIO",
+                        "MEDIUM",
+                        "/dashboard/portfolio",
+                        recordId
+                    );
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to generate portfolio notification: {}", e.getMessage());
+        }
     }
 }

@@ -4,9 +4,10 @@ import type { ReactNode } from 'react'
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  allowedRoles?: ('ADMIN' | 'STUDENT')[];
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { user, loading } = useAuthContext()
 
   if (loading) {
@@ -19,6 +20,11 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    console.warn(`User role ${user.role} is not authorized for this section. Redirecting...`)
+    return <Navigate to="/dashboard" replace />
   }
 
   return <>{children}</>

@@ -1,13 +1,13 @@
 package com.eduvault.api.service;
 
-import com.eduvault.api.dto.DashboardStatsDto;
+import com.eduvault.api.dto.AnalyticsDto;
 import java.util.Map;
 
 public interface AnalyticsService {
-    DashboardStatsDto getDashboardStats();
-    Map<String, Object> getCgpaAnalytics();
+    AnalyticsDto getOverview();
+    Map<String, Object> getCgpaDistribution();
     Map<String, Object> getAttendanceAnalytics();
-    Map<String, Long> getDepartmentAnalytics();
+    Map<String, Object> getRiskAnalytics();
+    Map<String, Object> getDepartmentAnalytics();
     Map<String, Object> getPlacementAnalytics();
-    Map<String, Object> getPlacementIntelligenceAnalytics();
 }

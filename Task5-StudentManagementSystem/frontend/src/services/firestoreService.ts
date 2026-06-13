@@ -26,11 +26,15 @@ export const portfoliosCollection = collection(db, 'portfolios')
 export const firestoreService = {
 
   // ═══════════════════════════════════════════════════════════════════
-  //  USER OPERATIONS (existing — unchanged)
+  //  USER OPERATIONS
   // ═══════════════════════════════════════════════════════════════════
 
+  /** Permanent super admin email — always retains ADMIN role */
+  SUPER_ADMIN_EMAIL: 'abhikmukherjee2003@gmail.com',
+
   /**
-   * Syncs user login details to the 'users' Firestore collection
+   * Syncs user login details to the 'users' Firestore collection.
+   * On first login, seeds role: super admin → ADMIN, everyone else → STUDENT.
    */
   async syncUserProfile(
     uid: string,
@@ -41,17 +45,23 @@ export const firestoreService = {
   ): Promise<User> {
     const userDocRef = doc(db, 'users', uid)
     const userSnapshot = await getDoc(userDocRef)
-
     const currentTime = new Date().toISOString()
+    const isSuperAdmin = (email || '').toLowerCase() === firestoreService.SUPER_ADMIN_EMAIL
     let finalProfile: User
 
     if (userSnapshot.exists()) {
-      // Pre-existing account, update last login metadata
-      const existingData = userSnapshot.data() as FirestoreUser
+      const existingData = userSnapshot.data() as any
+      // Super admin always retains ADMIN; everyone else keeps stored role or defaults to STUDENT
+      const userRole: 'ADMIN' | 'STUDENT' = isSuperAdmin
+        ? 'ADMIN'
+        : (existingData.role === 'ADMIN' ? 'ADMIN' : 'STUDENT')
+
       const updateData = {
-        lastLogin: serverTimestamp(),
-        name: name || existingData.name || 'User',
-        photoURL: photoURL || existingData.photoURL || ''
+        updatedAt: serverTimestamp(),
+        displayName: name || existingData.displayName || existingData.name || 'User',
+        photoURL: photoURL || existingData.photoURL || '',
+        role: userRole,
+        isActive: existingData.isActive !== false
       }
 
       await setDoc(userDocRef, updateData, { merge: true })
@@ -59,37 +69,42 @@ export const firestoreService = {
       finalProfile = {
         uid,
         email: existingData.email || email,
-        displayName: updateData.name,
+        displayName: updateData.displayName,
         photoURL: updateData.photoURL,
         provider: existingData.provider || provider,
-        role: existingData.role || 'STUDENT',
+        role: userRole,
+        isActive: updateData.isActive,
         createdAt: existingData.createdAt
           ? new Date(existingData.createdAt.seconds * 1000).toISOString()
           : currentTime,
         lastLogin: currentTime
       }
     } else {
-      // New registration, create document
-      const newUserData: FirestoreUser = {
+      // First login — seed user document
+      const defaultRole: 'ADMIN' | 'STUDENT' = isSuperAdmin ? 'ADMIN' : 'STUDENT'
+      const newUserData = {
         uid,
+        displayName: name || 'User',
         name: name || 'User',
         email: email || '',
         photoURL: photoURL || '',
         provider: provider || 'password',
+        role: defaultRole,
+        isActive: true,
         createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp(),
-        role: 'STUDENT' // Default privilege level
+        updatedAt: serverTimestamp()
       }
-      
+
       await setDoc(userDocRef, newUserData)
 
       finalProfile = {
         uid,
         email: newUserData.email,
-        displayName: newUserData.name,
+        displayName: newUserData.displayName,
         photoURL: newUserData.photoURL,
         provider: newUserData.provider,
         role: newUserData.role,
+        isActive: true,
         createdAt: currentTime,
         lastLogin: currentTime
       }
@@ -99,27 +114,32 @@ export const firestoreService = {
   },
 
   /**
-   * Fetches user profile from Firestore by UID
+   * Fetches user profile from Firestore by UID.
+   * Normalises any legacy TEACHER role to STUDENT.
    */
   async getUserProfile(uid: string): Promise<User | null> {
     try {
       const userDocRef = doc(db, 'users', uid)
       const userSnapshot = await getDoc(userDocRef)
       if (!userSnapshot.exists()) return null
-      
+
       const data = userSnapshot.data() as FirestoreUser
+      // Normalise any legacy TEACHER values → STUDENT
+      const role: 'ADMIN' | 'STUDENT' = data.role === 'ADMIN' ? 'ADMIN' : 'STUDENT'
+
       return {
         uid,
         email: data.email || '',
-        displayName: data.name || '',
+        displayName: data.displayName || (data as any).name || '',
         photoURL: data.photoURL || '',
         provider: data.provider || 'password',
-        role: data.role || 'STUDENT',
+        role,
+        isActive: data.isActive !== false,
         createdAt: data.createdAt
           ? new Date(data.createdAt.seconds * 1000).toISOString()
           : new Date().toISOString(),
-        lastLogin: data.lastLogin
-          ? new Date(data.lastLogin.seconds * 1000).toISOString()
+        lastLogin: data.updatedAt
+          ? new Date(data.updatedAt.seconds * 1000).toISOString()
           : new Date().toISOString()
       }
     } catch (err) {

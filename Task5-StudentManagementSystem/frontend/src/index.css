@@ -16,41 +16,41 @@
 
 @variant dark (&:where(.dark, .dark *));
 
-/* Light Mode Variables */
+/* Light Mode Variables (Stripe / Vercel Light) */
 :root {
-  --vault-bg: #f6f8fb;
-  --vault-fg: #111827;
+  --vault-bg: #f8fafc;
+  --vault-fg: #0f172a;
   --vault-card: #ffffff;
-  --vault-border: #dbe4ef;
+  --vault-border: #e2e8f0;
   --vault-accent: #2563eb;
-  --vault-cyan: #0891b2;
-  --vault-emerald: #059669;
-  --vault-destructive: #dc2626;
+  --vault-cyan: #06b6d4;
+  --vault-emerald: #10b981;
+  --vault-destructive: #ef4444;
   
-  --vault-glass-bg: rgba(255, 255, 255, 0.92);
-  --vault-glass-border: rgba(148, 163, 184, 0.28);
-  --vault-soft-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  --vault-glass-bg: rgba(255, 255, 255, 0.85);
+  --vault-glass-border: rgba(226, 232, 240, 0.8);
+  --vault-soft-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.02);
 
   font-family: var(--font-sans);
   background-color: var(--vault-bg);
   color: var(--vault-fg);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark Mode Variables */
+/* Dark Mode Variables (Linear / Vercel Dark) */
 :root.dark {
-  --vault-bg: #07111f;
-  --vault-fg: #f3f4f6;
-  --vault-card: #0d1726;
-  --vault-border: #243244;
-  --vault-accent: #60a5fa;
+  --vault-bg: #020617;
+  --vault-fg: #f8fafc;
+  --vault-card: #090f20;
+  --vault-border: #1e293b;
+  --vault-accent: #3b82f6;
   --vault-cyan: #22d3ee;
   --vault-emerald: #10b981;
-  --vault-destructive: #f43f5e;
+  --vault-destructive: #ef4444;
   
-  --vault-glass-bg: rgba(13, 23, 38, 0.84);
-  --vault-glass-border: rgba(148, 163, 184, 0.16);
-  --vault-soft-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  --vault-glass-bg: rgba(9, 15, 32, 0.85);
+  --vault-glass-border: rgba(30, 41, 59, 0.7);
+  --vault-soft-shadow: 0 4px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
 }
 
 body {

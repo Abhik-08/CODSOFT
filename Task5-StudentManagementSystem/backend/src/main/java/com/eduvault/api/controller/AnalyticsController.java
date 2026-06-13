@@ -1,6 +1,6 @@
 package com.eduvault.api.controller;
 
-import com.eduvault.api.dto.DashboardStatsDto;
+import com.eduvault.api.dto.AnalyticsDto;
 import com.eduvault.api.service.AnalyticsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,39 +24,39 @@ public class AnalyticsController {
         this.analyticsService = analyticsService;
     }
 
-    @GetMapping("/dashboard")
-    @Operation(summary = "Get dashboard statistics", description = "Fetch overview statistics for total/active students and grade trends")
-    public ResponseEntity<DashboardStatsDto> getDashboardStats() {
-        return ResponseEntity.ok(analyticsService.getDashboardStats());
+    @GetMapping("/overview")
+    @Operation(summary = "Get analytics overview", description = "Fetch cohort overview stats (total/active students, top department, placement percentage)")
+    public ResponseEntity<AnalyticsDto> getOverview() {
+        return ResponseEntity.ok(analyticsService.getOverview());
     }
 
-    @GetMapping("/cgpa")
-    @Operation(summary = "Get CGPA analytics", description = "Calculate CGPA ranges, averages, and highest/lowest metrics dynamically")
-    public ResponseEntity<Map<String, Object>> getCgpaAnalytics() {
-        return ResponseEntity.ok(analyticsService.getCgpaAnalytics());
+    @GetMapping("/cgpa-distribution")
+    @Operation(summary = "Get CGPA distribution", description = "Calculate CGPA ranges and progression curve dynamically")
+    public ResponseEntity<Map<String, Object>> getCgpaDistribution() {
+        return ResponseEntity.ok(analyticsService.getCgpaDistribution());
     }
 
     @GetMapping("/attendance")
-    @Operation(summary = "Get attendance analytics", description = "Calculate cohort attendance statistics dynamically")
+    @Operation(summary = "Get attendance stability/distribution", description = "Retrieve attendance metrics and monthly rates")
     public ResponseEntity<Map<String, Object>> getAttendanceAnalytics() {
         return ResponseEntity.ok(analyticsService.getAttendanceAnalytics());
     }
 
+    @GetMapping("/risk")
+    @Operation(summary = "Get risk statistics", description = "Fetch academic risk distribution, department-wise and semester-wise risk averages")
+    public ResponseEntity<Map<String, Object>> getRiskAnalytics() {
+        return ResponseEntity.ok(analyticsService.getRiskAnalytics());
+    }
+
     @GetMapping("/departments")
-    @Operation(summary = "Get department statistics", description = "Fetch student counts per department")
-    public ResponseEntity<Map<String, Long>> getDepartmentAnalytics() {
+    @Operation(summary = "Get department metrics", description = "Fetch department enrollment counts and CGPA averages")
+    public ResponseEntity<Map<String, Object>> getDepartmentAnalytics() {
         return ResponseEntity.ok(analyticsService.getDepartmentAnalytics());
     }
 
     @GetMapping("/placement")
-    @Operation(summary = "Get placement statistics", description = "Fetch dynamic placement readiness ratios and metrics")
+    @Operation(summary = "Get placement statistics", description = "Fetch placement readiness levels, tiers, score distributions, and dimensional averages")
     public ResponseEntity<Map<String, Object>> getPlacementAnalytics() {
         return ResponseEntity.ok(analyticsService.getPlacementAnalytics());
-    }
-
-    @GetMapping("/placement-intelligence")
-    @Operation(summary = "Get placement intelligence cohort statistics", description = "Fetch overview statistics for average placement scores, tier distributions, and departmental performance comparison")
-    public ResponseEntity<Map<String, Object>> getPlacementIntelligenceAnalytics() {
-        return ResponseEntity.ok(analyticsService.getPlacementIntelligenceAnalytics());
     }
 }

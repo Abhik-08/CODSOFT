@@ -58,7 +58,7 @@ class ApiEndpointsIntegrationTest {
     @Test
     @DisplayName("Analytics: Admin should access dashboard stats")
     void testGetDashboardStats() throws Exception {
-        mockMvc.perform(get("/api/analytics/dashboard")
+        mockMvc.perform(get("/api/analytics/overview")
                 .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk());
     }
@@ -66,7 +66,7 @@ class ApiEndpointsIntegrationTest {
     @Test
     @DisplayName("Analytics: Faculty should access analytics")
     void testGetCgpaAnalytics() throws Exception {
-        mockMvc.perform(get("/api/analytics/cgpa")
+        mockMvc.perform(get("/api/analytics/cgpa-distribution")
                 .header("Authorization", "Bearer " + facultyToken))
                 .andExpect(status().isOk());
     }
@@ -82,7 +82,7 @@ class ApiEndpointsIntegrationTest {
     @Test
     @DisplayName("Analytics: Unauthorized access should be denied")
     void testAnalyticsUnauthorized() throws Exception {
-        mockMvc.perform(get("/api/analytics/dashboard"))
+        mockMvc.perform(get("/api/analytics/overview"))
                 .andExpect(status().isUnauthorized());
     }
 

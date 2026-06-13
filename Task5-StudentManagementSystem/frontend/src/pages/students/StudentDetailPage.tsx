@@ -18,9 +18,12 @@ import SkillsPanel from '../../components/academic/SkillsPanel'
 import PlacementStatusCard from '../../components/academic/PlacementStatusCard'
 import PlacementIntelligencePanel from '../../components/academic/PlacementIntelligencePanel'
 import AcademicRiskPanel from '../../components/academic/AcademicRiskPanel'
+import AdvisoriesPanel from '../../components/academic/AdvisoriesPanel'
+import ImprovementRoadmapPanel from '../../components/academic/ImprovementRoadmapPanel'
+import { useAuth } from '../../hooks/useAuth'
 import { apiClient } from '../../services/apiClient'
 
-type TabKey = 'personal' | 'semesters' | 'subjects' | 'cgpa' | 'certificates' | 'projects' | 'achievements' | 'skills' | 'placement' | 'placement-intelligence' | 'academic-risk' | 'history'
+type TabKey = 'personal' | 'semesters' | 'subjects' | 'cgpa' | 'certificates' | 'projects' | 'achievements' | 'skills' | 'placement' | 'placement-intelligence' | 'academic-risk' | 'advisory' | 'history' | 'roadmap'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'personal', label: 'Personal' },
@@ -34,12 +37,16 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'placement', label: 'Placement' },
   { key: 'placement-intelligence', label: 'Placement Intel' },
   { key: 'academic-risk', label: 'Academic Risk' },
+  { key: 'advisory', label: 'Advisories' },
   { key: 'history', label: 'Edit History' },
+  { key: 'roadmap', label: 'Improvement Roadmap' },
 ]
 
 
 export default function StudentDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user: currentUser } = useAuth()
+  const isStaff = currentUser?.role === 'ADMIN'
   const [student, setStudent] = useState<Student | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -76,6 +83,19 @@ export default function StudentDetailPage() {
     if (!id) return
     try {
       const data = await studentService.getById(id)
+      
+      // Access check: if current user is STUDENT, they can only view their own record
+      if (currentUser?.role === 'STUDENT') {
+        const studentEmail = data.email
+        const userEmail = currentUser.email
+        if (studentEmail && userEmail && studentEmail.toLowerCase() !== userEmail.toLowerCase()) {
+          setError('Access Denied: You are not authorized to view this student\'s records.')
+          setStudent(null)
+          setLoading(false)
+          return
+        }
+      }
+
       setStudent(data)
       setError(null)
     } catch (err: any) {
@@ -259,6 +279,10 @@ export default function StudentDetailPage() {
         return <PlacementIntelligencePanel studentId={id} />
       case 'academic-risk':
         return <AcademicRiskPanel studentId={id} />
+      case 'advisory':
+        return <AdvisoriesPanel student={student} isStaff={isStaff} />
+      case 'roadmap':
+        return <ImprovementRoadmapPanel studentId={id} />
       case 'history':
         return renderHistoryTab()
       default:
@@ -491,10 +515,10 @@ export default function StudentDetailPage() {
         </div>
       )}
 
-      <div className="vault-glass rounded-2xl border border-vault-border overflow-hidden">
-        <div className="p-6 lg:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border-b border-slate-200 dark:border-white/5 bg-white/55 dark:bg-white/[0.02]">
+      <div className="bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="p-6 lg:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-900/10">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="h-16 w-16 rounded-2xl bg-vault-accent/10 border border-vault-accent/25 overflow-hidden flex items-center justify-center font-black text-vault-accent text-xl shrink-0">
+            <div className="h-16 w-16 rounded-md bg-vault-accent/10 border border-vault-accent/25 overflow-hidden flex items-center justify-center font-bold text-vault-accent text-xl shrink-0">
               {student?.imageUrl && !imageError ? (
                 <img
                   src={student.imageUrl.startsWith('localstorage://') ? (localStorage.getItem(`avatar_student_${student.id}`) || '') : student.imageUrl}
@@ -507,7 +531,7 @@ export default function StudentDetailPage() {
               )}
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] font-mono px-2 py-1 bg-slate-100 dark:bg-white/5 text-vault-cyan rounded-lg border border-slate-200 dark:border-white/10">
+              <span className="text-[10px] font-mono px-2 py-1 bg-slate-100 dark:bg-white/5 text-vault-cyan rounded-md border border-slate-200 dark:border-slate-800">
                 ID: {id || 'unknown'}
               </span>
               <h2 className="text-2xl md:text-3xl font-black tracking-tight mt-2 text-left text-slate-900 dark:text-white truncate">
@@ -527,20 +551,24 @@ export default function StudentDetailPage() {
                 <Pencil size={15} />
                 <span>Edit Profile</span>
               </button>
-              <button 
-                onClick={() => setShowAttendanceModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-vault-fg rounded-xl transition-colors border border-slate-200 dark:border-white/10 cursor-pointer text-xs font-black"
-              >
-                <CalendarCheck size={15} />
-                <span>Record Attendance</span>
-              </button>
-              <button 
-                onClick={() => setShowGradeModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-vault-accent hover:bg-vault-accent/90 text-white rounded-xl transition-colors shadow-lg cursor-pointer text-xs font-black"
-              >
-                <GraduationCap size={15} />
-                <span>Add Grade</span>
-              </button>
+              {isStaff && (
+                <>
+                  <button 
+                    onClick={() => setShowAttendanceModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-vault-fg rounded-xl transition-colors border border-slate-200 dark:border-white/10 cursor-pointer text-xs font-black"
+                  >
+                    <CalendarCheck size={15} />
+                    <span>Record Attendance</span>
+                  </button>
+                  <button 
+                    onClick={() => setShowGradeModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-vault-accent hover:bg-vault-accent/90 text-white rounded-xl transition-colors shadow-lg cursor-pointer text-xs font-black"
+                  >
+                    <GraduationCap size={15} />
+                    <span>Add Grade</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -549,28 +577,28 @@ export default function StudentDetailPage() {
           <div className="p-6 lg:p-8 space-y-6 text-left">
             {/* Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="rounded-xl border border-slate-200 dark:border-white/5 bg-white/75 dark:bg-white/[0.03] p-4">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">CGPA</p>
+              <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">CGPA</p>
                 <p className="mt-2 text-2xl font-black text-vault-accent font-mono">{student.gpa.toFixed(2)}</p>
               </div>
-              <div className="rounded-xl border border-slate-200 dark:border-white/5 bg-white/75 dark:bg-white/[0.03] p-4">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Attendance</p>
+              <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Attendance</p>
                 <p className="mt-2 text-2xl font-black text-vault-cyan font-mono">{attendanceRate}%</p>
               </div>
-              <div className="rounded-xl border border-slate-200 dark:border-white/5 bg-white/75 dark:bg-white/[0.03] p-4">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Grades</p>
-                <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white font-mono">{student.grades?.length || 0}</p>
+              <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Grades</p>
+                <p className="mt-2 text-2xl font-black text-slate-850 dark:text-slate-200 font-mono">{student.grades?.length || 0}</p>
               </div>
-              <div className="rounded-xl border border-slate-200 dark:border-white/5 bg-white/75 dark:bg-white/[0.03] p-4">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</p>
+              <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Status</p>
                 <p className="mt-2 text-sm font-black text-emerald-600 dark:text-emerald-400 uppercase">{student.status}</p>
               </div>
             </div>
 
             {/* Tab Navigation */}
-            <div className="border-b border-slate-200 dark:border-white/5 overflow-x-auto">
+            <div className="border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
               <div className="flex gap-0 min-w-max">
-                {TABS.map((tab) => (
+                {TABS.filter(t => t.key !== 'history' || isStaff).map((tab) => (
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}

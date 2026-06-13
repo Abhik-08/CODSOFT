@@ -58,20 +58,50 @@ public class RiskScoreCalculator {
         res.setSkillRisk(computeSkillRisk(skills));
         res.setGrowthRisk(computeGrowthRisk(semesters, achievements));
 
-        res.setScore((int) Math.round(
+        double cgpa = resolveCgpa(student, semesters);
+        double attendance = student.getAttendance() != null ? student.getAttendance() : 100.0;
+
+        int score = (int) Math.round(
                 (res.getAcademicRisk() * 0.35) +
                 (res.getPlacementRisk() * 0.25) +
                 (res.getEngagementRisk() * 0.15) +
                 (res.getSkillRisk() * 0.15) +
                 (res.getGrowthRisk() * 0.10)
-        ));
+        );
 
-        if (res.getScore() >= 75) res.setCategory("Critical Risk");
-        else if (res.getScore() >= 50) res.setCategory("High Risk");
-        else if (res.getScore() >= 25) res.setCategory("Moderate Risk");
-        else res.setCategory("Low Risk");
+        determineCategoryAndScore(res, student, cgpa, attendance, score);
 
         return res;
+    }
+
+    private static void determineCategoryAndScore(CalculationResult res, Student student, double cgpa, double attendance, int baseScore) {
+        String category;
+        int score = baseScore;
+
+        if (cgpa < 6.0 || attendance < 50.0 || "SUSPENDED".equalsIgnoreCase(student.getStatus())) {
+            category = "Critical Risk";
+            if (score < 75) {
+                score = 75 + (score * 25 / 100);
+            }
+        } else if (cgpa < 6.75 || attendance < 60.0) {
+            category = "High Risk";
+            if (score < 50 || score >= 75) {
+                score = 50 + (score % 25);
+            }
+        } else if (cgpa < 7.5 || attendance < 75.0) {
+            category = "Moderate Risk";
+            if (score < 25 || score >= 50) {
+                score = 25 + (score % 25);
+            }
+        } else {
+            category = "Low Risk";
+            if (score >= 25) {
+                score = score % 25;
+            }
+        }
+
+        res.setCategory(category);
+        res.setScore(score);
     }
 
     // -------------------------------------------------------------------------
@@ -104,17 +134,15 @@ public class RiskScoreCalculator {
 
     private static double gradeCgpaRisk(double cgpa) {
         if (cgpa < 6.0) return 100.0;
-        if (cgpa < 7.0) return 75.0;
-        if (cgpa < 8.0) return 40.0;
-        if (cgpa < 9.0) return 15.0;
+        if (cgpa < 6.75) return 75.0;
+        if (cgpa < 7.5) return 40.0;
         return 0.0;
     }
 
     private static double gradeAttendanceRisk(double rate) {
-        if (rate < 75.0) return 100.0;
-        if (rate < 80.0) return 75.0;
-        if (rate < 85.0) return 40.0;
-        if (rate < 90.0) return 15.0;
+        if (rate < 50.0) return 100.0;
+        if (rate < 60.0) return 75.0;
+        if (rate < 75.0) return 40.0;
         return 0.0;
     }
 

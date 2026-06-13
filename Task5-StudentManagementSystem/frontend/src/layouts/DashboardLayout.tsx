@@ -3,6 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthContext } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useStudents } from '../hooks/useStudents'
+import { useAlerts } from '../hooks/useAlerts'
 import { motion, AnimatePresence } from 'motion/react'
 import { 
   LayoutDashboard, 
@@ -14,19 +15,24 @@ import {
   ChevronLeft, 
   ChevronRight,
   Moon,
-  Sun
+  Sun,
+  Bell,
+  BellDot,
+  ShieldCheck
 } from 'lucide-react'
 import { EduVaultLogo, EduVaultLogoMark } from '../components/common'
-import { UserProfileSettingsModal } from '../components/dashboard'
+import { UserProfileSettingsModal, SmartAlertDrawer } from '../components/dashboard'
 
 export default function DashboardLayout() {
   const { user, logout } = useAuthContext()
   const { theme, toggleTheme } = useTheme()
   const { students } = useStudents()
+  const { unreadCount, hasCriticalAlert } = useAlerts()
   const navigate = useNavigate()
   const location = useLocation()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [isAlertDrawerOpen, setIsAlertDrawerOpen] = useState(false)
 
   const getPageTitle = () => {
     switch (location.pathname) {
@@ -72,61 +78,62 @@ export default function DashboardLayout() {
   const placementRate = totalStudents > 0 ? Math.round((placementReadyCount / totalStudents) * 100) : 89
 
   const menuItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Student Registry', path: '/dashboard/students', icon: Users },
-    { name: 'Portfolio Studio', path: '/dashboard/portfolio', icon: UserCircle },
-    { name: 'Analytics Hub', path: '/dashboard/analytics', icon: BarChart3 },
-    { name: 'AI Engine', path: '/dashboard/ai', icon: Brain },
-  ]
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'STUDENT'] },
+    { name: 'Student Registry', path: '/dashboard/students', icon: Users, roles: ['ADMIN'] },
+    { name: 'Portfolio Studio', path: '/dashboard/portfolio', icon: UserCircle, roles: ['ADMIN', 'STUDENT'] },
+    { name: 'Analytics Hub', path: '/dashboard/analytics', icon: BarChart3, roles: ['ADMIN'] },
+    { name: 'AI Engine', path: '/dashboard/ai', icon: Brain, roles: ['ADMIN', 'STUDENT'] },
+    { name: 'User Management', path: '/dashboard/admin/users', icon: ShieldCheck, roles: ['ADMIN'] },
+  ].filter(item => item.roles.includes(user?.role || 'STUDENT'))
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-vault-bg text-vault-fg transition-colors duration-200 font-sans">
       
       {/* Collapsible Sidebar Navigation */}
       <motion.aside 
-        animate={{ width: isCollapsed ? 80 : 260 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="h-full border-r border-slate-200 dark:border-vault-border bg-white/95 dark:bg-[#0a1422]/90 backdrop-blur-xl flex flex-col justify-between p-4 shrink-0 transition-colors duration-200 relative z-20 shadow-sm"
+        animate={{ width: isCollapsed ? 72 : 240 }}
+        transition={{ type: "tween", duration: 0.2, ease: "easeInOut" }}
+        className="h-full border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#030712] flex flex-col justify-between p-4 shrink-0 transition-colors duration-200 relative z-20"
       >
         <div>
           {/* Header branding & toggle */}
-          <div className="flex items-center justify-between mb-5 px-1.5 pt-2">
+          <div className="flex items-center justify-between mb-6 px-1 pt-1">
             <div className="overflow-hidden">
               {isCollapsed ? (
                 <div className="flex justify-center">
-                  <EduVaultLogoMark size={48} />
+                  <EduVaultLogoMark size={40} />
                 </div>
               ) : (
-                <EduVaultLogo showText={true} iconSize={62} textSize="text-xl font-black" />
+                <EduVaultLogo showText={true} iconSize={48} textSize="text-lg font-bold" />
               )}
             </div>
             
             {!isCollapsed && (
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-1 rounded-lg border border-slate-200 dark:border-vault-border/50 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer text-slate-400 hover:text-vault-fg"
+                className="p-1 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
                 title="Collapse Sidebar"
               >
                 <ChevronLeft size={14} />
               </button>
             )}
           </div>
-
+ 
           {/* Expand Toggle when collapsed */}
           {isCollapsed && (
             <div className="flex justify-center mb-6">
               <button
                 onClick={() => setIsCollapsed(false)}
-                className="p-2 rounded-xl border border-slate-200 dark:border-vault-border/50 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer text-slate-400 hover:text-vault-fg"
+                className="p-1.5 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
                 title="Expand Sidebar"
               >
                 <ChevronRight size={14} />
               </button>
             </div>
           )}
-
+ 
           {/* Navigation Links */}
-          <nav className="space-y-2 relative">
+          <nav className="space-y-1 relative">
             <AnimatePresence>
               {menuItems.map((item) => {
                 const Icon = item.icon
@@ -135,27 +142,27 @@ export default function DashboardLayout() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center relative rounded-xl transition-all duration-200 hover:-translate-y-[1px] active:translate-y-0 ${
-                      isCollapsed ? 'justify-center p-3' : 'space-x-3.5 px-4 py-3'
+                    className={`flex items-center relative rounded-md transition-colors duration-150 ${
+                      isCollapsed ? 'justify-center p-2.5' : 'space-x-3 px-3 py-2.5'
                     } ${
                       active
-                        ? 'bg-vault-accent/10 dark:bg-vault-accent/15 text-vault-accent font-extrabold border border-vault-accent/25 shadow-sm'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-vault-fg hover:bg-slate-100/80 dark:hover:bg-white/5 font-bold'
+                        ? 'bg-slate-100 dark:bg-slate-900 text-vault-accent font-semibold border border-slate-200/50 dark:border-slate-800/40 shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900/40 font-medium'
                     }`}
                   >
                     {/* Active Sliding indicator bar */}
                     {active && (
                       <motion.div
                         layoutId="activeIndicator"
-                        className="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-md bg-vault-accent"
+                        className="absolute left-0 top-1/4 bottom-1/4 w-0.5 rounded-r bg-vault-accent"
                         transition={{ type: "spring", stiffness: 350, damping: 35 }}
                       />
                     )}
-                    <Icon size={isCollapsed ? 20 : 18} className={`${active ? 'text-vault-accent' : ''}`} />
+                    <Icon size={isCollapsed ? 18 : 16} className={`${active ? 'text-vault-accent' : ''}`} />
                     {!isCollapsed && (
                       <motion.span 
-                        initial={{ opacity: 0, x: -10 }} 
-                        animate={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="truncate text-xs tracking-wide"
                       >
@@ -168,16 +175,15 @@ export default function DashboardLayout() {
             </AnimatePresence>
           </nav>
         </div>
-
+ 
         {/* Floating User Profile Card & Sign Out button */}
-        <div className="pt-6 border-t border-slate-200/50 dark:border-white/5">
-          <motion.button 
-            layout
+        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+          <button 
             onClick={() => setShowSettingsModal(true)}
-            className="w-full flex items-center space-x-3 p-2 rounded-xl bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden text-left cursor-pointer transition-colors"
+            className="w-full flex items-center space-x-3 p-2 rounded-md bg-slate-50 dark:bg-[#090f20] hover:bg-slate-100 dark:hover:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm overflow-hidden text-left cursor-pointer transition-colors"
             title="Open Profile Settings"
           >
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-vault-accent to-vault-cyan overflow-hidden flex items-center justify-center font-black text-white text-sm shrink-0">
+            <div className="h-8 w-8 rounded-md bg-gradient-to-tr from-vault-accent to-vault-cyan overflow-hidden flex items-center justify-center font-bold text-white text-xs shrink-0">
               {user?.photoURL ? (
                 <img
                   src={user.photoURL.startsWith('localstorage://') ? (localStorage.getItem(`avatar_user_${user.uid}`) || '') : user.photoURL}
@@ -193,25 +199,21 @@ export default function DashboardLayout() {
               )}
             </div>
             {!isCollapsed && (
-              <motion.div 
-                initial={{ opacity: 0, x: -10 }} 
-                animate={{ opacity: 1, x: 0 }}
-                className="truncate flex-1 text-left"
-              >
-                <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user?.displayName || 'Academic Lead'}</p>
+              <div className="truncate flex-1 text-left">
+                <p className="text-xs font-semibold truncate text-slate-850 dark:text-slate-200">{user?.displayName || 'Academic Lead'}</p>
                 <span className="text-[9px] text-vault-cyan font-bold font-mono tracking-wide uppercase mt-0.5 block">{user?.role || 'Intelligence Lead'}</span>
-              </motion.div>
+              </div>
             )}
-          </motion.button>
+          </button>
           
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center mt-3 rounded-xl text-vault-destructive hover:bg-vault-destructive/10 transition-all font-bold cursor-pointer text-xs ${
-              isCollapsed ? 'justify-center p-2.5' : 'space-x-3 px-4 py-2.5'
+            className={`w-full flex items-center mt-2 rounded-md text-vault-destructive hover:bg-red-500/10 transition-colors font-medium cursor-pointer text-xs ${
+              isCollapsed ? 'justify-center p-2' : 'space-x-3 px-3 py-2'
             }`}
             title="Sign Out"
           >
-            <LogOut size={16} />
+            <LogOut size={14} />
             {!isCollapsed && <span>Sign Out</span>}
           </button>
         </div>
@@ -259,6 +261,36 @@ export default function DashboardLayout() {
             </div>
           )}
 
+          {/* Smart Alert Bell Icon */}
+          <button
+            type="button"
+            onClick={() => setIsAlertDrawerOpen(true)}
+            className={`ml-3 relative h-9 w-9 inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 transition-all cursor-pointer hover:border-vault-accent/40 text-slate-600 dark:text-slate-300 hover:text-vault-accent group ${
+              hasCriticalAlert ? 'border-red-400 dark:border-red-900/60' : ''
+            }`}
+            title="Smart Alerts"
+          >
+            {unreadCount > 0 ? (
+              <BellDot 
+                size={16} 
+                className={`transition-transform duration-200 group-hover:scale-110 ${
+                  hasCriticalAlert ? 'text-red-500 animate-[pulse_2s_infinite]' : 'text-vault-accent'
+                }`} 
+              />
+            ) : (
+              <Bell size={16} className="transition-transform duration-200 group-hover:scale-110" />
+            )}
+            
+            {/* Unread Count Badge */}
+            {unreadCount > 0 && (
+              <span className={`absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full text-[8px] font-black text-white ${
+                hasCriticalAlert ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]' : 'bg-vault-accent shadow-[0_0_6px_rgba(37,99,235,0.6)]'
+              }`}>
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
           <button
             type="button"
             onClick={toggleTheme}
@@ -303,6 +335,13 @@ export default function DashboardLayout() {
       {showSettingsModal && (
         <UserProfileSettingsModal onClose={() => setShowSettingsModal(false)} />
       )}
+
+      {/* Smart Alert Drawer */}
+      <AnimatePresence>
+        {isAlertDrawerOpen && (
+          <SmartAlertDrawer isOpen={isAlertDrawerOpen} onClose={() => setIsAlertDrawerOpen(false)} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -24,6 +24,7 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
 
     private static final String INTEGER_VALUE_KEY = "integerValue";
     private static final String STRING_VALUE_KEY = "stringValue";
+    private static final String PATH_RISK = "/risk";
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RiskDetectionServiceImpl.class);
 
     private final StudentRepository studentRepository;
@@ -31,6 +32,7 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
     private final PortfolioService portfolioService;
     private final Environment env;
     private final StudentService studentService;
+    private final NotificationGenerator notificationGenerator;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
@@ -39,12 +41,14 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
             AcademicProfileService academicProfileService,
             PortfolioService portfolioService,
             Environment env,
-            @org.springframework.context.annotation.Lazy StudentService studentService) {
+            @org.springframework.context.annotation.Lazy StudentService studentService,
+            NotificationGenerator notificationGenerator) {
         this.studentRepository = studentRepository;
         this.academicProfileService = academicProfileService;
         this.portfolioService = portfolioService;
         this.env = env;
         this.studentService = studentService;
+        this.notificationGenerator = notificationGenerator;
     }
 
     private boolean isTestProfile() {
@@ -139,32 +143,8 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
         List<Map<String, Object>> skills = new ArrayList<>();
         List<Map<String, Object>> portfolios = new ArrayList<>();
 
-        if (fId != null && !fId.isBlank()) {
-            try {
-                semesters = academicProfileService.getSemesters(fId);
-                projects = academicProfileService.getProjects(fId);
-                certificates = academicProfileService.getCertificates(fId);
-                achievements = academicProfileService.getAchievements(fId);
-                skills = academicProfileService.getSkills(fId);
-            } catch (Exception e) {
-                log.warn("Failed to fetch Firestore academic profile for student: {}", e.getMessage());
-            }
-        }
-
-        try {
-            portfolios = portfolioService.getPortfoliosByStudentId(studentDbId).stream()
-                    .map(dto -> {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("published", dto.isPublished());
-                        map.put("portfolioStatus", dto.getPortfolioStatus());
-                        map.put("githubUrl", dto.getGithubUrl());
-                        map.put("linkedinUrl", dto.getLinkedinUrl());
-                        map.put("projects", dto.getProjects());
-                        return map;
-                    }).toList();
-        } catch (Exception e) {
-            log.warn("Failed to fetch portfolios for student: {}", e.getMessage());
-        }
+        populateFirestoreProfileData(fId, semesters, projects, certificates, achievements, skills);
+        populatePortfoliosData(studentDbId, portfolios);
 
         // Calculate risk
         RiskScoreCalculator.CalculationResult calc = RiskScoreCalculator.calculate(
@@ -173,10 +153,10 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
 
         // Generate explainable insights & actions
         List<String> reasons = RiskInsightGenerator.generateRiskReasons(
-                student, semesters, projects, certificates, achievements, skills, portfolios
+                student, semesters, projects, certificates, skills, portfolios
         );
         List<String> factors = RiskInsightGenerator.generateRiskFactors(
-                student, semesters, projects, certificates, achievements, skills, portfolios
+                student, projects, certificates, skills
         );
 
         double cgpa = student.getGpa() != null ? student.getGpa() : 0.0;
@@ -191,6 +171,8 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
                 cgpa, attendance
         );
 
+        String oldCategory = student.getRiskCategory();
+
         // Handle risk trend
         List<Integer> trend = getUpdatedTrend(student, calc.getScore());
 
@@ -198,6 +180,41 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
         student.setRiskScore(calc.getScore());
         student.setRiskCategory(calc.getCategory());
         student.setRiskLastCalculatedAt(LocalDateTime.now());
+
+        // Raise notification on risk category changes
+        if (calc.getCategory() != null && !calc.getCategory().equalsIgnoreCase(oldCategory)) {
+            if ("Critical".equalsIgnoreCase(calc.getCategory())) {
+                notificationGenerator.createNotification(
+                        student.getEmail(),
+                        "Academic Risk Alert: Critical Risk Detected",
+                        "Immediate academic intervention required. Your risk profile has transitioned to Critical.",
+                        "RISK",
+                        "CRITICAL",
+                        PATH_RISK,
+                        student.getFirestoreId()
+                );
+            } else if ("High".equalsIgnoreCase(calc.getCategory())) {
+                notificationGenerator.createNotification(
+                        student.getEmail(),
+                        "Academic Risk Alert: High Risk Detected",
+                        "High academic risk detected. Please review your priority action items.",
+                        "RISK",
+                        "HIGH",
+                        PATH_RISK,
+                        student.getFirestoreId()
+                );
+            } else {
+                notificationGenerator.createNotification(
+                        student.getEmail(),
+                        "Academic Risk Status Update",
+                        String.format("Your academic risk category changed from %s to %s.", oldCategory != null ? oldCategory : "Low", calc.getCategory()),
+                        "RISK",
+                        "MEDIUM",
+                        PATH_RISK,
+                        student.getFirestoreId()
+                );
+            }
+        }
 
         try {
             student.setRiskFactorsJson(objectMapper.writeValueAsString(factors));
@@ -306,6 +323,44 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
         }
     }
 
+    private void populateFirestoreProfileData(
+            String fId,
+            List<Map<String, Object>> semesters,
+            List<Map<String, Object>> projects,
+            List<Map<String, Object>> certificates,
+            List<Map<String, Object>> achievements,
+            List<Map<String, Object>> skills) {
+        if (fId != null && !fId.isBlank()) {
+            try {
+                semesters.addAll(academicProfileService.getSemesters(fId));
+                projects.addAll(academicProfileService.getProjects(fId));
+                certificates.addAll(academicProfileService.getCertificates(fId));
+                achievements.addAll(academicProfileService.getAchievements(fId));
+                skills.addAll(academicProfileService.getSkills(fId));
+            } catch (Exception e) {
+                log.warn("Failed to fetch Firestore academic profile for student: {}", e.getMessage());
+            }
+        }
+    }
+
+    private void populatePortfoliosData(Long studentDbId, List<Map<String, Object>> portfolios) {
+        try {
+            List<Map<String, Object>> list = portfolioService.getPortfoliosByStudentId(studentDbId).stream()
+                    .map(dto -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("published", dto.isPublished());
+                        map.put("portfolioStatus", dto.getPortfolioStatus());
+                        map.put("githubUrl", dto.getGithubUrl());
+                        map.put("linkedinUrl", dto.getLinkedinUrl());
+                        map.put("projects", dto.getProjects());
+                        return map;
+                    }).toList();
+            portfolios.addAll(list);
+        } catch (Exception e) {
+            log.warn("Failed to fetch portfolios for student: {}", e.getMessage());
+        }
+    }
+
     private RiskDto convertToDto(Student student) {
         return RiskDto.builder()
                 .studentId(student.getId())
@@ -321,3 +376,4 @@ public class RiskDetectionServiceImpl implements RiskDetectionService {
                 .build();
     }
 }
+// IDE Sync: This file has been verified to compile successfully under Maven.

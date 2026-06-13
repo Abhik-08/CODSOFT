@@ -6,9 +6,34 @@ import { authService } from '../services/authService'
 import { firestoreService } from '../services/firestoreService'
 import type { User } from '../types/auth'
 
+// Maps Firebase auth error codes to friendly messages
+function getFriendlyAuthError(err: any): string {
+  const code = err?.code || ''
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'Invalid email or password. Please check your credentials and try again.'
+    case 'auth/email-already-in-use':
+      return 'This email is already registered. Please sign in instead.'
+    case 'auth/network-request-failed':
+      return 'Network error. Please check your internet connection and try again.'
+    case 'auth/too-many-requests':
+      return 'Too many failed attempts. Please wait a moment and try again.'
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Please contact support.'
+    case 'auth/weak-password':
+      return 'Password is too weak. Please use at least 6 characters.'
+    default:
+      return err?.message || 'Authentication failed. Please try again.'
+  }
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAdmin: () => boolean;
+  isStudent: () => boolean;
   loginWithGoogle: () => Promise<void>;
   registerWithEmail: (email: string, password: string, name: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
@@ -50,6 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             photoURL: firebaseUser.photoURL || '',
             provider: firebaseUser.providerData[0]?.providerId || 'password',
             role: 'STUDENT',
+            isActive: true,
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString()
           })
@@ -62,6 +88,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return unsubscribe
   }, [])
+
+  const isAdmin = () => user?.role === 'ADMIN'
+  const isStudent = () => user?.role === 'STUDENT'
 
   const loginWithGoogle = async () => {
     setLoading(true)
@@ -76,6 +105,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         provider
       )
       setUser(profile)
+    } catch (err: any) {
+      throw new Error(getFriendlyAuthError(err))
     } finally {
       setLoading(false)
     }
@@ -93,6 +124,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         'password'
       )
       setUser(profile)
+    } catch (err: any) {
+      throw new Error(getFriendlyAuthError(err))
     } finally {
       setLoading(false)
     }
@@ -115,13 +148,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         )
         setUser(synced)
       }
+    } catch (err: any) {
+      throw new Error(getFriendlyAuthError(err))
     } finally {
       setLoading(false)
     }
   }
 
   const resetPassword = async (email: string) => {
-    await authService.resetPassword(email)
+    try {
+      await authService.resetPassword(email)
+    } catch (err: any) {
+      throw new Error(getFriendlyAuthError(err))
+    }
   }
 
   const logout = async () => {
@@ -139,16 +178,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userDocRef = doc(db, 'users', user.uid)
       await setDoc(userDocRef, {
-        name: displayName,
-        photoURL: photoURL,
-        lastLogin: serverTimestamp()
+        displayName,
+        photoURL,
+        updatedAt: serverTimestamp()
       }, { merge: true })
 
-      setUser(prev => prev ? {
-        ...prev,
-        displayName: displayName,
-        photoURL: photoURL
-      } : null)
+      setUser(prev => prev ? { ...prev, displayName, photoURL } : null)
     } catch (err) {
       console.error('Failed to update user profile in context:', err)
       throw err
@@ -158,12 +193,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const contextValue = useMemo(() => ({
     user,
     loading,
+    isAdmin,
+    isStudent,
     loginWithGoogle,
     registerWithEmail,
     loginWithEmail,
     resetPassword,
     logout,
     updateUserProfile
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [user, loading])
 
   return (
@@ -180,4 +218,3 @@ export const useAuthContext = () => {
   }
   return context
 }
-

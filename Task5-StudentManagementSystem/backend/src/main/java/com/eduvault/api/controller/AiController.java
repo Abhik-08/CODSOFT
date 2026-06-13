@@ -3,6 +3,7 @@ package com.eduvault.api.controller;
 import com.eduvault.api.dto.AiAnalysisDto;
 import com.eduvault.api.dto.RecommendationDto;
 import com.eduvault.api.service.AiRecommendationService;
+import com.eduvault.api.service.AiPromptBuilder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/ai")
@@ -17,9 +19,11 @@ import java.util.List;
 public class AiController {
 
     private final AiRecommendationService aiRecommendationService;
+    private final AiPromptBuilder aiPromptBuilder;
 
-    public AiController(AiRecommendationService aiRecommendationService) {
+    public AiController(AiRecommendationService aiRecommendationService, AiPromptBuilder aiPromptBuilder) {
         this.aiRecommendationService = aiRecommendationService;
+        this.aiPromptBuilder = aiPromptBuilder;
     }
 
     @GetMapping("/recommendations/{studentId}")
@@ -48,5 +52,12 @@ public class AiController {
     @Operation(summary = "Generate career recommendations", description = "Generate certification and career path recommendations for a student")
     public ResponseEntity<AiAnalysisDto.RecommendationResponse> getAiRecommendations(@PathVariable Long id) {
         return ResponseEntity.ok(aiRecommendationService.getAiRecommendations(id));
+    }
+
+    @GetMapping("/copilot-prompt")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get Academic Intelligence Assistant system prompt", description = "Fetch the compiled system instruction prompt with injected cohort context")
+    public ResponseEntity<Map<String, String>> getCopilotPrompt() {
+        return ResponseEntity.ok(Map.of("prompt", aiPromptBuilder.buildSystemPrompt()));
     }
 }

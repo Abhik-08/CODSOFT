@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ─────────────────────────────────────────────────────
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'abhikmukherjee2003@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'ADMIN')
+      );
+    }
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return request.auth != null &&
+        request.auth.token.email == 'abhikmukherjee2003@gmail.com';
+    }
+
+    // ── Users collection ─────────────────────────────────────────────
+    match /users/{userId} {
+      // Any authenticated user can read their own profile; admins can read all
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == userId || isAdmin());
+
+      // Users can update their own profile (non-role fields);
+      // Admins can update any user EXCEPT the super admin document
+      allow write: if isAuthenticated() && (
+        (request.auth.uid == userId) ||
+        (isAdmin() && userId != 'abhikmukherjee2003@gmail.com' && !(
+          // Prevent anyone from modifying the super admin doc via uid lookup —
+          // extra guard using email field in the doc being written
+          request.resource.data.keys().hasAny(['role']) &&
+          resource.data.email == 'abhikmukherjee2003@gmail.com'
+        ))
+      );
+    }
+
+    // ── Students collection ──────────────────────────────────────────
+    match /students/{studentId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.email == request.auth.token.email
+      );
+      allow write: if isAdmin();
+    }
+
+    // ── Portfolios collection ────────────────────────────────────────
+    match /portfolios/{portfolioId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.studentEmail == request.auth.token.email
+      );
+      allow write: if isAuthenticated() && (
+        isAdmin() ||
+        (resource.data.studentEmail == request.auth.token.email)
+      );
+    }
+
+    // ── Roadmaps collection ──────────────────────────────────────────
+    match /roadmaps/{roadmapId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.fields.studentId.integerValue == getUserData().studentId ||
+        resource.data.fields.studentId.stringValue == request.auth.uid
+      );
+      allow write: if isAdmin();
+    }
+
+    // ── Alerts collection ────────────────────────────────────────────
+    match /alerts/{alertId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.userId == request.auth.token.email
+      );
+      allow write: if isAuthenticated() && (
+        isAdmin() ||
+        (resource == null && request.resource.data.userId == request.auth.token.email) ||
+        (resource != null && resource.data.userId == request.auth.token.email)
+      );
+    }
+
+    // ── User Audit Logs collection ───────────────────────────────────
+    match /user_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+  }
+}

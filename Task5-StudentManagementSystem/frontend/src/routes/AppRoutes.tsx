@@ -10,6 +10,7 @@ import AnalyticsPage from '../pages/analytics/AnalyticsPage'
 import AiRecommendationsPage from '../pages/ai/AiRecommendationsPage'
 import LoginPage from '../pages/auth/LoginPage'
 import RegisterPage from '../pages/auth/RegisterPage'
+import UserManagementPage from '../pages/admin/UserManagementPage'
 import { ProtectedRoute } from './ProtectedRoute'
 
 export default function AppRoutes() {
@@ -24,7 +25,7 @@ export default function AppRoutes() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
-      {/* Core Admin Dashboard Portal */}
+      {/* Core Dashboard Portal */}
       <Route
         path="/dashboard"
         element={
@@ -34,11 +35,33 @@ export default function AppRoutes() {
         }
       >
         <Route index element={<DashboardPage />} />
-        <Route path="students" element={<StudentsPage />} />
+        <Route
+          path="students"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <StudentsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="students/:id" element={<StudentDetailPage />} />
         <Route path="portfolio" element={<PortfolioPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route
+          path="analytics"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AnalyticsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="ai" element={<AiRecommendationsPage />} />
+        <Route
+          path="admin/users"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <UserManagementPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* Redirect wildcards to landing */}

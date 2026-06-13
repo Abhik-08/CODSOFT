@@ -4,8 +4,6 @@ import {
   Brain,
   AlertTriangle,
   Send,
-  TrendingUp,
-  Layers,
   ShieldAlert,
   UserCheck,
   Database,
@@ -14,24 +12,11 @@ import {
   Sparkles,
   AlertCircle
 } from 'lucide-react'
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  Legend
-} from 'recharts'
 import { useStudents } from '../../hooks/useStudents'
 import type { Student } from '../../types/student'
+
+import { useAiChat } from '../../hooks/useAiChat'
+import type { ChatMessage } from '../../types/ai'
 
 interface AtRiskStudent extends Student {
   attendanceRate: number
@@ -39,12 +24,19 @@ interface AtRiskStudent extends Student {
   factor: string
 }
 
-interface ChatMessage {
-  id: string
-  sender: 'ai' | 'user'
-  text: string
-  timestamp: Date
-  isError?: boolean
+const getGeminiModelBadge = (mod: string, original: string) => {
+  if (mod.includes('flash-lite')) return 'Gemini Flash Lite'
+  if (mod.includes('flash')) return 'Gemini Flash'
+  if (mod.includes('pro')) return 'Gemini Pro'
+  return `Gemini ${original}`
+}
+
+const getGroqModelBadge = (mod: string, original: string) => {
+  if (mod.includes('llama-3.3-70b')) return 'Groq Llama 70B'
+  if (mod.includes('llama-3.1-8b')) return 'Groq Llama 8B'
+  if (mod.includes('deepseek')) return 'Groq DeepSeek'
+  if (mod.includes('qwq')) return 'Groq Qwen QWQ'
+  return `Groq ${original}`
 }
 
 export default function AiRecommendationsPage() {
@@ -53,16 +45,35 @@ export default function AiRecommendationsPage() {
   const [advisoryNotes, setAdvisoryNotes] = useState('')
   const [advisorySentStatus, setAdvisorySentStatus] = useState(false)
 
-  // Chat UI states
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  // AI Copilot Integration
+  const {
+    messages,
+    sendMessage,
+    isTyping,
+    error: chatError,
+    clearChat,
+    retryMessage
+  } = useAiChat()
   const [inputValue, setInputValue] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [chatError, setChatError] = useState<string | null>(null)
+
+  const getModelBadgeText = (providerName?: string, modelName?: string) => {
+    if (!providerName || !modelName) return null
+    const prov = providerName.toLowerCase()
+    const mod = modelName.toLowerCase()
+    
+    if (prov.includes('gemini')) {
+      return getGeminiModelBadge(mod, modelName)
+    }
+    if (prov.includes('groq')) {
+      return getGroqModelBadge(mod, modelName)
+    }
+    return `${providerName} (${modelName})`
+  }
   
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   const getMessageStyle = (m: ChatMessage) => {
-    const base = 'p-2.5 rounded-xl max-w-[85%] text-xs leading-normal font-semibold shadow-sm'
+    const base = 'p-2.5 rounded-xl text-xs leading-normal font-semibold shadow-sm w-full'
     if (m.sender === 'user') {
       return `${base} bg-vault-cyan text-white rounded-tr-none`
     }
@@ -91,7 +102,7 @@ export default function AiRecommendationsPage() {
       ).length || 0
       const attendanceRate = totalAttendance > 0 ? (present / totalAttendance) * 100 : 92
       
-      return s.gpa < 8 || attendanceRate < 85 || s.status === 'SUSPENDED'
+      return s.gpa < 6.75 || attendanceRate < 60 || s.status === 'SUSPENDED'
     }).map((s) => {
       const totalAttendance = s.attendance?.length || 0
       const present = s.attendance?.filter(
@@ -102,18 +113,18 @@ export default function AiRecommendationsPage() {
       let riskLevel: 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'MEDIUM'
       let factor = 'GPA Registry Entry'
       
-      if (s.gpa < 7 || attendanceRate < 75 || s.status === 'SUSPENDED') {
+      if (s.gpa < 6 || attendanceRate < 50 || s.status === 'SUSPENDED') {
         riskLevel = 'CRITICAL'
         if (s.status === 'SUSPENDED') {
           factor = 'Disciplinary Suspended'
-        } else if (s.gpa < 7) {
+        } else if (s.gpa < 6) {
           factor = 'Critically Low CGPA'
         } else {
           factor = 'Poor Attendance'
         }
-      } else if (s.gpa < 8 || attendanceRate < 85) {
+      } else if (s.gpa < 6.75 || attendanceRate < 60) {
         riskLevel = 'HIGH'
-        if (s.gpa < 8) {
+        if (s.gpa < 6.75) {
           factor = 'CGPA Support Boundary'
         } else {
           factor = 'Attendance Drift'
@@ -129,70 +140,10 @@ export default function AiRecommendationsPage() {
     })
   }, [students])
 
-  // Forecast data prep
-  const forecastData = [
-    { name: 'Sem 1', actual: 8.55, forecast: 8.55 },
-    { name: 'Sem 2', actual: 8.78, forecast: 8.78 },
-    { name: 'Sem 3', actual: 8.95, forecast: 8.95 },
-    { name: 'Sem 4', actual: 9.13, forecast: 9.13 },
-    { name: 'Sem 5 (F)', actual: null, forecast: 9.3 },
-    { name: 'Sem 6 (F)', actual: null, forecast: 9.55 },
-  ]
-
-  // Skill gap data
-  const skillGapData = [
-    { subject: 'ML & Data Sci', actual: 78, target: 90 },
-    { subject: 'Fullstack Web', actual: 85, target: 95 },
-    { subject: 'Cloud Systems', actual: 64, target: 85 },
-    { subject: 'Core Databases', actual: 88, target: 90 },
-    { subject: 'DSA Theory', actual: 80, target: 92 },
-    { subject: 'System Design', actual: 58, target: 80 },
-  ]
-
   const handleSendMessage = () => {
     if (!inputValue.trim()) return
-    setChatError(null)
-
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: inputValue,
-      timestamp: new Date()
-    }
-    
-    setMessages(prev => [...prev, userMsg])
-    const promptText = inputValue
+    sendMessage(inputValue)
     setInputValue('')
-    setIsTyping(true)
-
-    // Simulate future Gemini stream / integration structure
-    setTimeout(() => {
-      try {
-        let replyText = 'I am scanning the academic registry. Currently, overall attendance is stable at 94.2% and GPA benchmarks hover near 8.1.'
-        const lowerInput = promptText.toLowerCase()
-
-        if (lowerInput.includes('risk') || lowerInput.includes('warning') || lowerInput.includes('at risk')) {
-          replyText = `There are currently ${atRiskStudents.length} students flagged in the risk registry (CGPA < 8.0 or Attendance < 85%). Computer Science maintains standard averages.`
-        } else if (lowerInput.includes('gpa') || lowerInput.includes('cgpa') || lowerInput.includes('grade')) {
-          replyText = 'The cohort average GPA is 8.1. Data Science and Computer Science departments lead the averages.'
-        } else if (lowerInput.includes('attendance') || lowerInput.includes('absent')) {
-          replyText = 'The overall cohort attendance stands at a robust 94%. Special intervention triggers are active for student records with attendance rates below 85%.'
-        }
-
-        const aiMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          sender: 'ai',
-          text: replyText,
-          timestamp: new Date()
-        }
-        setMessages(prev => [...prev, aiMsg])
-      } catch (err: any) {
-        console.error('Failed to parse prompt or query registry:', err)
-        setChatError('Failed to generate response. Please try again.')
-      } finally {
-        setIsTyping(false)
-      }
-    }, 1000)
   }
 
   // Handle advisory modal
@@ -209,27 +160,6 @@ export default function AiRecommendationsPage() {
       setAdvisoryModalStudent(null)
       alert(`Academic advisory alert dispatched successfully to ${advisoryModalStudent?.firstName}'s institutional email.`)
     }, 1000)
-  }
-
-  const clearChat = () => {
-    setMessages([])
-    setChatError(null)
-  }
-
-  // Custom premium Recharts Tooltip styling
-  const customTooltipStyle = {
-    contentStyle: {
-      backgroundColor: 'rgba(11, 15, 25, 0.85)',
-      borderColor: 'rgba(255, 255, 255, 0.08)',
-      borderRadius: '12px',
-      backdropFilter: 'blur(8px)',
-      color: '#map',
-      fontSize: '11px',
-      fontWeight: 'bold',
-      boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)'
-    },
-    itemStyle: { color: 'var(--color-vault-accent)' },
-    labelStyle: { color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }
   }
 
   if (loading) {
@@ -265,87 +195,6 @@ export default function AiRecommendationsPage() {
         </div>
       </div>
 
-      {/* Main Grid: Forecasts and Skill Gap */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Academic GPA Forecast Chart (7 columns) */}
-        <div className="lg:col-span-7 vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm text-left">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-1.5">
-                <TrendingUp size={14} className="text-vault-cyan" />
-                <span>Academic Trend Forecast Model</span>
-              </h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">Historical averages mapped alongside projected semester parameters.</p>
-            </div>
-            <span className="text-[9px] font-bold bg-vault-cyan/15 text-vault-cyan px-2 py-0.5 rounded font-mono uppercase">Semester 5-6 Projections</span>
-          </div>
-
-          <div className="h-60 w-full">
-            <ResponsiveContainer width="100%" height={230} minWidth={0}>
-              <AreaChart data={forecastData} margin={{ left: -25, bottom: 0, right: 10 }}>
-                <defs>
-                  <linearGradient id="areaActualForecast" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="var(--color-vault-cyan)" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="var(--color-vault-cyan)" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.12)" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} />
-                <YAxis domain={[5, 10]} stroke="#64748b" fontSize={9} tickLine={false} />
-                <Tooltip {...customTooltipStyle} />
-                
-                <Area 
-                  type="monotone" 
-                  dataKey="actual" 
-                  stroke="var(--color-vault-cyan)" 
-                  strokeWidth={2.5} 
-                  fillOpacity={1} 
-                  fill="url(#areaActualForecast)" 
-                  connectNulls
-                />
-
-                <Line 
-                  type="monotone" 
-                  dataKey="forecast" 
-                  stroke="var(--color-vault-accent)" 
-                  strokeWidth={2} 
-                  strokeDasharray="5,5" 
-                  dot={{ r: 3.5, strokeWidth: 1 }} 
-                  activeDot={{ r: 5 }} 
-                  connectNulls
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Skill Gap Analysis Radar Chart (5 columns) */}
-        <div className="lg:col-span-5 vault-glass p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm text-left flex flex-col justify-between">
-          <div>
-            <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-1.5">
-              <Layers size={14} className="text-vault-accent" />
-              <span>Skill Gap & Industry Readiness Radar</span>
-            </h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Cohort averages compared to target tier-1 placement thresholds.</p>
-          </div>
-
-          <div className="h-56 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={220} minWidth={0}>
-              <RadarChart cx="50%" cy="50%" outerRadius="75%" data={skillGapData}>
-                <PolarGrid stroke="rgba(148, 163, 184, 0.12)" />
-                <PolarAngleAxis dataKey="subject" stroke="#64748b" fontSize={8} />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="rgba(148, 163, 184, 0.3)" fontSize={7} />
-                <Radar name="Cohort Average" dataKey="actual" stroke="var(--color-vault-cyan)" fill="var(--color-vault-cyan)" fillOpacity={0.25} />
-                <Radar name="Industry Goal" dataKey="target" stroke="var(--color-vault-accent)" fill="var(--color-vault-accent)" fillOpacity={0.08} />
-                <Tooltip {...customTooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 8, marginTop: 10 }} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-      </div>
 
       {/* Bottom Row: At-Risk student registry & Copilot */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -357,7 +206,7 @@ export default function AiRecommendationsPage() {
               <ShieldAlert className="text-red-500 animate-pulse" size={15} />
               <span>Academic Risk Registry Detection</span>
             </h3>
-            <p className="text-[10px] text-slate-400">Students flagged below benchmark parameters (CGPA &lt; 8.0 or Attendance &lt; 85%).</p>
+            <p className="text-[10px] text-slate-400">Students requiring academic intervention (CGPA &lt; 6.75 or Attendance &lt; 60%).</p>
           </div>
 
           <div className="flex-1 overflow-y-auto mt-4 pr-1 space-y-2.5">
@@ -448,15 +297,41 @@ export default function AiRecommendationsPage() {
               messages.map((m) => (
                 <div 
                   key={m.id} 
-                  className={`flex gap-2 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex gap-2 ${m.sender === 'user' ? 'justify-end ml-auto' : 'justify-start mr-auto'} max-w-[85%]`}
                 >
                   {m.sender === 'ai' && (
                     <div className="h-6.5 w-6.5 rounded-lg bg-vault-accent/15 border border-vault-accent/30 text-vault-accent flex items-center justify-center shrink-0">
                       <Brain size={11} />
                     </div>
                   )}
-                  <div className={getMessageStyle(m)}>
-                    {m.text}
+                  <div className="flex-1 flex flex-col gap-1">
+                    <div className={getMessageStyle(m)}>
+                      {m.text}
+                    </div>
+                    {m.sender === 'ai' && !m.isError && (m.providerName || m.modelName) && (
+                      <div className="flex items-center justify-between px-1 text-[9px] font-bold text-slate-450 dark:text-slate-400 font-mono">
+                        <span className="bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/10 px-1.5 py-0.5 rounded text-vault-accent">
+                          {getModelBadgeText(m.providerName, m.modelName)}
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(m.text)
+                            alert('Response copied to clipboard!')
+                          }}
+                          className="hover:text-vault-accent cursor-pointer flex items-center gap-1 transition-colors"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    )}
+                    {m.isError && (
+                      <button
+                        onClick={() => retryMessage(m.id)}
+                        className="px-1 text-left text-[9px] font-bold text-red-500 hover:text-red-400 cursor-pointer underline transition-colors"
+                      >
+                        Retry Generation
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

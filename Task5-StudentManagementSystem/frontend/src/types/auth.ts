@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT';
+export type UserRole = 'ADMIN' | 'STUDENT';
 
 // client-side provider details
 export interface AuthUser {
@@ -14,11 +14,13 @@ export interface FirestoreUser {
   uid: string;
   name: string;
   email: string;
+  displayName?: string;
   photoURL: string;
   provider: string;
   role: UserRole;
+  isActive: boolean;
   createdAt: any; // FieldValue or ISO String
-  lastLogin: any; // FieldValue or ISO String
+  updatedAt: any; // FieldValue or ISO String
 }
 
 // Unified client user model combining provider and database role claims
@@ -29,6 +31,7 @@ export interface User {
   photoURL: string;
   provider: string;
   role: UserRole;
+  isActive: boolean;
   createdAt: string;
   lastLogin: string;
 }

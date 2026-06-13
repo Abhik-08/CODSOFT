@@ -4,3 +4,4 @@ export const Header = () => null;
 export const MetricCard = () => null;
 export const StudentTable = () => null;
 export { default as UserProfileSettingsModal } from './UserProfileSettingsModal'
+export { default as SmartAlertDrawer } from './SmartAlertDrawer'

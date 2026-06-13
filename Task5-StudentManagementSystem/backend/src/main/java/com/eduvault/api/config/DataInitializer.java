@@ -2,6 +2,7 @@ package com.eduvault.api.config;
 
 import com.eduvault.api.model.*;
 import com.eduvault.api.repository.*;
+import com.eduvault.api.service.RiskDetectionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -18,7 +19,7 @@ import java.util.List;
 @Slf4j
 public class DataInitializer {
 
-    private static final String ROLE_USER = "ROLE_USER";
+    private static final String ROLE_STUDENT = "ROLE_STUDENT";
     private static final String STATUS_ACTIVE = "ACTIVE";
     /**
      * Property key for the seed password used during data initialisation.
@@ -27,19 +28,22 @@ public class DataInitializer {
      * any environment that requires real users.
      */
     private static final String DEFAULT_PASSWORD_PROP = "app.default-password";
-    private static final String FALLBACK_PASSWORD = "{CONFIGURE_PASSWORD}";
+    private static final String FALLBACK_PASSWORD = "EduVaultSecurePasswordTemp123!";
 
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final PasswordEncoder passwordEncoder;
     private final Environment env;
+    private final RiskDetectionService riskDetectionService;
 
     public DataInitializer(UserRepository userRepository, StudentRepository studentRepository,
-                          PasswordEncoder passwordEncoder, Environment env) {
+                          PasswordEncoder passwordEncoder, Environment env,
+                          @org.springframework.context.annotation.Lazy RiskDetectionService riskDetectionService) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.passwordEncoder = passwordEncoder;
         this.env = env;
+        this.riskDetectionService = riskDetectionService;
     }
 
     private String resolveDefaultPassword() {
@@ -68,6 +72,21 @@ public class DataInitializer {
             log.info("✓ Test students initialized");
         }
 
+        // Trigger automatic recalculation of all student risk scores using new thresholds on startup
+        try {
+            log.info("Recalculating risk scores for all students using new thresholds...");
+            List<Student> allStudents = studentRepository.findAll();
+            for (Student s : allStudents) {
+                if (s.getFirestoreId() != null && !s.getFirestoreId().isBlank()) {
+                    riskDetectionService.recalculate(s.getFirestoreId());
+                } else if (s.getId() != null) {
+                    riskDetectionService.recalculate(s.getId().toString());
+                }
+            }
+            log.info("✓ All student risk scores recalculated successfully!");
+        } catch (Exception e) {
+            log.error("Failed to recalculate student risk scores on startup: {}", e.getMessage());
+        }
         
         log.info("Database initialization complete!");
     }
@@ -95,21 +114,21 @@ public class DataInitializer {
                 .email("student@eduvault.com")
                 .password(encodedPassword)
                 .fullName("John Student")
-                .role(ROLE_USER)
+                .role(ROLE_STUDENT)
                 .build(),
             User.builder()
                 .username("john_doe")
                 .email("john.doe@student.edu")
                 .password(encodedPassword)
                 .fullName("John Doe")
-                .role(ROLE_USER)
+                .role(ROLE_STUDENT)
                 .build(),
             User.builder()
                 .username("jane_smith")
                 .email("jane.smith@student.edu")
                 .password(encodedPassword)
                 .fullName("Jane Smith")
-                .role(ROLE_USER)
+                .role(ROLE_STUDENT)
                 .build()
         );
         

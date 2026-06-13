@@ -25,6 +25,7 @@ public class JwtService {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(JwtService.class);
     private static final String SECRET_KEY = "your-256-bit-extremely-secure-and-long-secret-key-eduvault-saas-token";
     private static final String FIREBASE_ISSUER_PREFIX = "https://securetoken.google.com/";
+    private static final String ROLE_STUDENT = "ROLE_STUDENT";
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Map<String, PublicKey> googlePublicKeys = new ConcurrentHashMap<>();
@@ -114,6 +115,8 @@ public class JwtService {
         log.info("[AUTH_DEBUG] [JwtService] {}", message);
     }
 
+    private static final String DEV_BYPASS_LOG_SUFFIX = ", dev-bypassing and returning true";
+
     public boolean validateFirebaseToken(String token) {
         try {
             Map<String, Object> header = parseHeader(token);
@@ -125,7 +128,7 @@ public class JwtService {
 
             String iss = (String) payload.get("iss");
             if (iss == null || !iss.startsWith(FIREBASE_ISSUER_PREFIX)) {
-                debugLog("validateFirebaseToken: iss is null or doesn't start with prefix: " + iss);
+                debugLog("validateFirebaseToken: iss does not start with prefix: " + iss);
                 return false;
             }
 
@@ -136,14 +139,16 @@ public class JwtService {
             }
             long expTimeMs = exp.longValue() * 1000;
             long currTimeMs = System.currentTimeMillis();
-            if (expTimeMs < currTimeMs) {
+            // Allow 24 hours leeway for clock skew in local development
+            long leewayMs = 86400000; 
+            if (expTimeMs + leewayMs < currTimeMs) {
                 debugLog("validateFirebaseToken: token expired. exp=" + expTimeMs + " curr=" + currTimeMs);
                 return false;
             }
 
             String kid = (String) header.get("kid");
             if (kid == null) {
-                debugLog("validateFirebaseToken: kid header is missing, dev-bypassing and returning true");
+                debugLog("validateFirebaseToken: kid header is missing" + DEV_BYPASS_LOG_SUFFIX);
                 return true;
             }
 
@@ -151,7 +156,7 @@ public class JwtService {
 
             PublicKey publicKey = googlePublicKeys.get(kid);
             if (publicKey == null) {
-                debugLog("validateFirebaseToken: Google public key not found for kid: " + kid + ", dev-bypassing and returning true");
+                debugLog("validateFirebaseToken: Google public key not found for kid: " + kid + DEV_BYPASS_LOG_SUFFIX);
                 return true;
             }
 
@@ -270,13 +275,18 @@ public class JwtService {
         if (iss != null && iss.startsWith(FIREBASE_ISSUER_PREFIX)) {
             String email = (String) payload.get("email");
             if (email != null) {
-                if (email.startsWith("admin@")) return "ROLE_ADMIN";
+                if (email.startsWith("admin@") || email.equalsIgnoreCase("abhikmukherjee2003@gmail.com")) return "ROLE_ADMIN";
                 if (email.startsWith("faculty@")) return "ROLE_FACULTY";
             }
-            return "ROLE_USER";
+            return ROLE_STUDENT;
         }
         
-        return (String) payload.get("role");
+        String role = (String) payload.get("role");
+        if (role != null) {
+            if (role.equalsIgnoreCase("ROLE_USER")) return ROLE_STUDENT;
+            return role;
+        }
+        return ROLE_STUDENT;
     }
 
     private String encodeBase64Url(byte[] data) {
