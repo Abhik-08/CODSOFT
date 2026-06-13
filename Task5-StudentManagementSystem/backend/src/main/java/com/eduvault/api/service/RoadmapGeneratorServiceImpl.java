@@ -49,6 +49,7 @@ public class RoadmapGeneratorServiceImpl implements RoadmapGeneratorService {
     private static final String FIELD_MILESTONES = "milestones";
     private static final String FIELD_ACTION_ITEMS = "actionItems";
     private static final String FIELD_RECOMMENDATIONS = "recommendations";
+    private static final String PRIORITY_MEDIUM = "MEDIUM";
 
     private final StudentRoadmapRepository roadmapRepository;
     private final StudentRepository studentRepository;
@@ -167,7 +168,7 @@ public class RoadmapGeneratorServiceImpl implements RoadmapGeneratorService {
             fieldsNode.set(FIELD_CURRENT_STATUS, objectMapper.createObjectNode().put(VAL_STRING, dto.getCurrentStatus() != null ? dto.getCurrentStatus() : ""));
             fieldsNode.set(FIELD_TARGET_STATUS, objectMapper.createObjectNode().put(VAL_STRING, dto.getTargetStatus() != null ? dto.getTargetStatus() : ""));
             fieldsNode.set(FIELD_ESTIMATED_DURATION, objectMapper.createObjectNode().put(VAL_STRING, dto.getEstimatedDuration() != null ? dto.getEstimatedDuration() : "90 Days"));
-            fieldsNode.set(FIELD_PRIORITY, objectMapper.createObjectNode().put(VAL_STRING, dto.getPriority() != null ? dto.getPriority() : "MEDIUM"));
+            fieldsNode.set(FIELD_PRIORITY, objectMapper.createObjectNode().put(VAL_STRING, dto.getPriority() != null ? dto.getPriority() : PRIORITY_MEDIUM));
 
             if (dto.getMilestones() != null) {
                 fieldsNode.set(FIELD_MILESTONES, convertToFirestoreValue(dto.getMilestones(), objectMapper));
@@ -266,7 +267,7 @@ public class RoadmapGeneratorServiceImpl implements RoadmapGeneratorService {
                 "Roadmap Alert: New Roadmap Generated",
                 String.format("A new %s roadmap has been generated to guide your learning progression.", roadmapType),
                 "ROADMAP",
-                "MEDIUM",
+                PRIORITY_MEDIUM,
                 "/roadmaps"
         );
 
@@ -335,6 +336,10 @@ public class RoadmapGeneratorServiceImpl implements RoadmapGeneratorService {
     @Override
     public synchronized void syncRoadmapsWithFirestore() {
         if (isTestProfile()) return;
+        if (!SecurityUtils.hasRole("ROLE_ADMIN")) {
+            log.debug("Bypassing global roadmaps sync for non-admin user to prevent 403 Forbidden");
+            return;
+        }
         try {
             RestTemplate restTemplate = SecurityUtils.getAuthenticatedRestTemplate();
             String response = restTemplate.getForObject(FIRESTORE_BASE_URL, String.class);
@@ -388,7 +393,7 @@ public class RoadmapGeneratorServiceImpl implements RoadmapGeneratorService {
         roadmap.setCurrentStatus(fieldsNode.has(FIELD_CURRENT_STATUS) ? fieldsNode.get(FIELD_CURRENT_STATUS).get(VAL_STRING).asText() : "");
         roadmap.setTargetStatus(fieldsNode.has(FIELD_TARGET_STATUS) ? fieldsNode.get(FIELD_TARGET_STATUS).get(VAL_STRING).asText() : "");
         roadmap.setEstimatedDuration(fieldsNode.has(FIELD_ESTIMATED_DURATION) ? fieldsNode.get(FIELD_ESTIMATED_DURATION).get(VAL_STRING).asText() : "90 Days");
-        roadmap.setPriority(fieldsNode.has(FIELD_PRIORITY) ? fieldsNode.get(FIELD_PRIORITY).get(VAL_STRING).asText() : "MEDIUM");
+        roadmap.setPriority(fieldsNode.has(FIELD_PRIORITY) ? fieldsNode.get(FIELD_PRIORITY).get(VAL_STRING).asText() : PRIORITY_MEDIUM);
 
         roadmap.setMilestonesJson(objectMapper.writeValueAsString(parseListField(fieldsNode, FIELD_MILESTONES)));
         roadmap.setActionItemsJson(objectMapper.writeValueAsString(parseListField(fieldsNode, FIELD_ACTION_ITEMS)));
