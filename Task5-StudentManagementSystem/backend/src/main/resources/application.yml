@@ -36,3 +36,9 @@ spring:
 # Firebase credentials configs placeholders
 firebase:
   config-path: classpath:firebase-service-account.json
+
+ai:
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+  groq:
+    api-key: ${GROQ_API_KEY:}

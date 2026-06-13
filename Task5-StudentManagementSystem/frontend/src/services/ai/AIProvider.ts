@@ -1,73 +1,34 @@
-import { AIModelRouter } from './AIModelRouter'
+import { apiClient } from '../apiClient'
 import type { AIProvider } from '../../types/ai'
 
+interface GatewayResponse {
+  reply: string
+  provider: string
+  model: string
+  responseTime: number
+  tokensUsed: number
+}
+
 export class AIProviderManager implements AIProvider {
-  readonly name = 'AI Provider Manager'
-  readonly rawProviderName = 'AI Router'
+  readonly name = 'AI Gateway Client'
+  readonly rawProviderName = 'AI Gateway'
   readonly modelName = 'Auto'
-  private readonly router: AIModelRouter
-
-  private static requestsCount = 0
-  private static cumulativeFailovers = 0
-
-  constructor() {
-    this.router = new AIModelRouter()
-  }
-
-  getRouter(): AIModelRouter {
-    return this.router
-  }
 
   async generateStream(
     prompt: string,
-    systemInstruction: string,
+    _systemInstruction: string,
     onChunk: (chunk: string, providerName: string, modelName: string) => void
   ): Promise<string> {
-    const startTime = performance.now()
-    let requestFailovers = 0
+    const res = await apiClient.post<GatewayResponse>('/ai/chat', {
+      message: prompt
+    })
 
-    while (true) {
-      const activeProvider = this.router.getPrimaryModel()
-      if (!activeProvider) {
-        AIProviderManager.requestsCount++
-        AIProviderManager.cumulativeFailovers += requestFailovers
-        const responseTime = Math.round(performance.now() - startTime)
-
-        console.info('[AI Analytics] Request failed across all providers.', {
-          totalRequests: AIProviderManager.requestsCount,
-          responseTimeMs: responseTime,
-          failoversForThisRequest: requestFailovers,
-          cumulativeFailovers: AIProviderManager.cumulativeFailovers
-        })
-
-        throw new Error('All AI providers in the failover chain failed or none are configured.')
-      }
-
-      try {
-        console.log(`[AIProviderManager] Attempting generation with: ${activeProvider.name}`)
-        const result = await activeProvider.generateStream(prompt, systemInstruction, onChunk)
-
-        const responseTime = Math.round(performance.now() - startTime)
-        AIProviderManager.requestsCount++
-        AIProviderManager.cumulativeFailovers += requestFailovers
-
-        console.info('[AI Analytics] Request completed successfully.', {
-          totalRequests: AIProviderManager.requestsCount,
-          providerUsed: activeProvider.rawProviderName,
-          modelUsed: activeProvider.modelName,
-          responseTimeMs: responseTime,
-          failoversForThisRequest: requestFailovers,
-          cumulativeFailovers: AIProviderManager.cumulativeFailovers
-        })
-
-        this.router.resetFailures()
-        return result
-      } catch (err: any) {
-        console.warn(`[AIProviderManager] ${activeProvider.name} failed:`, err)
-        this.router.recordFailure(activeProvider, err)
-        requestFailovers++
-      }
-    }
+    const data = res.data
+    
+    // Call the chunk callback once with the full mapped response.
+    // This maintains compatibility with the existing streaming-ready chat UI.
+    onChunk(data.reply, data.provider, data.model)
+    return data.reply
   }
 }
 
